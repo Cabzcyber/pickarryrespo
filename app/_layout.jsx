@@ -9,11 +9,13 @@ export default function RootLayout() {
       <Stack.Screen name="index"/>
     <Stack.Screen name="authlog"/>
     <Stack.Screen name="authsign"/>
-    <Stack.Screen name="otp"/>
+    <Stack.Screen name="otp"  options={{ 
+      headerShown: true ,
+      headerBackTitleVisible: false,  // hide text, show only arrow
+      title: "Verify OTP"             // custom title
+      }} />
     <Stack.Screen name="terms"/>
     </Stack>
   </SafeAreaProvider>
-
-
       )
 }
