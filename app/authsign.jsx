@@ -130,7 +130,7 @@ const auth = () => {
                                         <Pressable style={styles.mainbutton}
                                         onPress={()=>router.push('otp')}
                                         > 
-                                           <Text style={styles.maintextbutton}>Log In</Text>
+                                           <Text style={styles.maintextbutton}>Continue</Text>
                                               </Pressable>       
                                </View>
                                 <Text>

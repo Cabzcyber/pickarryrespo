@@ -32,7 +32,7 @@ const auth = () => {
                       </View>
                       <View style={styles.logincontainer}>
                         <Pressable style={styles.authbutton}
-                        onPress={()=> router.push('authsignn')}
+                        onPress={()=> router.push('/authsign')}
                         >
                           <Text style={styles.authtext}>
                             Sign Up
@@ -72,8 +72,10 @@ const auth = () => {
             </View>
             </View>
 
-           
-              <Pressable style={styles.mainbutton}> 
+             
+              <Pressable style={styles.mainbutton}
+                onPress={()=> router.replace('/(customer)/home')}
+              > 
               <Text style={styles.maintextbutton}>Log In</Text>
               </Pressable>
                 </View>

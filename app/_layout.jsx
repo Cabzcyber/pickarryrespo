@@ -6,15 +6,13 @@ export default function RootLayout() {
   return  (
   <SafeAreaProvider>
     <Stack  screenOptions={{headerShown:false}}>
-      <Stack.Screen name="index"/>
-    <Stack.Screen name="authlog"/>
-    <Stack.Screen name="authsign"/>
-    <Stack.Screen name="otp"  options={{ 
-      headerShown: true ,
-      headerBackTitleVisible: false,  // hide text, show only arrow
-      title: "Verify OTP"             // custom title
-      }} />
-    <Stack.Screen name="terms"/>
+      <Stack.Screen name="index" />
+      {/** Auth stack lives under app/auth */}
+      <Stack.Screen name="auth" />
+      {/** Role groups */}
+      <Stack.Screen name="(customer)" />
+      <Stack.Screen name="(courier)" />
+      <Stack.Screen name="(admin)" />
     </Stack>
   </SafeAreaProvider>
       )
