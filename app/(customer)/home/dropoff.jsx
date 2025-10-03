@@ -24,7 +24,7 @@ export default function DropoffScreen() {
                       <View style={styles.inputcontainer}>
                       <TextInput style={styles.textinput}
                       placeholder='Enter Your Drop-Off Location'
-                      styles={{color: '#7398A9'}}
+                      placeholderTextColor='#7398A9'
                          />
                     </View> 
                    </View> 

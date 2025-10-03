@@ -46,21 +46,55 @@ export default function CustomerTabs() {
         name="home/pickup" 
         options={{ 
           href: null, // This hides it from the tab bar
+          tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
         }} 
       />
       <Tabs.Screen 
         name="home/dropoff" 
         options={{ 
           href: null, // This hides it from the tab bar
+          tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
         }} 
       />
       <Tabs.Screen 
         name="home/setgoods" 
         options={{ 
           href: null, // This hides it from the tab bar
+          tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
         }} 
       />
+      {/* Order flow inner pages - hide tab bar */}
+      <Tabs.Screen 
+        name="home/ordersearch" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="home/ordercancel" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="home/orderongoing" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="home/ordercomplete" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+        
     </Tabs>
+    
   );
 }
 

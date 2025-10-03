@@ -26,7 +26,7 @@ export default function PickupScreen() {
                   <View style={styles.inputcontainer}>
                   <TextInput style={styles.textinput}
                   placeholder='Enter Your Pickup Location'
-                  styles={{color: '#7398A9'}}
+                  placeholderTextColor='#7398A9'
                      />
                 </View> 
                </View> 

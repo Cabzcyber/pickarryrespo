@@ -84,7 +84,7 @@ export default function index() {
                   <Pressable style={styles.textinputloc} >
                     <Text style={styles.textloc}
                      onPress={() => router.push('/(customer)/home/setgoods')}
-                    >   What To Deliver?
+                    >What To Deliver?
                            </Text>
              </Pressable>
                   </View> 
@@ -235,7 +235,7 @@ export default function index() {
 
 
           <Pressable style={styles.mainbutton}
-                                        onPress={()=>router.push('otp')}
+                                        onPress={()=>router.push('/(customer)/home/ordersearch')}
                                         > 
                                            <Text style={styles.maintextbutton}>Order</Text>
                                               </Pressable>   

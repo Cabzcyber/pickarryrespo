@@ -2,7 +2,6 @@ import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Stack, useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 const backimg =require("@/assets/images/back.png")
 const headerlogo =require("@/assets/images/headerlogo.png")
@@ -15,22 +14,12 @@ const geodrop =require("@/assets/images/geodrop.png")
 const goods =require("@/assets/images/goods.png")
 const calculator =require("@/assets/images/calculator.png")
 const call =require("@/assets/images/call.png")
-
-
-
-const OrderComplete = () => {
+const OrderOngoing = () => {
 const router = useRouter(); 
   const snapPoints = useMemo(() => ['10%', '25%', '50%','60%'], []);
   const bottomSheetRef = useRef(null);
 const [modalVisible, setModalVisible] = useState(false);
-const [viewerVisible, setViewerVisible] = useState(false);
 const [reportVisible, setReportVisible] = useState(false);
-
-const sampleImages = [
-  { uri: Image.resolveAssetSource(require('@/assets/images/react-logo.png')).uri },
-  { uri: Image.resolveAssetSource(require('@/assets/images/onfoot.png')).uri },
-  { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
-];
 
  const handleSheetChanges = (index) => {
     console.log('Bottom sheet index changed to:', index);
@@ -48,11 +37,7 @@ const sampleImages = [
       
               <View style={styles.container}>
                   <View style={styles.header}>
-                  <Pressable style={styles.headerbutton}
-                          onPress={()=>router.back()}
-                          >
-                          <Image  source={backimg} style={styles.backIcon}/>
-                          </Pressable>
+                          
 
                           <Image  source={headerlogo} style={styles.logo}/>
 
@@ -85,10 +70,10 @@ const sampleImages = [
           <View style={styles.orderinfo}>
             <View style={styles.info}>
               <Text style={styles.infotext}>
-              Arnold  in a blue motorcycle the License plate is AFA 10242, Order Complete
+              Arnold  in a blue motorcycle the License plate is AFA 10242, was assigned of your order
               </Text> 
               <Text style={styles.infosubtext}>
-               
+               Ongoing Delivery...
               </Text>
             </View>
             <View style={styles.farecontainer}>
@@ -106,7 +91,7 @@ const sampleImages = [
                  
                 >Call</Text>
               </Pressable>
-              <View style={styles.optionItem}>
+            <View style={styles.optionItem}>
               <Pressable onPress={()=>setReportVisible(true)}>
                 <View style={styles.optionCircle}>
                   <Image  source={report} style={styles.reporticon}/> 
@@ -126,7 +111,6 @@ const sampleImages = [
               </View>
               <Text style={styles.optionLabel}>Delivery Fare</Text>
             </View>
-          
           </View>
 
           <View style={styles.locationcontainer}>
@@ -143,19 +127,6 @@ const sampleImages = [
           <Text style={styles.sublocationtext}>2 Iced Macha Coffer and 2 fries and 2 kwekkwek  </Text>
           </View>
           </View>
-
-            <View style={styles.viewimgcontainer}>
-            <Pressable style={styles.viewPhotos} onPress={()=> setViewerVisible(true)}>
-              <Text style={styles.viewPhotosText}>View Delivered Photos</Text>
-            </Pressable>
-
-
-            </View>
-
-
-          
-
-
 
             </View>
          
@@ -178,7 +149,6 @@ const sampleImages = [
             </View>
           </Modal>
 
-            
           <Modal
             animationType="fade"
             transparent={true}
@@ -198,13 +168,6 @@ const sampleImages = [
               </View>
             </View>
           </Modal>
-
-          <ImageViewing
-            images={sampleImages}
-            imageIndex={0}
-            visible={viewerVisible}
-            onRequestClose={() => setViewerVisible(false)}
-          />
 
 
 
@@ -390,18 +353,6 @@ const styles = StyleSheet.create({
     textAlign:'center',
     fontSize:12,
   },
-  viewPhotos:{
-    marginTop:16,
-    paddingVertical:10,
-    paddingHorizontal:14,
-    backgroundColor:'#22262F',
-    borderRadius:10,
-  },
-  viewPhotosText:{
-    color:'#87AFB9',
-    fontSize:14,
-    textAlign:'center',
-  },
   locationcontainer:{
     flexDirection:'column',
     marginTop:16,
@@ -503,17 +454,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     fontFamily: 'Roboto-regular',
   },
-  viewimgcontainer:{
-
-
-
-
-
-    
-  },
   
 }); 
 
 
 
-export default OrderComplete;
+export default OrderOngoing;
