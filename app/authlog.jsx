@@ -1,7 +1,8 @@
 
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { CheckBox, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CheckBox } from 'react-native-elements';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -45,12 +46,14 @@ const auth = () => {
               <Text style={styles.title}>Email</Text>
             <TextInput style={styles.textinput}
             placeholder='Enter Your Email Address'
+            placeholderTextColor='#7398A9'
             />
             </View>
             <View style={styles.inputcontainer}>
               <Text  style={styles.title} >Password</Text>
             <TextInput style={styles.textinput}
             placeholder='Enter Your Password'
+            placeholderTextColor='#7398A9'
             />
             </View>
            </View>
@@ -58,10 +61,11 @@ const auth = () => {
             <View style={styles.remembercontainer}>
               <View style={styles.recover}>
             <CheckBox
-              value={isSelected}
-               onValueChange={setSelected}
-               tintColors={{ true: '#1976d2', false: '#aaa' }}
-                style={{marginRight:5}} />
+              checked={isSelected}
+              onPress={() => setSelected(!isSelected)}
+              checkedColor='#1976d2'
+              uncheckedColor='#aaa'
+              style={{marginRight:5}} />
             <Text  style={{ color: '#FFFFFF',marginLeft:5}}>Remember Me</Text>
             </View>
             <View style={styles.recover}>  
@@ -127,9 +131,8 @@ gap:80,
 marginTop: verticalScale(35.82),
 },
 authtext:{
-fontFamily: 'Roboto',      // or 'Roboto-Bold' if you loaded the TTF
+fontFamily: 'Roboto-Bold',
     fontStyle: 'normal',
-    fontWeight: '700',         // 700 → 'bold'
     fontSize: 20,
     lineHeight: 23,
     color: '#ffffff',
@@ -137,9 +140,8 @@ fontFamily: 'Roboto',      // or 'Roboto-Bold' if you loaded the TTF
 title:{
   flexDirection:'column',
 justifyContent:'flex-start',
-fontfamily: 'Roboto Flex',
+fontFamily: 'Roboto-Bold',
 color: '#FFFFFF',
-fontWeight: 700,
 fontSize: 15,
 lineHeight: 18,
 letterSpacing: 0.12,
@@ -159,6 +161,7 @@ rowGap:10,
 inputcontainer:{
 flexDirection:'column',
 width:'90%',
+height:'28%',
 maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',
@@ -166,9 +169,8 @@ pointerEvents:'auto',
 },
 textinput:{
   flex:1,
-fontfamily: 'Roboto Flex',
+fontFamily: 'Roboto-Light',
 color: '#7398A9',
-fontWeight: 300,
 fontSize: 15,
 lineHeight: 18,
 letterSpacing: 0.12,
@@ -206,8 +208,6 @@ alignItems:'center',
 maintextbutton:{
 fontSize:18,
 color:'black',
-fontFamily: 'Roboto', 
-fontWeight: '700',
-
+fontFamily: 'Roboto-Bold', 
 }
 })

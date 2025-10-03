@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { CheckBox, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CheckBox } from 'react-native-elements';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -105,10 +106,11 @@ const auth = () => {
                               <View style={styles.remembercontainer}>
                                             <View style={styles.recover}>
                                           <CheckBox
-                                            value={isSelected}
-                                            onValueChange={setSelected}
-                                            tintColors={{ true: '#1976d2', false: '#aaa' }}
-                                              style={{marginRight:5}} />
+                                            checked={isSelected}
+                                            onPress={() => setSelected(!isSelected)}
+                                            checkedColor='#1976d2'
+                                            uncheckedColor='#aaa'
+                                            style={{marginRight:5}} />
                                           <Text style={{ color: '#FFFFFF', marginLeft: 1 }}>
                                                 I Agree To The 
                                                 <Text
@@ -195,7 +197,6 @@ alignItems:'center',
 PointerEvents:'auto',
  marginTop: verticalScale(13.18),
 rowGap:10,
-
 },
 inputcontainer:{
 flexDirection:'column',
@@ -226,9 +227,9 @@ marginBottom:11,
 },
 textinput:{
   flex:1,
-fontfamily: 'Roboto Flex',
+fontFamily: 'Roboto Flex',
 color: '#7398A9',
-fontWeight: 300,
+fontWeight: 'bold',
 fontSize: 15,
 lineHeight: 18,
 letterSpacing: 0.12,
@@ -237,7 +238,6 @@ borderRadius: 10,
 padding:10,
 marginRight:10,
 borderWidth:1,
-
 },
 remembercontainer:{
 flexDirection: 'row',
@@ -269,6 +269,5 @@ fontSize:18,
 color:'black',
 fontFamily: 'Roboto', 
 fontWeight: '700',
-
 }
 })
