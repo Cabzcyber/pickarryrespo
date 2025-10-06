@@ -92,6 +92,36 @@ export default function CustomerTabs() {
           tabBarStyle: { display: 'none' },
         }} 
       />
+      
+      {/* Menu inner pages - hide tab bar */}
+      <Tabs.Screen 
+        name="menu/profile" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/settings" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/notification" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/about" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
         
     </Tabs>
     

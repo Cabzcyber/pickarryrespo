@@ -329,10 +329,6 @@ const styles = StyleSheet.create({
   locationcontainer:{
     flexDirection:'column',
     marginTop:16,
-
-
-
-
   },
   sublocationcontainer:{
     flexDirection:'row',
