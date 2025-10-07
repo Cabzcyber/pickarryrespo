@@ -37,7 +37,7 @@ const logout = require("@/assets/images/logout.png");
             <Text style={styles.settingsubtext}>Notification</Text>
           </Pressable>
           
-          <Pressable  style={styles.settingsubcontent} onPress={() => router.replace('/(courier)/home')}>
+          <Pressable  style={styles.settingsubcontent} onPress={() => router.replace('/(courier)/registration/courierauthsign')}>
             <Image source={switchcour} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Switch To Courier</Text>
           </Pressable>
@@ -53,7 +53,7 @@ const logout = require("@/assets/images/logout.png");
             <Text style={styles.settingsubtext}>Check Our Pickarry Website</Text>
           </View>
           
-          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/index')}>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/authlog')}>
             <Image source={logout} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Log Out</Text>
           </Pressable>

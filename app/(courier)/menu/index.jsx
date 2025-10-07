@@ -54,7 +54,7 @@ const logout = require("@/assets/images/logout.png");
              <Text style={styles.settingsubtext}>Check Our Pickarry Website</Text>
            </View>
            
-           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/index')}>
+           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/authlog')}>
              <Image source={logout} style={styles.ordericon}/>
              <Text style={styles.settingsubtext}>Log Out</Text>
            </Pressable>

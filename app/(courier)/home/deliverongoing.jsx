@@ -280,15 +280,45 @@ const call =require("@/assets/images/call.png")
                           Alert.alert('Modal has been closed.');
                           setModalVisible(!modalVisible);
                         }}>
-                        <View style={styles.centeredView}>
-                          <View style={styles.modalView}>
-                            <Pressable
-                              style={[styles.button, styles.buttonClose]}
-                              onPress={() => setModalVisible(!modalVisible)}>
-                              <Text style={styles.textStyle}>Hide Modal</Text>
-                            </Pressable>
-                          </View>
-                        </View>
+                       <View style={styles.centeredView}>
+                                     <View style={styles.modalView}>
+                                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                                         <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
+                                           <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                                         </Pressable>
+                                         <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
+                                       </View>
+                                       <View style={{ marginBottom: 18 }}>
+                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                                           <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
+                                           <Text style={{ color: '#fff' }}>₱20.00</Text>
+                                         </View>
+                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                                           <Text style={{ color: '#b0c4d4' }}>Distance (1.8 km)</Text>
+                                           <Text style={{ color: '#fff' }}>₱8.00</Text>
+                                         </View>
+                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                                           <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
+                                           <Text style={{ color: '#fff' }}>₱5.00</Text>
+                                         </View>
+                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                                           <Text style={{ color: '#b0c4d4' }}>Goods Cost:</Text>
+                                           <Text style={{ color: '#fff' }}>₱00.0</Text>
+                                         </View>
+                                         <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
+                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                           <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
+                                           <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>₱33.0</Text>
+                                         </View>
+                                       </View>
+                                       <Pressable
+                                         style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
+                                         onPress={() => setModalVisible(false)}
+                                       >
+                                         <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
+                                       </Pressable>
+                                     </View>
+                                   </View>
                       </Modal>
             
                       <Modal
@@ -297,18 +327,39 @@ const call =require("@/assets/images/call.png")
                         visible={reportVisible}
                         onRequestClose={() => setReportVisible(false)}
                       >
-                        <View style={styles.centeredView}>
-                          <View style={styles.modalView}>
-                            <Text style={styles.textStyle}>Report an Issue</Text>
-                            <Text style={[styles.textStyle, { marginTop: 8 }]}>This is a placeholder modal.</Text>
-                            <Pressable
-                              style={[styles.button, styles.buttonClose]}
-                              onPress={() => setReportVisible(false)}
-                            >
-                              <Text style={styles.textStyle}>Close</Text>
-                            </Pressable>
-                          </View>
-                        </View>
+                       <View style={styles.centeredView1}>
+                                    <View style={styles.modalView1}>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'stretch' }}>
+                                        <Pressable onPress={() => setReportVisible(false)} style={{ marginRight: 12 }}>
+                                          <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                                        </Pressable>
+                                        <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Report an Issue</Text>
+                                      </View>
+                                      <View style={{ alignSelf: 'stretch' }}>
+                                        {[
+                                          'Goods Spilled,crush or damaged',
+                                          'Wrong item delivered',
+                                          'Driver got lost / could not find my exact address',
+                                          'No communication or update from driver while waiting',
+                                          'Items were stolen or missing upon arrival',
+                                          'Driver was rude or unprofessional',
+                                          'Payment dispute',
+                                          'The Vehicle Broke down & absence of Drive License',
+                                        ].map((item, idx, arr) => (
+                                          <React.Fragment key={item}>
+                                            <Text style={{ color: '#b0c4d4', fontSize: 16, paddingVertical: 10, textAlign: 'left' }}>{item}</Text>
+                                            {idx !== arr.length - 1 && <View style={{ borderBottomWidth: 1, borderBottomColor: '#2a3a4d' }} />}
+                                          </React.Fragment>
+                                        ))}
+                                      </View>
+                                      <Pressable
+                                        style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 18 }}
+                                        onPress={() => setReportVisible(false)}
+                                      >
+                                        <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
+                                      </Pressable>
+                                    </View>
+                                  </View>
                       </Modal>
 
               <ImageViewing
@@ -566,7 +617,7 @@ optionbtn:{
    modalView: {
     margin: 20,
     width: '80%',
-    height: '25%',
+    height: '40%',
     backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 35,
@@ -684,4 +735,27 @@ optionbtn:{
       padding: 12,
       marginBottom: 6,
     },
+    modalView1: {
+    margin: 20,
+    width: '80%',
+    height: '70%',
+    backgroundColor: '#363D47',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+    centeredView1: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontFamily: 'Roboto-regular',
+  },
 })

@@ -15,9 +15,7 @@ export default function About() {
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
-        <Pressable onPress={() => console.log('Edit About - Future Feature')}>
-          <Image source={edit} style={styles.editicon}/>
-        </Pressable>
+        
       </View>
       <View style={styles.separator} />
       

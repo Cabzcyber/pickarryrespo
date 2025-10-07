@@ -133,10 +133,40 @@ const [modalVisible, setModalVisible] = useState(false);
             }}>
             <View style={styles.centeredView}>
               <View style={styles.modalView}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
+                    <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                  </Pressable>
+                  <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
+                </View>
+                <View style={{ marginBottom: 18 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
+                    <Text style={{ color: '#fff' }}>₱20.00</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: '#b0c4d4' }}>Distance (1.8 km)</Text>
+                    <Text style={{ color: '#fff' }}>₱8.00</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
+                    <Text style={{ color: '#fff' }}>₱5.00</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: '#b0c4d4' }}>Goods Cost:</Text>
+                    <Text style={{ color: '#fff' }}>₱00.0</Text>
+                  </View>
+                  <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
+                    <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>₱33.0</Text>
+                  </View>
+                </View>
                 <Pressable
-                  style={[styles.button, styles.buttonClose]}
-                  onPress={() => setModalVisible(!modalVisible)}>
-                  <Text style={styles.textStyle}>Hide Modal</Text>
+                  style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
                 </Pressable>
               </View>
             </View>
@@ -380,7 +410,7 @@ const styles = StyleSheet.create({
    modalView: {
     margin: 20,
     width: '80%',
-    height: '25%',
+    height: '40%',
     backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 35,

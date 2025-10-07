@@ -15,7 +15,7 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back('/(customer)/menu/index')}>
+        <Pressable onPress={() => router.back()}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
       

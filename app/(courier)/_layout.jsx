@@ -108,9 +108,28 @@ export default function CourierTabs() {
           tabBarStyle: { display: 'none' },
         }} 
       />
-        
-
-
+ <Tabs.Screen 
+        name="registration/courierauthsign" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+        <Tabs.Screen 
+        name="registration/otp" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="registration/terms" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+ 
 
 
 
