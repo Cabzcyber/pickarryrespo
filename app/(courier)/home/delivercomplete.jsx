@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 const delivercomplete = () => {
@@ -42,6 +43,10 @@ const call =require("@/assets/images/call.png")
                       headerShown: false,  
                     }}
                   />
+                  <ScrollView
+                  contentContainerStyle={{ flexGrow: 1 }}
+  showsVerticalScrollIndicator={true}
+                  > 
   <View  style={styles.container}>
             <View style={styles.header}>
                                       <Pressable style={styles.headerbutton}
@@ -114,6 +119,13 @@ const call =require("@/assets/images/call.png")
                         </Text>
                         </View>
                         </View>
+                        <View style={styles.viewimgcontainer}>
+                                    <Pressable style={styles.viewPhotos} onPress={()=> setViewerVisible(true)}>
+                                      <Text style={styles.viewPhotosText}>Delivered Goods Photos</Text>
+                                    </Pressable>
+                        
+                        
+                                    </View>
 
                   <View style={styles.optionbtn}>
                                 <Pressable style={styles.optionItem} onPress={()=>router.push('/(customer)/home/ordercomplete')}>
@@ -205,6 +217,7 @@ const call =require("@/assets/images/call.png")
             onRequestClose={() => setViewerVisible(false)}
           />
           </View>
+          </ScrollView>
        </>
 
 
@@ -221,7 +234,7 @@ export default delivercomplete
 
 const styles = StyleSheet.create({
 container: {
-    flex: 1,
+  
     backgroundColor: '#141519',
   },
   mainContent: {

@@ -1,6 +1,8 @@
+import AntDesign from '@expo/vector-icons/AntDesign';
+import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 const deliverongoing = () => {
@@ -14,7 +16,11 @@ const deliverongoing = () => {
   const goodimg =require("@/assets/images/goodimg.png")
   const urgent =require("@/assets/images/urgent.png")
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible1, setModalVisible1] = useState(false); 
   const [reportVisible, setReportVisible] = useState(false);
+  const [assets, setAssets] = useState([]);
+    const [previewImage, setPreviewImage] = useState(null);
+   
 const report =require("@/assets/images/report.png")
 const calculator =require("@/assets/images/calculator.png")
 const call =require("@/assets/images/call.png")
@@ -25,7 +31,69 @@ const call =require("@/assets/images/call.png")
     { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
   ];
   
-  
+  const renderItem = item => {
+    return (
+      <View style={styles.item}>
+        <Text style={styles.textItem}>{item.label}</Text>
+        {item.value === value && (
+          <AntDesign
+            style={styles.icon}
+            color="black"
+            name="Safety"
+            size={20}
+          />
+        )}
+      </View>
+    );
+  };
+
+  const pickImage = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: 3,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setAssets(result.assets);
+    }
+  };
+
+  const deleteImage = (index) => {
+    Alert.alert(
+      'Delete Image',
+      'Are you sure you want to delete this image?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            const newAssets = assets.filter((_, i) => i !== index);
+            setAssets(newAssets);
+            setModalVisible1(false);
+            setPreviewImage(null);
+          }
+        }
+      ]
+    );
+  };
+
+  const previewImageHandler = (item) => {
+    setPreviewImage(item);
+    setModalVisible1(true);
+  };
+
   return (
      <>
               <Stack.Screen 
@@ -34,6 +102,11 @@ const call =require("@/assets/images/call.png")
                   headerShown: false,  
                 }}
               />
+            
+              <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+  showsVerticalScrollIndicator={true}
+              > 
            <View  style={styles.container}>
             <View style={styles.header}>
 
@@ -75,17 +148,17 @@ const call =require("@/assets/images/call.png")
                         </View>
               <View style={styles.locationcontainer1}>
                         <View style={styles.sublocationcontainer}>
-                        <Image  source={feature} style={styles.geopickicon}/>
+                        <Image  source={goodimg} style={styles.geopickicon}/>
                         </View>
                          <View style={styles.viewimgcontainer}>
                                     <Pressable style={styles.viewPhotos} onPress={()=> setViewerVisible(true)}>
-                                      <Text style={styles.viewPhotosText}>View Goods To Deliver Photos</Text>
+                                      <Text style={styles.viewPhotosText}>Goods To Deliver Photos</Text>
                                     </Pressable>
                         
                         
                                     </View>
                         </View>
-              <View style={styles.locationcontainer2}>
+                        <View style={styles.locationcontainer2}>
                         <View style={styles.sublocationcontainer2}>
                         <Image  source={feature} style={styles.geopickicon}/>
                         <Text style={styles.sublocationtext2} >
@@ -101,6 +174,25 @@ const call =require("@/assets/images/call.png")
                         </Text>
                         </View>
                         </View>
+
+                 {/* Image Picker Section */}
+                               <View style={styles.imagePickerContainer}>
+                                 <Pressable 
+                                   onPress={pickImage}
+                                   style={styles.imgbutton}
+                                 >
+                                   <Text style={styles.uploadButtonText}>Upload Delivered Goods (Max 3)</Text>
+                                 </Pressable>
+                                 
+                                <View style={[styles.imageListContainer, { flexDirection: 'row', flexWrap: 'wrap',  }]}>
+                                  {assets.map((item, index) => (
+                                    <TouchableOpacity key={index} onPress={() => previewImageHandler(item)}>
+                                      <Image source={{ uri: item.uri }} style={styles.selectedImage} />
+                                    </TouchableOpacity>
+                                  ))}
+                                </View>
+                                                              </View>
+              
 
                   <View style={styles.optionbtn}>
                                 <Pressable style={styles.optionItem} onPress={()=>router.push('/(customer)/home/ordercomplete')}>
@@ -144,7 +236,41 @@ const call =require("@/assets/images/call.png")
 
 
             </View>
-
+                       
+                        {/* Image Preview Modal */}
+                               <Modal
+                                 animationType="fade"
+                                 transparent={true}
+                                 visible={modalVisible1}
+                                 onRequestClose={() => setModalVisible1(false)}
+                               >
+                                 <View style={styles.modalOverlay}>
+                                   <View style={styles.modalContent}>
+                                     <Image
+                                       source={{ uri: previewImage?.uri }}
+                                       style={styles.previewImage}
+                                       resizeMode="contain"
+                                     />
+                                     <View style={styles.modalButtons}>
+                                       <Pressable
+                                         style={styles.closeButton}
+                                         onPress={() => setModalVisible1(false)}
+                                       >
+                                         <Text style={styles.buttonText}>Close</Text>
+                                       </Pressable>
+                                       <Pressable
+                                         style={styles.deleteButton}
+                                         onPress={() => {
+                                           const index = assets.findIndex(asset => asset.uri === previewImage.uri);
+                                           deleteImage(index);
+                                         }}
+                                       >
+                                         <Text style={styles.buttonText}>Delete</Text>
+                                       </Pressable>
+                                     </View>
+                                   </View>
+                                 </View>
+                               </Modal>
             
                         <Modal
                         animationType="slide"
@@ -192,7 +318,7 @@ const call =require("@/assets/images/call.png")
             onRequestClose={() => setViewerVisible(false)}
           />
           </View>
-       
+      </ScrollView>
          </>
   )
 }
@@ -202,7 +328,7 @@ export default deliverongoing
 
 const styles = StyleSheet.create({
 container: {
-    flex: 1,
+    
     backgroundColor: '#141519',
   },
   mainContent: {
@@ -370,9 +496,11 @@ container: {
     paddingHorizontal:14,
     backgroundColor:'#22262F',
     borderRadius:10,
+    
   },
   viewPhotosText:{
     color:'#87AFB9',
+    fontFamily:'Roboto-Bold',
     fontSize:14,
     textAlign:'center',
   },
@@ -481,5 +609,79 @@ optionbtn:{
     alignItems: 'center',
     fontFamily: 'Roboto-regular',
   },
-  
+  imagePickerContainer: {
+    justifyContent: "center",
+    alignItems: 'center',
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(20),
+    width: '100%',
+    height: verticalScale(148),
+    backgroundColor: '#363D47',
+    borderRadius: 11,
+    padding: 10,
+  },
+  imageListContainer: {
+    marginTop: 20,
+  },
+  selectedImage: {
+    width: 100,
+    height: 100,
+    margin: 5,
+    borderRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#363D47',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    maxWidth: '90%',
+    maxHeight: '80%',
+  },
+  previewImage: {
+    width: 300,
+    height: 300,
+    borderRadius: 8,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 15,
+  },
+  closeButton: {
+    backgroundColor: '#7398A9',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#FF4444',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Roboto-Bold',
+    fontSize: 16,
+  },
+  uploadButtonText: {
+    color: '#7398A9',
+    fontFamily: 'Roboto-Bold',
+    fontSize: 16,
+  },
+  imgbutton:{
+      width:'90%',
+      height: 45,
+      backgroundColor:'#192028',
+      borderColor:'#192028',
+      borderRadius: 11,
+      padding: 12,
+      marginBottom: 6,
+    },
 })

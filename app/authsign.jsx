@@ -22,7 +22,10 @@ const auth = () => {
     const router = useRouter(); 
      const [value, setValue] = useState("male");
   return (
-            <ScrollView>
+            <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={true}
+            >
            <View style={styles.container}>
              <View style={styles.allcontainer}>
              <View>
@@ -47,12 +50,15 @@ const auth = () => {
                                        </Pressable>
                                      </View>
                               </View>
+                               <View style={styles.separator} />
                          <View style={styles.maininputcontainer}>
                            <View style={styles.inputcontainer}>
                             <Text style={styles.title}>Full Name</Text>
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Full Name'
+                           placeholderTextColor='#7398A9'
                            />
+                           
                            </View> 
 
                             <View style={styles.rowinput}> 
@@ -60,6 +66,7 @@ const auth = () => {
                              <Text  style={styles.title} >Date of Birth</Text>
                            <TextInput style={styles.textinput}
                            placeholder='mm/dd/yyyy'
+                           placeholderTextColor='#7398A9'
                            />
                            </View>
                            <View style={styles.inputcontainerr}>
@@ -79,6 +86,7 @@ const auth = () => {
                             <Text style={styles.title}>Email Address</Text>
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Email Address'
+                           placeholderTextColor='#7398A9'
                            />
                            </View> 
 
@@ -86,6 +94,7 @@ const auth = () => {
                             <Text style={styles.title}>Phone Number</Text>
                            <TextInput style={styles.textinput}
                            placeholder='+63 |  '
+                           placeholderTextColor='#7398A9'
                            />
                            </View> 
 
@@ -93,6 +102,7 @@ const auth = () => {
                             <Text style={styles.title}>Address</Text>
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Address'
+                           placeholderTextColor='#7398A9'
                            />
                            </View> 
 
@@ -100,6 +110,7 @@ const auth = () => {
                             <Text style={styles.title}>Password</Text>
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Password'
+                           placeholderTextColor='#7398A9'
                            />
                            </View> 
 
@@ -110,21 +121,21 @@ const auth = () => {
                                             onPress={() => setSelected(!isSelected)}
                                             checkedColor='#1976d2'
                                             uncheckedColor='#aaa'
-                                            style={{marginRight:5}} />
-                                          <Text style={{ color: '#FFFFFF', marginLeft: 1 }}>
-                                                I Agree To The 
+                                            style={{marginRight:0}} />
+                                          <Text style={{ color: '#FFFFFF',}}>
+                                              I Agree to
                                                 <Text
                                                   style={{ color: '#1976d2', textDecorationLine: 'underline' }}
                                                   onPress={() => router.push('terms')}
                                                 >
                                                   {"  "}Terms of Service{"  "}
-                                                </Text>
-                                                and 
+                                                </Text>&
                                                 <Text
                                                   style={{ color: '#1976d2', textDecorationLine: 'underline' }}
                                                   onPress={() => router.push('terms')}
                                                 >
-                                                  {"  "}Privacy Policy
+                                                  {"  "}
+                                                  Privacy Policy
                                                 </Text>
                                               </Text>
                                           </View>
@@ -141,6 +152,23 @@ const auth = () => {
                                         {'\n'}
                                           {'\n'}
                                             {'\n'}
+                                            {'\n'}
+                                          {'\n'}
+                                            {'\n'}
+                                            {'\n'}
+                                          {'\n'}
+                                            {'\n'}
+                                            {'\n'}
+                                          {'\n'}
+                                            {'\n'}
+                                            {'\n'}
+                                          {'\n'}
+                                            {'\n'}
+                                            {'\n'}
+                                          {'\n'}
+                                            {'\n'}
+                                            
+                                            
                                     </Text>
 
 
@@ -155,7 +183,7 @@ export default auth
 
 const styles = StyleSheet.create({
 container:{
-flex:1,
+paddingBottom: 30, 
 backgroundColor: '#141519',
 },
 TopImage:{
@@ -189,18 +217,30 @@ fontFamily: 'Roboto',      // or 'Roboto-Bold' if you loaded the TTF
 },
 rowinput:{
 flexDirection:'row',
-gap:40,
+gap:10,
+marginHorizontal:'auto',
+marginLeft:16
 },
 maininputcontainer:{
 justifyContent:"center",
 alignItems:'center',
 PointerEvents:'auto',
- marginTop: verticalScale(13.18),
+ marginTop: verticalScale(-75),
 rowGap:10,
+
 },
+ separator: {
+    height: 1,
+    backgroundColor: '#363D47',
+    alignSelf:'center',
+    width: '90%',
+    marginTop: 15,
+    marginBottom: 20,
+  },
 inputcontainer:{
 flexDirection:'column',
 width:'90%',
+height:'10.5%',
 maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',
@@ -208,7 +248,8 @@ pointerEvents:'auto',
 },
 inputcontainerr:{
 flexDirection:'column',
-width:'50%',
+width:'55%',
+
 maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',
@@ -241,15 +282,14 @@ borderWidth:1,
 },
 remembercontainer:{
 flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between', // pushes the two items apart
-  width: '80%',                    // same width as your inputs
-  alignSelf: 'center',
-  marginTop: verticalScale(5),
+  width: '100%',               
+  marginTop: verticalScale(1),
+  
 },
 recover:{
 flexDirection:'row',
 alignItems: 'center',
+marginHorizontal:'auto',
 },
 mainbutton:{
 flexDirection:'column',

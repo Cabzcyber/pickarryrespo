@@ -16,6 +16,9 @@ const rela = require("@/assets/images/rela.png");
 const bike = require("@/assets/images/bike.png");
 const passengercar = require("@/assets/images/passengercar.png");
 const truck = require("@/assets/images/truck.png");
+const next = require("@/assets/images/next.png");
+const money = require("@/assets/images/money.png");
+const time = require("@/assets/images/time.png");
 
 export default function index() {
   const snapPoints = useMemo(() => ['10%', '25%', '50%', '70%'], []);
@@ -24,6 +27,7 @@ export default function index() {
   const [value, setValue] = useState(null);
   const [isSelected, setSelected] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSlide, setSelectedSlide] = useState(null);
   const data = [
     { label: 'Pasundo', value: '1' },
     { label: 'Pasugo', value: '2' },
@@ -67,8 +71,9 @@ export default function index() {
                        Where To Pickup?
 
                     </Text>
-
+              <Image  source={next} style={styles.nexticon}/>
              </Pressable>
+             
                            </View>  
              <View style={styles.inputcontainer}>
            <Pressable style={styles.textinputloc} >
@@ -76,7 +81,7 @@ export default function index() {
            onPress={() => router.push('/(customer)/home/dropoff')}>
                        Where To Drop-off?
                     </Text>
-
+           <Image  source={next} style={styles.nexticon}/>
              </Pressable>
              </View> 
 
@@ -86,6 +91,7 @@ export default function index() {
                      onPress={() => router.push('/(customer)/home/setgoods')}
                     >What To Deliver?
                            </Text>
+                            <Image  source={next} style={styles.nexticon}/>
              </Pressable>
                   </View> 
       </View>
@@ -98,8 +104,10 @@ export default function index() {
         onChange={handleSheetChanges}
         backgroundStyle={styles.bottomSheetBackground}
         handleIndicatorStyle={styles.handleIndicator}
+
       >
-        <BottomSheetView style={styles.contentContainer}>
+        <BottomSheetView style={styles.contentContainer}
+        pointerEvents="box-none">
 
 
           <View style={styles.bottomsheetcontainer}>
@@ -174,45 +182,39 @@ export default function index() {
                   style={[styles.button, styles.buttonOpen]}
                   onPress={() => setModalVisible(true)}>
                   <Text style={styles.textStyle}>Set Schedule</Text>
+                    <Image  source={time} style={styles.ordericon}/>
                 </Pressable>
               </View>
             </View>
           </View>
-            <View style={styles.swiperContainer}>
-              <Swiper style={styles.swiperWrapper} showsButtons={true} height={200}>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>On Foot</Text>
-                  <Image source={onfoot} style={styles.slideimg} />
-                </View>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Dulog</Text>
-                  <Image  source={dulog} style={styles.slideimg} />
-                </View>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Motorcycle</Text>
-                  <Image source={motorcycle} style={styles.slideimg} />
-                </View>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Rela</Text>
-                  <Image source={rela} style={styles.slideimg} />
-                </View>
-                  <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Bicycle</Text>
-                  <Image source={bike} style={styles.slideimg} />
-                </View>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Passenger Car</Text>
-                  <Image source={passengercar} style={styles.slideimg} />
-                </View>
-                <View style={styles.slide}>
-                  <Text style={styles.swiperText}>Truck</Text>
-                  <Image source={truck} style={styles.slideimg} />
-                </View>
-
-
-              </Swiper>
-
-            </View>
+           <View style={styles.swiperContainer}>
+  <Swiper style={styles.swiperWrapper} showsButtons={true} height={200}
+  >
+    {[
+      { id: 'foot', label: 'On Foot - ₱ 10', image: onfoot },
+      { id: 'dulog', label: 'Dulog - ₱ 25', image: dulog },
+      { id: 'motorcycle', label: 'Motorcycle - ₱ 20', image: motorcycle },
+      { id: 'rela', label: 'Rela - ₱ 15', image: rela },
+      { id: 'bike', label: 'Bicycle - ₱ 10', image: bike },
+      { id: 'passenger', label: 'Passenger Car - ₱ 40', image: passengercar },
+      { id: 'truck', label: 'Truck - ₱ 90', image: truck },
+    ].map(item => (
+      <Pressable
+  key={item.id}
+  onPress={() =>
+    setSelectedSlide(selectedSlide === item.id ? null : item.id)
+  }
+  style={[
+    styles.slide,
+    selectedSlide === item.id && styles.selectedSlide
+  ]}
+>
+  <Text style={styles.swiperText}>{item.label}</Text>
+  <Image source={item.image} style={styles.slideimg} />
+</Pressable>
+    ))}
+  </Swiper>
+</View>
           <Modal
             animationType="slide"
             transparent={true}
@@ -305,6 +307,7 @@ const styles = StyleSheet.create({
 
   },
   inputlocationcontainer:{
+    
 position: 'absolute',
 justifyContent:'center',
 width: 381,
@@ -316,31 +319,41 @@ borderRadius: 28
   },
   inputcontainer:{
     flexDirection:'column',
-    width:'102%',
+    width:'101%',
     height:'30%',
     maxWidth:1024,
-    padding:10,
+    padding:9,
     marginHorizontal:'auto',
     pointerEvents:'auto',
     },
-    textinputloc:{
-      flex:1,
-      backgroundColor:'#192028',
-      borderColor:'#192028',
-      color: '#7398A9',
-      borderRadius: 10,
-      padding:10,
-      marginRight:10,
-      borderWidth:1,
-      },
-      textloc:{
-        flex:1,
-        color: '#7398A9',
-        fontFamily: 'Roboto-light',
-        fontStyle: 'normal',
-        fontSize: 18,
-        lineHeight: 23,
-        },
+   textinputloc: {
+  flexDirection: 'row',          // horizontal layout
+  alignItems: 'center',          // vertically center content
+  justifyContent: 'space-between', // text left, icon right
+  backgroundColor: '#192028',
+  borderColor: '#192028',
+  borderWidth: 1,
+  borderRadius: 10,
+  paddingVertical: 12,
+  paddingHorizontal: 15,
+  marginBottom: 8,
+},
+
+textloc: {
+  flexShrink: 1,
+  color: '#7398A9',
+  fontFamily: 'Roboto-light',
+  fontSize: 18,
+  lineHeight: 23,
+  
+},
+
+nexticon: {
+  width: 30,
+  height: 28,
+  resizeMode: 'contain',
+  tintColor: '#00bfff',  // matches your accent blue
+},
         mainbutton:{
           flexDirection:'column',
           width:'100%',
@@ -478,7 +491,15 @@ borderRadius: 28
     justifyContent:"center",
     alignItems:'center',
     fontFamily: 'Roboto-regular',
+     flexDirection: 'row',          // horizontal layout
+  
   },
+  ordericon:{
+  width:22,
+  height:22,
+  resizeMode:'contain',
+  marginRight:10,
+},
   buttonClose: {
     backgroundColor: '#2196F3',
   },
@@ -512,18 +533,27 @@ borderRadius: 28
    
   },
    slide: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor:'#465569',
-    borderRadius: 17,
-    width:'70%',
-    alignContent:'center',
-    alignSelf:'center',
-    fontFamily: 'Roboto-regular',
-    fontSize: 16,
-    color: '#7398A9',
-  },
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: '#465569',
+  borderRadius: 17,
+  width: '70%',
+  alignContent: 'center',
+  alignSelf: 'center',
+  fontFamily: 'Roboto-regular',
+  fontSize: 16,
+  color: '#7398A9',
+  borderWidth: 2,
+  borderColor: 'transparent', // default
+},
+
+selectedSlide: {
+  borderColor: '#0AB3FF', // blue when clicked
+  shadowColor: '#0AB3FF',
+  shadowOpacity: 0.6,
+  shadowRadius: 5,
+},
   swiperText: {
       fontWeight:'bold',
     fontFamily: 'Roboto-regular',

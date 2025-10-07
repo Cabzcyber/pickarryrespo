@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Searchbar } from 'react-native-paper';
@@ -14,6 +15,7 @@ const backimg = require("@/assets/images/back.png");
     const geopick = require("@/assets/images/geopick.png");
     const geodrop = require("@/assets/images/geodrop.png");
     const goods = require("@/assets/images/goods.png");
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [value, setValue] = useState(null);
     const [items, setItems] = useState([

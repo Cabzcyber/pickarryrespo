@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 const orderview = () => {
@@ -32,6 +33,11 @@ const sampleImages = [
               headerShown: false,  
             }}
           />
+
+          <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+  showsVerticalScrollIndicator={true}
+          >
           <View  style={styles.container}>
             <View style={styles.header}>
                                       <Pressable style={styles.headerbutton}
@@ -194,18 +200,7 @@ const sampleImages = [
             onRequestClose={() => setViewerVisible(false)}
           />
           </View>
-
-
-
-
-
-
-
-
-
-
-
-
+                                    </ScrollView>
 
      </>
   )
@@ -215,7 +210,7 @@ export default orderview
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    
     backgroundColor: '#141519',
   },
   mainContent: {

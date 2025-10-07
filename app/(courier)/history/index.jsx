@@ -104,7 +104,7 @@ const router = useRouter();
               </View>
               <View style={styles.orderbtn}>
                 <Pressable style={styles.mainbutton}
-                                        onPress={()=>router.push('/(courier)/home/orderview')}
+                                        onPress={()=>router.push('/(courier)/home/delivercomplete')}
                                         > 
                                            <Text style={styles.maintextbutton}>View</Text>
                                               </Pressable>  
