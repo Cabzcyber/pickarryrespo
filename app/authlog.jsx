@@ -41,6 +41,7 @@ const auth = () => {
                         </Pressable>
                       </View>
                </View>
+               <View style={styles.separator} />
           <View style={styles.maininputcontainer}>
             <View style={styles.inputcontainer}>
               <Text style={styles.title}>Email</Text>
@@ -66,7 +67,7 @@ const auth = () => {
               checkedColor='#1976d2'
               uncheckedColor='#aaa'
               style={{marginRight:5}} />
-            <Text  style={{ color: '#FFFFFF',marginLeft:5}}>Remember Me</Text>
+            <Text  style={{ color: '#FFFFFF',marginLeft:-12}}>Remember Me</Text>
             </View>
             <View style={styles.recover}>  
               <Text
@@ -110,6 +111,14 @@ alignSelf:'center',
     resizeMode: 'contain',
     flexDirection:'row',
 },
+ separator: {
+    height: 1,
+    backgroundColor: '#363D47',
+    alignSelf:'center',
+    width: '90%',
+    marginTop: 13,
+    marginBottom: 20,
+  },
 allcontainer:{
 flex:1,
 rowGap:20,
@@ -127,8 +136,8 @@ justifyContent:"center",
 flexDirection:'row',
 alignItems:'center',
 PointerEvents:'auto',
-gap:80,
-marginTop: verticalScale(35.82),
+gap:90,
+marginTop: verticalScale(36.82),
 },
 authtext:{
 fontFamily: 'Roboto-Bold',
@@ -155,7 +164,7 @@ maininputcontainer:{
 justifyContent:"center",
 alignItems:'center',
 PointerEvents:'auto',
- marginTop: verticalScale(13.18),
+ marginTop: verticalScale(-60),
 rowGap:10,
 },
 inputcontainer:{
@@ -166,12 +175,14 @@ maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',
 pointerEvents:'auto',
+fontSize: 20,
+
 },
 textinput:{
   flex:1,
 fontFamily: 'Roboto-Light',
 color: '#7398A9',
-fontSize: 15,
+fontSize: 16,
 lineHeight: 18,
 letterSpacing: 0.12,
 borderColor:'#FFFFFF',
@@ -182,11 +193,10 @@ borderWidth:1,
 },
 remembercontainer:{
 flexDirection: 'row',
-  alignItems: 'center',
   justifyContent: 'space-between', // pushes the two items apart
-  width: '80%',                    // same width as your inputs
+  width: '89%',                    // same width as your inputs
   alignSelf: 'center',
-  marginTop: verticalScale(5),
+  marginTop: verticalScale(-60),
 },
 recover:{
 flexDirection:'row',
@@ -203,7 +213,7 @@ backgroundColor:'#3BF579',
 borderRadius: 10,
 justifyContent:"center",
 alignItems:'center',
- marginTop: verticalScale(15),
+ marginTop: verticalScale(40),
 },
 maintextbutton:{
 fontSize:18,

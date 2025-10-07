@@ -14,6 +14,7 @@ const geodrop =require("@/assets/images/geodrop.png")
 const goods =require("@/assets/images/goods.png")
 const calculator =require("@/assets/images/calculator.png")
 const call =require("@/assets/images/call.png")
+
 const OrderOngoing = () => {
 const router = useRouter(); 
   const snapPoints = useMemo(() => ['10%', '25%', '50%','60%'], []);
@@ -356,10 +357,6 @@ const styles = StyleSheet.create({
   locationcontainer:{
     flexDirection:'column',
     marginTop:16,
-
-
-
-
   },
   sublocationcontainer:{
     flexDirection:'row',
@@ -395,13 +392,7 @@ const styles = StyleSheet.create({
     marginRight:10,
   },
   bottomshtcontainer:{
-
-
-
-
-
   },
-  
           bottomsheetcontainer:{
             flex: 1,
             paddingHorizontal: 8,

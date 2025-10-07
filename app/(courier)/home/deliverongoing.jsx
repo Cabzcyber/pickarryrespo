@@ -25,19 +25,7 @@ const call =require("@/assets/images/call.png")
     { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
   ];
   
-   const handleSheetChanges = (index) => {
-      console.log('Bottom sheet index changed to:', index);
-    };
   
-
-
-
-
-
-
-
-
-
   return (
      <>
               <Stack.Screen 
@@ -48,8 +36,7 @@ const call =require("@/assets/images/call.png")
               />
            <View  style={styles.container}>
             <View style={styles.header}>
-                                      
-            
+
                                       <Image  source={headerlogo} style={styles.logo}/>
             
                                       <Pressable style={styles.headerbutton}

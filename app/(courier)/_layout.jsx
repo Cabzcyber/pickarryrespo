@@ -78,7 +78,37 @@ export default function CourierTabs() {
                   tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
                 }} 
               />
-
+              
+      {/* Menu inner pages - hide tab bar */}
+      <Tabs.Screen 
+        name="menu/courierprofile" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/couriersettings" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/couriernotification" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/courierabout" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+        
 
 
 

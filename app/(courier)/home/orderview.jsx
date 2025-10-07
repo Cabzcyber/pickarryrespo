@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 const orderview = () => {
@@ -13,17 +13,15 @@ const geodrop =require("@/assets/images/geodrop.png")
 const feature =require("@/assets/images/feature.png")
 const goodimg =require("@/assets/images/goodimg.png")
 const urgent =require("@/assets/images/urgent.png")
+const calculator =require("@/assets/images/calculator.png")
+ const [modalVisible, setModalVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
 const [viewerVisible, setViewerVisible] = useState(false);
 const sampleImages = [
   { uri: Image.resolveAssetSource(require('@/assets/images/react-logo.png')).uri },
   { uri: Image.resolveAssetSource(require('@/assets/images/onfoot.png')).uri },
   { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
 ];
-
- const handleSheetChanges = (index) => {
-    console.log('Bottom sheet index changed to:', index);
-  };
-
 
   return (
 
@@ -106,6 +104,19 @@ const sampleImages = [
                         </Text>
                         </View>
                         </View>
+
+                         <View style={styles.optionbtn}>                 
+                                                      <View style={styles.optionItem}>
+                                                        <View style={styles.optionCircle}>
+                                                          <Pressable
+                                                          onPress={() => setModalVisible(true)}>
+                                                          <Image  source={calculator} style={styles.calculatoricon}
+                                                          /> 
+                                                          </Pressable>
+                                                        </View>
+                                                        <Text style={styles.optionLabel}>Delivery Fare</Text>
+                                                      </View>
+                                                    </View>
                <View style={styles.remembercontainer}>
                                             <View style={styles.recover}>
                                           <Text style={{ color: '#FFFFFF', marginLeft: 1 }}>
@@ -136,6 +147,46 @@ const sampleImages = [
 
 
             </View>
+
+            
+                                    <Modal
+                                    animationType="slide"
+                                    transparent={true}
+                                    visible={modalVisible}
+                                    onRequestClose={() => {
+                                      Alert.alert('Modal has been closed.');
+                                      setModalVisible(!modalVisible);
+                                    }}>
+                                    <View style={styles.centeredView}>
+                                      <View style={styles.modalView}>
+                                        <Pressable
+                                          style={[styles.button, styles.buttonClose]}
+                                          onPress={() => setModalVisible(!modalVisible)}>
+                                          <Text style={styles.textStyle}>Hide Modal</Text>
+                                        </Pressable>
+                                      </View>
+                                    </View>
+                                  </Modal>
+                        
+                                  <Modal
+                                    animationType="fade"
+                                    transparent={true}
+                                    visible={reportVisible}
+                                    onRequestClose={() => setReportVisible(false)}
+                                  >
+                                    <View style={styles.centeredView}>
+                                      <View style={styles.modalView}>
+                                        <Text style={styles.textStyle}>Report an Issue</Text>
+                                        <Text style={[styles.textStyle, { marginTop: 8 }]}>This is a placeholder modal.</Text>
+                                        <Pressable
+                                          style={[styles.button, styles.buttonClose]}
+                                          onPress={() => setReportVisible(false)}
+                                        >
+                                          <Text style={styles.textStyle}>Close</Text>
+                                        </Pressable>
+                                      </View>
+                                    </View>
+                                  </Modal>
               <ImageViewing
             images={sampleImages}
             imageIndex={0}
@@ -361,11 +412,138 @@ flexDirection: 'row',
    // pushes the two items apart
   width: '90%',                    // same width as your inputs
 
-  marginTop: verticalScale(100),
+  marginTop: verticalScale(28),
  
 },
 recover:{
 flexDirection:'row',
 alignItems: 'center',
 },
+optionbtn:{
+    flexDirection:'row',
+    alignItems:'center',
+    justifyContent:'center',
+    gap:48,
+    marginTop:16,
+  },
+  optionItem:{
+    alignItems:'center',
+    justifyContent:'center',
+  },
+  optionCircle:{
+    width:72,
+    height:72,
+    borderRadius:36,
+    backgroundColor:'#22262F',
+    alignItems:'center',
+    justifyContent:'center',
+  },
+  cancelicon:{
+    width:34,
+    height:34,
+    resizeMode:'contain',
+  },
+  reporticon:{
+    width:30,
+    height:30,
+    resizeMode:'contain',
+  },
+  calculatoricon:{
+    width:30,
+    height:30,
+    resizeMode:'contain',
+  },
+  optionLabel:{
+    marginTop:6,
+    color:'#8796AA',
+    textAlign:'center',
+    fontSize:12,
+  },
+  optionbtn:{
+    flexDirection:'row',
+    alignItems:'center',
+    justifyContent:'center',
+    gap:48,
+    marginTop:16,
+  },
+  optionItem:{
+    alignItems:'center',
+    justifyContent:'center',
+  },
+  optionCircle:{
+    width:72,
+    height:72,
+    borderRadius:36,
+    backgroundColor:'#22262F',
+    alignItems:'center',
+    justifyContent:'center',
+  },
+  cancelicon:{
+    width:34,
+    height:34,
+    resizeMode:'contain',
+  },
+  reporticon:{
+    width:30,
+    height:30,
+    resizeMode:'contain',
+  },
+  calculatoricon:{
+    width:30,
+    height:30,
+    resizeMode:'contain',
+  },
+  optionLabel:{
+    marginTop:6,
+    color:'#8796AA',
+    textAlign:'center',
+    fontSize:12,
+  },
+  
+   modalView: {
+    margin: 20,
+    width: '80%',
+    height: '25%',
+    backgroundColor: '#363D47',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+  
+  },
+  buttonOpen: {
+    
+ 
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: '#7398A9',
+    fontFamily: 'Roboto-regular',
+
+    textAlign: 'center',
+    fontSize: 15,
+    flex: 1,
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+    fontFamily: 'Roboto-regular',
+  },
+   centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontFamily: 'Roboto-regular',
+  },
 })

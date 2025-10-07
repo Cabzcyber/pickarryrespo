@@ -77,16 +77,12 @@ export default function CourierHome() {
             <View style={styles.productRow}>
               <View style={styles.productInfo}>
                 <Image source={goods} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>Iced Coffee Macha 2 Cups</Text>
+                <Text style={styles.ordersubtext}>  Iced Coffee Macha 2 Cups</Text>
                   
                 </View>
                 <View style={styles.actionButtons}>
-                  <Pressable style={styles.actionButton}>
-                    <Image source={heart} style={styles.actionIcon}/>
-                  </Pressable>
-                  <Pressable style={styles.actionButton}>
-                    <Image source={delete1} style={styles.actionIcon}/>
-                  </Pressable>
+                  
+                  
                 </View>
               </View>
               <View style={styles.ordertext}>
