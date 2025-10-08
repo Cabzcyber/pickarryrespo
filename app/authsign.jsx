@@ -44,7 +44,7 @@ const auth = () => {
                                      <View style={styles.logincontainer}>
                                        <Pressable style={styles.authbutton}
                                        >
-                                         <Text style={styles.authtext}>
+                                         <Text style={styles.authtext1}>
                                            Sign Up
                                          </Text>
                                        </Pressable>
@@ -208,12 +208,18 @@ gap:80,
 marginTop: verticalScale(1),
 },
 authtext:{
-fontFamily: 'Roboto',      // or 'Roboto-Bold' if you loaded the TTF
+fontFamily: 'Roboto-Bold',
     fontStyle: 'normal',
-    fontWeight: '700',         // 700 → 'bold'
     fontSize: 20,
     lineHeight: 23,
     color: '#ffffff',
+},
+authtext1:{
+fontFamily: 'Roboto-Bold',
+    fontStyle: 'normal',
+    fontSize: 20,
+    lineHeight: 23,
+    color: '#0AB3FF',
 },
 rowinput:{
 flexDirection:'row',

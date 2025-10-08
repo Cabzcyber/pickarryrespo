@@ -35,7 +35,7 @@ const auth = () => {
                         <Pressable style={styles.authbutton}
                         onPress={()=> router.push('/authsign')}
                         >
-                          <Text style={styles.authtext}>
+                          <Text style={styles.authtext1}>
                             Sign Up
                           </Text>
                         </Pressable>
@@ -140,6 +140,13 @@ gap:90,
 marginTop: verticalScale(36.82),
 },
 authtext:{
+fontFamily: 'Roboto-Bold',
+    fontStyle: 'normal',
+    fontSize: 20,
+    lineHeight: 23,
+    color: '#0AB3FF',
+},
+authtext1:{
 fontFamily: 'Roboto-Bold',
     fontStyle: 'normal',
     fontSize: 20,
