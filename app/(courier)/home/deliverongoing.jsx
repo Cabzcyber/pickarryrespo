@@ -124,7 +124,7 @@ const call =require("@/assets/images/call.png")
                <View style={styles.orderinfo}>
                           <View style={styles.info}>
                             <Text style={styles.infotext}>
-                                Order Ongoing August 20,2025 1:00 PM -5:00 pm
+                                Book Ongoing August 20,2025 1:00 PM -5:00 pm
                             </Text> 
                             <Text style={styles.infosubtext}>
                               Pasundo
