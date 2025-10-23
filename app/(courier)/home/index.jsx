@@ -59,7 +59,7 @@ export default function CourierHome() {
             setOpen={setOpen}
             setValue={setValue}
             setItems={setItems}
-            placeholder="Filter orders"
+            placeholder="Filter Statistics"
             style={styles.dropdown}
             textStyle={styles.dropdownText}
             placeholderStyle={styles.placeholderText}
@@ -121,9 +121,6 @@ const styles = StyleSheet.create({
   container:{
     flex: 1,
       backgroundColor: '#141519',
-
-
-
 
   },
   header:{
