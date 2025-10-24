@@ -3,8 +3,8 @@ import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -31,6 +31,7 @@ export default function RootLayout() {
   }
 
   return  (
+    <PaperProvider> 
   <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <Stack  screenOptions={{headerShown:false}}>
@@ -44,5 +45,6 @@ export default function RootLayout() {
       </Stack>
     </SafeAreaProvider>
   </GestureHandlerRootView>
+  </PaperProvider>
       )
 }
