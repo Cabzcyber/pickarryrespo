@@ -123,10 +123,8 @@ const getStatusStyle = (status) => {
             setOpen={setOpen}
             setValue={setValue}
             setItems={setItems}
-            onOpen={() => setOpen1(false)} // Close the other dropdown when this one opens
-                                                  zIndex={3000}
-                                                  zIndexInverse={1000}
-            
+            onOpen={() => setOpen1(false)} 
+            zIndex={1000} // A base zIndex
             placeholder="Filter Status"
             style={styles.dropdown}
             textStyle={styles.dropdownText}
@@ -219,19 +217,18 @@ const getStatusStyle = (status) => {
                                       <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold', alignItems: 'center', }}>Are you sure you want to suspend this
                                          account? {"                                                 "}The user will not be able to log in or use the services until reactivated.</Text>
                                     </View>
-                                    <View style={{ marginBottom: 5 }}>
+                                    <View style={{ marginBottom: 1 }}>
                                                <View style={styles.filterbtn1}>
                                               <DropDownPicker
                                                 open={open1}
                                                 value={value1}
                                                 items={items1}
-                                                setOpen1={setOpen1}
-                                                setValue1={setValue1}
-                                                setItems1={setItems1}
+                                                setOpen={setOpen1}
+                                                setValue={setValue1}
+                                                setItems={setItems1}
                                                 onOpen={() => setOpen(false)} // Close the other dropdown when this one opens
-                                                  zIndex={4000}
-                                                  zIndexInverse={2000}
                                                 placeholder="Select Reason of Suspension"
+                                                zIndex={1100}
                                                 style={styles.dropdown1}
                                                 textStyle={styles.dropdownText1}
                                                 placeholderStyle={styles.placeholderText1}
@@ -242,7 +239,7 @@ const getStatusStyle = (status) => {
                                             </View>
                                     </View>
 
-                                    <View style={{ flexDirection: 'row', gap: 40 }}>
+                                    <View style={{ flexDirection: 'row', gap: 40 ,marginTop: -140}}>
                                         <Pressable
                                       style={{ alignSelf: 'center', borderColor: '#ffffff', borderWidth: 1,borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
                                       onPress={() => setModalVisible(false)}
