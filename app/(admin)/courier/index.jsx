@@ -258,27 +258,8 @@ const getStatusStyle = (status) => {
                                 </View>
                   </Modal>
 
-
-
-
-
-
-
-
-
            </View>
          </View>
-
-
-
-
-
-
-
-
-
-
-
 
 
   );

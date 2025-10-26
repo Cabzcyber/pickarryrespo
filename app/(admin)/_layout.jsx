@@ -26,7 +26,7 @@ export default function AdminTabs() {
                       <Tabs.Screen 
                         name="courier/index" 
                         options={{ 
-                          title: "Orders",
+                          title: "Courier",
                           tabBarIcon: ({ color, size }) => (
                             <Text style={{ color, fontSize: size }}>📋</Text>
                           )
@@ -35,7 +35,7 @@ export default function AdminTabs() {
                       <Tabs.Screen 
                         name="customer/index" 
                         options={{ 
-                          title: "Book",
+                          title: "Customer",
                           tabBarIcon: ({ color, size }) => (
                             <Text style={{ color, fontSize: size }}>🍔</Text>
                           )
@@ -44,7 +44,7 @@ export default function AdminTabs() {
                         <Tabs.Screen 
                         name="order/index" 
                         options={{ 
-                          title: "Menu",
+                          title: "Delivery",
                           tabBarIcon: ({ color, size }) => (
                             <Text style={{ color, fontSize: size }}>🍔</Text>
                           )
@@ -67,8 +67,50 @@ export default function AdminTabs() {
                   tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
                 }} 
               />
-
-
+                 <Tabs.Screen 
+                name="order/[id]" 
+                options={{ 
+                  href: null, // This hides it from the tab bar
+                  tabBarStyle: { display: 'none' }, // Hide the tab bar on this screen
+                }} 
+              />
+               {/* Menu inner pages - hide tab bar */}
+      <Tabs.Screen 
+        name="menu/profile" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/settings" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/notification" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+      <Tabs.Screen 
+        name="menu/about" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+         <Tabs.Screen 
+        name="menu/term" 
+        options={{ 
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }} 
+      />
+        
     </Tabs>
       
 
