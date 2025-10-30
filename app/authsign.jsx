@@ -255,7 +255,6 @@ pointerEvents:'auto',
 inputcontainerr:{
 flexDirection:'column',
 width:'55%',
-
 maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',

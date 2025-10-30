@@ -57,7 +57,7 @@ export default function index() {
               setOpen={setOpen}
               setValue={setValue}
               setItems={setItems}
-              placeholder="Filter orders"
+              placeholder="Status"
               style={styles.dropdown}
               textStyle={styles.dropdownText}
               placeholderStyle={styles.placeholderText}
@@ -195,8 +195,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   dropdown: {
-    backgroundColor: '#363D47',
-    borderColor: '#363D47',
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
     borderWidth: 0,
     borderRadius: 8,
     minHeight: 40,

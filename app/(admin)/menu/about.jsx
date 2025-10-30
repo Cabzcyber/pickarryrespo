@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 
 export default function About() {
@@ -11,62 +11,74 @@ export default function About() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back('/(customer)/menu/index')}>
+        <Pressable onPress={() => router.replace('/(admin)/menu')}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
-        <Text style={styles.title}>About</Text>
-        
+        <Text style={styles.title}>Fare</Text>
       </View>
       <View style={styles.separator} />
-      
-      <ScrollView 
-        style={styles.mainContent}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.logoContainer}>
-          <Image source={aboutlogo} style={styles.aboutlogo}/>
-        </View>
-        
-        <Text style={styles.descriptionText}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-          Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-          Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-          faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-          felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-          euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-          varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-          in nisi a accumsan.
-        </Text>
+      <View style={styles.mainContent}>
+         <Text style={styles.sectionTitle}>Delivery Fare Management</Text>
+      <View style={styles.sectionCard}>
+                <Text style={styles.sectionText}>
+                  <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Base Fare (₱ of Every Delivery)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Base Fare'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Time Rate  (₱ of Every Minute)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter  Time Rate '
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Platform Commission (% Every Delivery)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter  Platform Commission '
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Distance Rate (₱ Per Kilometer)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter  Distance Rate '
+                                            placeholderTextColor='#87AFB9'
+                                            
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Ipa-Dali Bonus (Minimum Set Price)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Minimum Set Price'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Penalty Rate (₱ Per Minute)</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Penalty Rate '
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             
+                </Text>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
-        </View>
+                  <Pressable style={styles.mainbutton}
+                                                       
+                                                        > 
+                                                           <Text style={styles.maintextbutton}>Edit Fare</Text>
+                                                              </Pressable>  
+                
+              </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Terms of Use</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
-        </View>
-      </ScrollView>
+
+
+
+      </View>
     </View>
   );
 }
@@ -139,16 +151,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionCard: {
-    backgroundColor: '#1f2937',
+    backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
+    height:'85%',
   },
   sectionTitle: {
     fontFamily: 'Roboto-Bold',
-    fontSize: 18,
-    color: '#ffffff',
-    marginBottom: 10,
+    fontSize: 22,
+    color: '#0AB3FF',
+    marginBottom: 15,
   },
   sectionText: {
     fontFamily: 'Roboto-Light',
@@ -157,4 +170,59 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'justify',
   },
+  inputcontainer:{
+flexDirection:'column',
+width:'90%',
+height:'15.5%',
+maxWidth:1024,
+padding:10,
+marginHorizontal:'auto',
+pointerEvents:'auto',
+},
+title1:{
+  flexDirection:'column',
+justifyContent:'flex-start',
+fontfamily: 'Roboto Flex',
+color: '#0AB3FF',
+fontWeight: 700,
+fontSize: 15,
+lineHeight: 18,
+letterSpacing: 0.12,
+marginBottom:11,
+},
+textinput:{
+  flex:1,
+fontFamily: 'Roboto Flex',
+backgroundColor: '#22262F',
+color:'#7398A9',
+fontWeight: 'bold',
+fontSize: 15,
+lineHeight: 18,
+letterSpacing: 0.12,
+borderColor:'#22262F',
+borderRadius: 10,
+padding:12,
+marginRight:10,
+borderWidth:1,
+
+},
+mainbutton:{
+flexDirection:'column',
+width:'92%',
+maxWidth:1024,
+padding:10,
+marginHorizontal:'auto',
+pointerEvents:'auto',
+backgroundColor:'#3BF579',
+borderRadius: 10,
+justifyContent:"center",
+alignItems:'center',
+marginTop:verticalScale(-12),
+},
+maintextbutton:{
+fontSize:18,
+color:'black',
+fontFamily: 'Roboto', 
+fontWeight: '700',
+}
 });

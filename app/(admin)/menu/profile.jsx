@@ -1,82 +1,199 @@
-import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { IconButton, Menu } from 'react-native-paper';
 import { verticalScale } from 'react-native-size-matters';
-
 export default function Profile() {
   const router = useRouter();
   const backimg = require("@/assets/images/back.png");
-  const headerlogo = require("@/assets/images/headerlogo.png");
-  const person = require("@/assets/images/person.png");
-  const email = require("@/assets/images/email.png");
-  const contact = require("@/assets/images/contact.png");
-  const birth = require("@/assets/images/birth.png");
-  const gender = require("@/assets/images/gender.png");
-  const home = require("@/assets/images/home.png");
+
+ const report = require("@/assets/images/report.png");
+const{id} = useLocalSearchParams();
+ const [visibleMenuId, setVisibleMenuId] = useState(null);
+     const openMenu = (id) => {
+       setVisibleMenuId(prev => prev === id ? null : id);
+     };
+     const closeMenu = () => setVisibleMenuId(null);
+     const handleSuspend = (id) => {
+       console.log('Suspend couriesr:', id);
+       setModalVisible(true);
+       closeMenu();
+     };
+
+      const [modalVisible, setModalVisible] = useState(false);
+
+
+         const [open, setOpen] = useState(false);
+              const [value, setValue] = useState(null);
+              const [items, setItems] = useState([
+                {label: 'Fraudulent Activity', value: '1'},
+                {label: 'Customer Complaints', value: '2'},
+                {label: 'Violation of Policies', value: '3'},
+                {label: 'Unprofessional Behavior', value: '4'},
+                {label: 'Fake/Invalid Documents', value: '5'},
+                {label: 'Unprofessional Behavior', value: '6'},
+                {label: 'Repeated Late Deliveries', value: '7'},
+                 {label: 'Tampering with Orders', value: '8'},
+              ]);
+      
   return (
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: `Profile: ${id}`,
+        }}
+      />
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.replace('/(admin)/menu')}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
       
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>Complaint</Text>
         <View style={styles.placeholder}/>
       </View>
       <View style={styles.separator} />
+          <ScrollView style={styles.mainContent}>
+              <View style={styles.notifcontainer}>
+                <View style={styles.notifheader}>
+                  <Image source={report} style={styles.notificon}/>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.notifheaderText}>Kent Dominic ➔ James Juntilla</Text>
+                  </View>
+                  <Menu
+                  visible={visibleMenuId === id}
+                  onDismiss={closeMenu}
+                  anchor={
+                    <IconButton
+                      icon="dots-vertical"
+                      iconColor="#0AB3FF"
+                      size={20}
+                      style={{marginTop: 1}}
+                      onPress={() => openMenu(id)}
+                    />
+                  }>
+                  <Menu.Item onPress={() => handleSuspend(id)} title="Suspend" />
+                </Menu>
+                </View>
+                <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                   Report ➔ Courier
+                  </Text>
+                </View>
+                 <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                   Time Reported: 12:00 PM 
+                  </Text>
+                </View>
+                <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                   Driver got lost / could not find my exact address 
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.notifcontainer}>
+                <View style={styles.notifheader}>
+                  <Image source={report} style={styles.notificon}/>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.notifheaderText}>James Juntilla ➔ Kent Dominic</Text>
+                  </View>
+                  <Menu
+                  visible={visibleMenuId === id}
+                  onDismiss={closeMenu}
+                  anchor={
+                    <IconButton
+                      icon="dots-vertical"
+                      iconColor="#0AB3FF"
+                      size={20}
+                      style={{marginTop: 1}}
+                      onPress={() => openMenu(id)}
+                    />
+                  }>
+                  <Menu.Item onPress={() => handleSuspend(id)} title="Suspend" />
+                </Menu>
+                </View>
+                <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                   Report ➔ Customer
+                  </Text>
+                </View>
+                 <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                   Time Reported: 1:00 PM 
+                  </Text>
+                </View>
+                <View style={styles.notifdescription}>
+                  <Text style={styles.notifdescriptiontext}>
+                  Violation of Customer Policies
+                  </Text>
+                </View>
+              </View>
       
-      <View style={styles.mainContent}>
-        <View style={styles.settingcontent}>
-          <View style={styles.settingsubcontent}>
-            <Image source={person} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Full Name</Text>
-              <Text style={styles.settingsubinnertext}>Dominic Gayramara</Text>
-            </View>
-          </View>
-          
-          <View style={styles.settingsubcontent}>
-            <Image source={email} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Email</Text>
-              <Text style={styles.settingsubinnertext}>Not Provided</Text>
-            </View>
-          </View>
-          
-          <View style={styles.settingsubcontent}>
-            <Image source={contact} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Phone Number</Text>
-              <Text style={styles.settingsubinnertext}>+6312345678910</Text>
-            </View>
-          </View>
-          
-          <View style={styles.settingsubcontent}>
-            <Image source={birth} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Date of Birth</Text>
-              <Text style={styles.settingsubinnertext}>Not Provided</Text>
-            </View>
-          </View>
-          
-          <View style={styles.settingsubcontent}>
-            <Image source={gender} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Gender</Text>
-              <Text style={styles.settingsubinnertext}>Male</Text>
-            </View>
-          </View>
-          
-          <View style={styles.settingsubcontent}>
-            <Image source={home} style={styles.ordericon}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Address</Text>
-              <Text style={styles.settingsubinnertext}>Aplaya Zone 1-A</Text>
-            </View>
-          </View>
-        </View>
-      </View>
+              
+            </ScrollView>
+
+                                           <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalVisible}
+                    onRequestClose={() => {
+                      Alert.alert('Modal has been closed.');
+                      setModalVisible(!modalVisible);
+                    }}>
+                    <View style={styles.centeredView}>
+                                  <View style={styles.modalView1}>
+                                    <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                                      <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
+                                        <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                                      </Pressable>
+                                      <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold', alignItems: 'center', }}>Are you sure you want to suspend this User? The user will not be able to log in or use the services until reactivated.</Text>
+                                    </View>
+                                    <View style={{ marginBottom: 1 }}>
+                                               <View style={styles.filterbtn1}>
+                                              <DropDownPicker
+                                                open={open}
+                                                value={value}
+                                                items={items}
+                                                setOpen={setOpen}
+                                                setValue={setValue}
+                                                setItems={setItems}
+                                               
+                                                placeholder="Select Reason of Suspension"
+                                               
+                                                style={styles.dropdown1}
+                                                textStyle={styles.dropdownText1}
+                                                placeholderStyle={styles.placeholderText1}
+                                                dropDownContainerStyle={styles.dropdownContainer1}
+                                                selectedItemContainerStyle={styles.selectedItemContainer1}
+                                                selectedItemLabelStyle={styles.selectedItemLabel1}
+                                              />
+                                            </View>
+                                    </View>
+
+                                    <View style={{ flexDirection: 'row', gap: 40 ,marginTop: -140}}>
+                                        <Pressable
+                                      style={{ alignSelf: 'center', borderColor: '#ffffff', borderWidth: 1,borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
+                                      onPress={() => setModalVisible(false)}
+                                    >
+                                      <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 16 }}>Cancel</Text>
+                                    </Pressable>
+                                    <Pressable
+                                      style={{ alignSelf: 'center', backgroundColor: '#FF4E4E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
+                                      onPress={() => setModalVisible(false)}
+                                    >
+                                      <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 16 }}>Suspend</Text>
+                                    </Pressable>
+                                    </View>
+                                    
+                                  </View>
+                                </View>
+                  </Modal>
+              
     </View>
+    </>
   );
+  
 }
 
 const styles = StyleSheet.create({
@@ -156,5 +273,114 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
     marginRight: 15,
+  },
+  notifcontainer: {
+    backgroundColor: '#1f2937',
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 15,
+  },
+  notifheader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: -5,
+  },
+  notificon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+    marginRight: 12,
+  },
+  notifheaderText: {
+    fontFamily: 'Roboto-Bold',
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  notifdescription: {
+    paddingLeft: 44,
+  },
+  notifdescriptiontext: {
+    fontFamily: 'Roboto-Light',
+    fontSize: 13,
+    color: '#d1d5db',
+    lineHeight: 20,
+    textAlign: 'justify',
+  },
+  modalView: {
+    margin: 20,
+    width: '95%',
+    height: '40%',
+    backgroundColor: '#363D47',
+    borderRadius: 20,
+    padding: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+   modalView1: {
+    margin: 20,
+    width: '95%',
+    height: '40%',
+    backgroundColor: '#363D47',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontFamily: 'Roboto-regular',
+  },
+  filterbtn1:{
+    flex: 1,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+  },
+  dropdown1: {
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
+    borderWidth: 0,
+    borderRadius: 8,
+    minHeight: 40,
+  },
+  dropdownText1: {
+    color: '#0AB3FF',
+    fontSize: 14,
+    fontFamily: 'Roboto-Regular',
+  },
+  placeholderText1: {
+    color: '#0AB3FF',
+    fontSize: 14,
+    fontFamily: 'Roboto-Regular',
+  },
+  dropdownContainer1: {
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 5,
+  },
+  selectedItemContainer1: {
+    backgroundColor: '#4B5563',
+  },
+  selectedItemLabel1: {
+    color: '#0AB3FF',
+    fontSize: 14,
+    fontFamily: 'Roboto-Medium',
   },
 });

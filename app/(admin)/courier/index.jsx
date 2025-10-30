@@ -77,7 +77,7 @@ const getStatusStyle = (status) => {
 
   const handleView = (id) => {
     console.log('Navigating to user profile:', id);
-    router.push({ pathname: '/(admin)/courier/[id]', params: { id: String(id) } });
+    router.push({ pathname: '/(admin)/courier/[id]', params: { id: String(id) ,from:'courier'}});
   };
 
   const handleSuspend = (id) => {
@@ -125,7 +125,7 @@ const getStatusStyle = (status) => {
             setItems={setItems}
             onOpen={() => setOpen1(false)} 
             zIndex={1000} // A base zIndex
-            placeholder="Filter Status"
+            placeholder="Status"
             style={styles.dropdown}
             textStyle={styles.dropdownText}
             placeholderStyle={styles.placeholderText}
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   dropdown: {
-    backgroundColor: '#363D47',
-    borderColor: '#363D47',
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
     borderWidth: 0,
     borderRadius: 8,
     minHeight: 40,
@@ -343,14 +343,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Regular',
   },
   dropdownContainer: {
-    backgroundColor: '#4B5563',
-    borderColor: '#4B5563',
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
     borderWidth: 1,
     borderRadius: 8,
     marginTop: 5,
   },
   selectedItemContainer: {
-    backgroundColor: '#4B5563',
+    backgroundColor: '#22262F',
   },
   selectedItemLabel: {
     color: '#0AB3FF',

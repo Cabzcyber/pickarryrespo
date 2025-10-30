@@ -10,7 +10,7 @@ const allCouriers = [
   { id: 2, name: 'dsadsad', contact: '099342525', status: 'Pending' },
   { id: 3, name: 'dsadasswgegmafren', contact: '099342525', status: 'Active' },
   { id: 4, name: 'Scottie geagseg', contact: '099342525', status: 'Inactive' },
-  // Add more couriers to test pagination
+  // Add more customers to test pagination
   { id: 5, name: 'John Doe', contact: '099342525', status: 'Active' },
   { id: 6, name: 'Jane Smith', contact: '099342525',  status: 'Pending' },
   { id: 7, name: 'Mike Johnson', contact: '099342525', status: 'Inactive' },
@@ -26,7 +26,7 @@ const ITEMS_PER_PAGE = 7;
 export default function AdminCustomer() {
  const router = useRouter(); 
 const [page, setPage] = useState(0);
-  const [couriers, setCouriers] = useState([]);
+  const [customers, setCouriers] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   useEffect(() => {
     // This logic simulates fetching and paginating data
@@ -75,7 +75,9 @@ const getStatusStyle = (status) => {
 
   const handleView = (id) => {
     console.log('Navigating to user profile:', id);
-    router.push({ pathname: '/(admin)/courier/[id]', params: { id: String(id) } });
+    router.push({
+       pathname: '/(admin)/courier/[id]', 
+      params: { id: String(id),from:'customer' } });
   };
 
   const handleSuspend = (id) => {
@@ -117,7 +119,7 @@ const getStatusStyle = (status) => {
             setItems={setItems}
             onOpen={() => setOpen1(false)} 
             zIndex={1000} // A base zIndex
-            placeholder="Filter Status"
+            placeholder="Status"
             style={styles.dropdown}
             textStyle={styles.dropdownText}
             placeholderStyle={styles.placeholderText}
@@ -140,37 +142,37 @@ const getStatusStyle = (status) => {
     <DataTable.Title style={styles.actionsColumn} textStyle={styles.headerText}>Actions</DataTable.Title>
   </DataTable.Header>
 
-  {couriers.map((courier) =>  {
+  {customers.map((customer) =>  {
     
-    if (!courier) return null;
+    if (!customer) return null;
     return(
-    <DataTable.Row key={courier.id} style={styles.row}>
+    <DataTable.Row key={customer.id} style={styles.row}>
       {/* --- AND APPLY STYLES HERE --- */}
-      <DataTable.Cell style={styles.idColumn} textStyle={styles.cellText}>{courier.id}</DataTable.Cell>
-      <DataTable.Cell style={styles.nameColumn} textStyle={styles.cellText}>{courier.name}</DataTable.Cell>
-      <DataTable.Cell style={styles.contactColumn} textStyle={styles.cellText}>{courier.contact}</DataTable.Cell>
+      <DataTable.Cell style={styles.idColumn} textStyle={styles.cellText}>{customer.id}</DataTable.Cell>
+      <DataTable.Cell style={styles.nameColumn} textStyle={styles.cellText}>{customer.name}</DataTable.Cell>
+      <DataTable.Cell style={styles.contactColumn} textStyle={styles.cellText}>{customer.contact}</DataTable.Cell>
       <DataTable.Cell style={styles.statusColumn}>
-        <Text style={[styles.cellText, getStatusStyle(courier.status)]}>
-          {courier.status}
+        <Text style={[styles.cellText, getStatusStyle(customer.status)]}>
+          {customer.status}
         </Text>
       </DataTable.Cell>
       <DataTable.Cell style={styles.actionsColumn}>
                 <Menu
-                  visible={visibleMenuId === courier.id}
+                  visible={visibleMenuId === customer.id}
                   onDismiss={closeMenu}
                   anchor={
                     <IconButton
                       icon="dots-vertical"
                       iconColor="#0AB3FF"
                       size={20}
-                      onPress={() => openMenu(courier.id)}
+                      onPress={() => openMenu(customer.id)}
                     />
                   }>
-                  <Menu.Item onPress={() => handleView(courier.id)} title="View" />
+                  <Menu.Item onPress={() => handleView(customer.id)} title="View" />
                      <Pressable
        onPress={() => setModalVisible(true)}>  
                     
-                  <Menu.Item onPress={() => handleSuspend(courier.id)} title="Suspend" />
+                  <Menu.Item onPress={() => handleSuspend(customer.id)} title="Suspend" />
                     </Pressable>
                 </Menu>
               </DataTable.Cell>
@@ -316,8 +318,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   dropdown: {
-    backgroundColor: '#363D47',
-    borderColor: '#363D47',
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
     borderWidth: 0,
     borderRadius: 8,
     minHeight: 40,

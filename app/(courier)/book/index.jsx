@@ -61,7 +61,7 @@ const backimg = require("@/assets/images/back.png");
             setOpen={setOpen}
             setValue={setValue}
             setItems={setItems}
-            placeholder="Filter orders"
+            placeholder="Category"
             style={styles.dropdown}
             textStyle={styles.dropdownText}
             placeholderStyle={styles.placeholderText}
@@ -80,7 +80,6 @@ const backimg = require("@/assets/images/back.png");
               <View style={styles.productInfo}>
                 <Image source={goods} style={styles.ordericon}/>
                 <Text style={styles.ordersubtext}>  Iced Coffee Macha 2 Cups</Text>
-                  
                 </View>
                 <View style={styles.actionButtons}>
                  
@@ -183,8 +182,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   dropdown: {
-    backgroundColor: '#363D47',
-    borderColor: '#363D47',
+    backgroundColor: '#22262F',
+    borderColor: '#22262F',
     borderWidth: 0,
     borderRadius: 8,
     minHeight: 40,

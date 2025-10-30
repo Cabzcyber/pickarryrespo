@@ -6,16 +6,19 @@ export default function term() {
   const router = useRouter();
   const backimg = require("@/assets/images/back.png");
   const headerlogo = require("@/assets/images/headerlogo.png");
+   
   const aboutlogo = require("@/assets/images/aboutlogo.png");
   const edit = require("@/assets/images/edit.png");
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back('/(customer)/menu/index')}>
+        <Pressable onPress={() => router.replace('/(admin)/menu')}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
-        
+           <Pressable >
+                    <Image source={edit} style={styles.editicon}/>
+                  </Pressable>
       </View>
       <View style={styles.separator} />
       
@@ -38,7 +41,20 @@ export default function term() {
           varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
           in nisi a accumsan.
         </Text>
-
+          
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
+          <Text style={styles.sectionText}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
+            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
+            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
+            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
+            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
+            in nisi a accumsan.
+          </Text>
+        </View>
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Contact Us</Text>
           <Text style={styles.sectionText}>
@@ -66,6 +82,45 @@ export default function term() {
             in nisi a accumsan.
           </Text>
         </View>
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Customer Policies</Text>
+          <Text style={styles.sectionText}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
+            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
+            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
+            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
+            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
+            in nisi a accumsan.
+          </Text>
+        </View>
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Courier Policies</Text>
+          <Text style={styles.sectionText}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
+            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
+            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
+            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
+            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
+            in nisi a accumsan.
+          </Text>
+        </View>
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Fare Policies</Text>
+          <Text style={styles.sectionText}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
+            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
+            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
+            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
+            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
+            in nisi a accumsan.
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -79,6 +134,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent:'space-between',
    gap:20,
     paddingHorizontal: 12,
     paddingTop: 12,
