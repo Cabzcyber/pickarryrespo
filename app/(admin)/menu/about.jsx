@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 
 export default function About() {
@@ -17,7 +17,7 @@ export default function About() {
         <Text style={styles.title}>Fare</Text>
       </View>
       <View style={styles.separator} />
-      <View style={styles.mainContent}>
+      <ScrollView style={styles.mainContent}>
          <Text style={styles.sectionTitle}>Delivery Fare Management</Text>
       <View style={styles.sectionCard}>
                 <Text style={styles.sectionText}>
@@ -74,11 +74,72 @@ export default function About() {
                                                               </Pressable>  
                 
               </View>
+                  <Text style={styles.sectionTitle}>Delivery Vehicle Management</Text>
+      <View style={styles.sectionCard}>
+                <Text style={styles.sectionText}>
+                  <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Motorcycle Fare </Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Motorcycle Fare'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>On-Foot  Fare</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter  On-Foot  Fare'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Dulog  Fare</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter  Dulog  Fare'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Rela  Fare</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Rela  Fare '
+                                            placeholderTextColor='#87AFB9'
+                                            
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Passenger Car  Fare</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Passenger Car  Fare'
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             <View style={styles.inputcontainer}>
+                                             <Text style={styles.title1}>Truck  Fare</Text>
+                                            <TextInput style={styles.textinput}
+                                            placeholder='Enter Truck  Fare '
+                                            placeholderTextColor='#87AFB9'
+                                            />
+                                            </View> 
+                                             
+                </Text>
+
+                  <Pressable style={styles.mainbutton}
+                                                       
+                                                        > 
+                                                           <Text style={styles.maintextbutton}>Edit Fare</Text>
+                                                              </Pressable>  
+                
+              </View>
+              <Text>{'\n'}
+{'\n'}
+{'\n'}
+
+{'\n'}</Text>
 
 
 
 
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -155,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
-    height:'85%',
+    height:'47%',
   },
   sectionTitle: {
     fontFamily: 'Roboto-Bold',
@@ -173,7 +234,7 @@ const styles = StyleSheet.create({
   inputcontainer:{
 flexDirection:'column',
 width:'90%',
-height:'15.5%',
+height:'18%',
 maxWidth:1024,
 padding:10,
 marginHorizontal:'auto',
@@ -217,7 +278,7 @@ backgroundColor:'#3BF579',
 borderRadius: 10,
 justifyContent:"center",
 alignItems:'center',
-marginTop:verticalScale(-12),
+marginTop:verticalScale(45),
 },
 maintextbutton:{
 fontSize:18,
