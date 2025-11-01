@@ -15,7 +15,7 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.replace('/(customer)/menu')}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
       
@@ -73,6 +73,8 @@ export default function Profile() {
               <Text style={styles.settingsubinnertext}>Aplaya Zone 1-A</Text>
             </View>
           </View>
+          
+        
         </View>
       </View>
     </View>

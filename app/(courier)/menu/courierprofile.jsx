@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import { verticalScale } from 'react-native-size-matters';
-
 export default function Profile() {
   const router = useRouter();
   const backimg = require("@/assets/images/back.png");
@@ -12,7 +13,25 @@ export default function Profile() {
   const birth = require("@/assets/images/birth.png");
   const gender = require("@/assets/images/gender.png");
   const home = require("@/assets/images/home.png");
+    const theme = require("@/assets/images/theme.png");
+    const vehicle = require("@/assets/images/vehicle.png");
+    const platenum = require("@/assets/images/platenum.png");
+     const license = require("@/assets/images/license.png");
+
+  const [modalVisible1, setModalVisible1] = useState(false);
+
+
+
+
+
+
+
+
+
+
   return (
+
+
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back('/(courier)/menu/index')}>
@@ -24,7 +43,7 @@ export default function Profile() {
       </View>
       <View style={styles.separator} />
       
-      <View style={styles.mainContent}>
+      <ScrollView style={styles.mainContent}>
         <View style={styles.settingcontent}>
           <View style={styles.settingsubcontent}>
             <Image source={person} style={styles.ordericon}/>
@@ -73,8 +92,87 @@ export default function Profile() {
               <Text style={styles.settingsubinnertext}>Aplaya Zone 1-A</Text>
             </View>
           </View>
+
+           <View style={styles.settingsubcontent}>
+            <Image source={vehicle} style={styles.ordericon}/>
+            <View style={styles.textContainer}>
+              <Text style={styles.settingsubtext}>Type of Vehicle </Text>
+              <Text style={styles.settingsubinnertext}>Motorcycle</Text>
+            </View>
+          </View>
+
+           <View style={styles.settingsubcontent}>
+            <Image source={theme} style={styles.ordericon}/>
+            <View style={styles.textContainer}>
+              <Text style={styles.settingsubtext}>Vehicle Color</Text>
+              <Text style={styles.settingsubinnertext}>Blue</Text>
+            </View>
+          </View>
+
+           <View style={styles.settingsubcontent}>
+            <Image source={platenum} style={styles.ordericon}/>
+            <View style={styles.textContainer}>
+              <Text style={styles.settingsubtext}>Plate Number</Text>
+              <Text style={styles.settingsubinnertext}>AFD-2645</Text>
+            </View>
+          </View>
+
+           <View style={styles.settingsubcontent}>
+            <Image source={vehicle} style={styles.ordericon}/>
+            <View style={styles.textContainer}>
+              <Text style={styles.settingsubtext}>Vehicle Brand</Text>
+              <Text style={styles.settingsubinnertext}>Honda</Text>
+            </View>
+          </View>
+
+           <View style={styles.settingsubcontent}>
+            <Image source={license} style={styles.ordericon}/>
+            <View style={styles.textContainer}>
+              <Pressable
+              onPress={() => setModalVisible1(true)}>
+              
+                    <Text style={styles.settingsubtext}>Driver License</Text>
+              <Text style={styles.settingsubinnertext}>View License</Text>
+              </Pressable>
+        
+            </View>
+          </View>
+        <Text>{'\n'}
+{'\n'}
+{'\n'}
+
+{'\n'}</Text>
+
         </View>
-      </View>
+      </ScrollView>
+      <Modal
+                                      animationType="slide"
+                                      transparent={true}
+                                      visible={modalVisible1}
+                                      onRequestClose={() => {
+                                        Alert.alert('Modal has been closed.');
+                                        setModalVisible1(!modalVisible1);
+                                      }}>
+                                        
+                                      <View style={styles.centeredView}>
+                                     
+                                     
+                                          <View style={styles.modalView}>
+                                            <Pressable
+                                              style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+                                              onPress={() => setModalVisible1(false)}
+                                            >
+                                               <Image  source={backimg} style={{ width:40, height:40, resizeMode:'contain'}}/>
+                                              
+                                            </Pressable>
+                                          </View>
+                                          
+                                      </View>
+                                      
+                                      
+                                      
+                                      
+                                    </Modal> 
     </View>
   );
 }
@@ -156,5 +254,28 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
     marginRight: 15,
+  },
+   modalView: {
+    margin: 20,
+    width: '95%',
+    height: '40%',
+    backgroundColor: '#363D47',
+    borderRadius: 20,
+    padding: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontFamily: 'Roboto-regular',
   },
 });

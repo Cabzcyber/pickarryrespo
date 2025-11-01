@@ -11,7 +11,7 @@ export default function About() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back('/(customer)/menu/index')}>
+        <Pressable onPress={() => router.replace('/(customer)/menu')}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
