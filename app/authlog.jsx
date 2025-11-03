@@ -7,12 +7,13 @@ import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
-import { verticalScale } from 'react-native-size-matters';
+import supabase from '../lib/supabase';
 
+
+import { verticalScale } from 'react-native-size-matters';
 const logoimg =require("@/assets/images/logologin.png")
 const auth = () => {
-
-   
+   console.log(supabase)
       const [isSelected, setSelected] = useState(false);
        const router = useRouter(); 
   return (
