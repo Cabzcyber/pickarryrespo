@@ -1,17 +1,115 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { decode } from 'base64-arraybuffer';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { CheckBox } from 'react-native-elements';
 import { verticalScale } from 'react-native-size-matters';
+import { supabase } from '../../../lib/supabase';
 const backimg =require("@/assets/images/back.png")
 const headerlogo =require("@/assets/images/headerlogo.png")
 const headerheart =require("@/assets/images/heart.png")
 export default function Terms() {
     const router = useRouter(); 
+    const [isSelected, setSelected] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    // Receive params from previous screen
+    const params = useLocalSearchParams();
+
+    const registrationData = useMemo(() => {
+      try {
+        return {
+          value: params?.value || '',
+          color: params?.color || '',
+          plate: params?.plate || '',
+          vehicle_brand: params?.vehicle_brand || '',
+          otherdetails_vehicle: params?.otherdetails_vehicle || '',
+          assets: params?.assets ? JSON.parse(String(params.assets)) : [],
+        };
+      } catch {
+        return {
+          value: '',
+          color: '',
+          plate: '',
+          vehicle_brand: '',
+          otherdetails_vehicle: '',
+          assets: [],
+        };
+      }
+    }, [params]);
+
+    const handleSubmit = async () => {
+      if (!isSelected) {
+        Alert.alert('Agreement Required', 'You must agree to the terms and conditions.');
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          Alert.alert('Error', authError?.message || 'Could not get current user.');
+          return;
+        }
+
+        const serviceid = user.id;
+
+        // Upload first license image (required as per previous screen logic)
+        if (!registrationData.assets || registrationData.assets.length === 0) {
+          Alert.alert('Missing Info', 'Please upload your driver license image.');
+          return;
+        }
+
+        const firstAsset = registrationData.assets[0];
+        const file = firstAsset.base64;
+        const fileExt = firstAsset.uri.split('.').pop();
+        const filePath = `${serviceid}/license_front.${fileExt}`;
+        const contentType = `image/${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('licenses')
+          .upload(filePath, decode(file), { contentType, upsert: true });
+
+        if (uploadError) {
+          Alert.alert('Error', 'Failed to upload license image.');
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('licenses')
+          .getPublicUrl(uploadData.path);
+
+        const imageUrl = urlData.publicUrl;
+
+        const { error: insertError } = await supabase.from('courier').insert({
+          user_id: serviceid,
+          vehicle_id: registrationData.value,
+          vehicle_color: registrationData.color,
+          plate_number: (typeof registrationData.plate === 'string' ? registrationData.plate.trim() : String(registrationData.plate)),
+          vehicle_brand: registrationData.vehicle_brand,
+          otherdetails_vehicle: registrationData.otherdetails_vehicle,
+          license_image: imageUrl,
+        });
+
+        if (insertError) {
+          Alert.alert('Error', 'Failed to create courier profile: ' + insertError.message);
+          return;
+        }
+
+        // Success → proceed to OTP
+        router.replace('/(courier)/registration/otp');
+      } catch (e) {
+        Alert.alert('Error', 'An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
+    };
   return (
     <View style={styles.container}>
       <View style={styles.header}>
                                 <Pressable style={styles.headerbutton}
-                                onPress={()=>router.back('/(courier)/registration/otp')}
+                                onPress={()=>router.replace('/(courier)/registration/courierauthsign')}
                                 >
                                 <Image  source={backimg} style={styles.backIcon}/>
                                 </Pressable>
@@ -37,17 +135,45 @@ export default function Terms() {
         <Text style={{ color: '#fff', fontSize: 15, marginBottom: 16, lineHeight: 22 }}>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nulla nunc, condimentum a libero at, convallis mollis est. Morbi in arcu sodales, vehicula magna et, ullamcorper orci. In blandit purus in rutrum mattis. Proin nec auctor magna. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sit amet felis non elit cursus convallis eu quis augue. Donec non magna ut nisl dignissim rutrum vitae in leo.
         </Text>
+        
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-        <View style={{ width: 22, height: 22, borderWidth: 1, borderColor: '#fff', borderRadius: 4, marginRight: 8, justifyContent: 'center', alignItems: 'center' }}>
-          {/* You can add a checkmark here if checked */}
-        </View>
-        <Text style={{ color: '#fff', fontSize: 14 }}>
-          I agree to the <Text style={{ color: '#2196F3', textDecorationLine: 'underline' }}>Terms of Service</Text> and <Text style={{ color: '#2196F3', textDecorationLine: 'underline' }}>Privacy Policy</Text>.
-        </Text>
-      </View>
-      <Pressable style={styles.mainbutton} onPress={() => router.replace('/(courier)/home')}>
-        <Text style={styles.maintextbutton}>Sign Up</Text>
+       {/* onPress={()=>signupauthcour()}
+                                        disabled={loading}*/}
+                                          {/* When Next BUTTON IS transfer to another page the insert function on
+                                           hold here when go to terms page the insert function will be executed it will be executed if the radio button is
+                                            checked then click submit then it executes if the radiobutton is not check and click the sumbmit will not execute */}
+      <View style={styles.recover}>
+        {/* Double check the Checkbox function if cliked the check appear */}
+                                          <CheckBox
+                                            checked={isSelected}
+                                            onPress={() => setSelected(!isSelected)}
+                                            checkedColor='#1976d2'
+                                            uncheckedColor='#aaa'
+                                            style={{marginRight:0}} />
+                                          <Text style={{ color: '#FFFFFF',}}>
+                                              I Agree to
+                                                <Text
+                                                  style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                                                  onPress={() => router.push('terms')}
+                                                >
+                                                  {"  "}Terms of Service{"  "}
+                                                </Text>&
+                                                <Text
+                                                  style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                                                  onPress={() => router.push('terms')}
+                                                >
+                                                  {"  "}
+                                                  Privacy Policy
+                                                </Text>
+                                              </Text>
+                                          </View>
+
+
+
+
+
+      <Pressable style={styles.mainbutton} onPress={handleSubmit} disabled={loading}>
+        <Text style={styles.maintextbutton}>{loading ? 'Submitting...' : 'Sign Up'}</Text>
       </Pressable>
     </View>
   );
@@ -121,4 +247,15 @@ const styles = StyleSheet.create({
     height:20,
     resizeMode:'contain',
   },
+  remembercontainer:{
+    flexDirection: 'row',
+      width: '100%',               
+      marginTop: verticalScale(1),
+      
+    },
+    recover:{
+    flexDirection:'row',
+    alignItems: 'center',
+    marginHorizontal:'auto',
+    },
 });

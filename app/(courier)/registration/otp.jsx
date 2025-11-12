@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -32,22 +32,17 @@ const auth = () => {
                          <View style={styles.maininputcontainer}>
                            <View style={styles.inputcontainer}>
                             <Text style={styles.title}>
-                              We sent a message with a code to
+                              Your Application Is Under Review. 
                             </Text>
-                            <Text style={styles.phonenumber} >0423634634</Text>
+                            <Text style={styles.phonenumber} >We Will Notify You Two - Three Days </Text>
 
-                            <View style={styles.inputcontainer}>
-                           <TextInput style={styles.textinput}
-                           placeholder='Enter Your OTP Code'
-                           placeholderTextColor='#7398A9'
-                           />
-                           </View> 
+                           
                            </View>
                           
                               <Pressable style={styles.mainbutton}
-                                        onPress={()=>router.replace('/(courier)/registration/terms')}
+                                        onPress={()=>router.replace('/(customer)/menu')}
                                         > 
-                                           <Text style={styles.maintextbutton}>Submit</Text>
+                                           <Text style={styles.maintextbutton}>Go To Menu</Text>
                                               </Pressable>       
                                </View>
 
@@ -96,7 +91,7 @@ fontFamily: 'Roboto',      // or 'Roboto-Bold' if you loaded the TTF
     color: '#ffffff',
 },
 phonenumber:{
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#00AEEF", // blue like in your image
     textAlign: "center",
@@ -141,7 +136,7 @@ fontFamily: 'Roboto-Bold',
   justifyContent: 'space-between', // pushes the two items apart
   alignSelf: 'center',
 color: '#FFFFFF',
-fontSize: 18,
+fontSize: 20,
 lineHeight: 18,
 letterSpacing: 0.12,
 marginBottom:11,

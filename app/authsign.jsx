@@ -1,26 +1,90 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CheckBox } from 'react-native-elements';
+import { DatePickerInput } from 'react-native-paper-dates';
+import PhoneInput from "react-native-phone-number-input";
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 import RadioForm from "react-native-simple-radio-button";
 import { verticalScale } from 'react-native-size-matters';
-
+import { supabase } from '../lib/supabase';
 const logoimg =require("@/assets/images/logologin.png")
-
 const radio_props=[
 {label:"Male",value:"male"},
 {label:"Female",value:"female"}
 ];
 
 const auth = () => {
-
    const [isSelected, setSelected] = useState(false);
     const router = useRouter(); 
-     const [value, setValue] = useState("male");
+      const [loading, setLoading] = useState(false)
+      const [fullname,setFullName]= useState('')
+     
+      const [gender,setgender]= useState(radio_props[0].value)
+      const [email,setEmailAddress]= useState('')
+  const [phonenumber,setphonenumber]= useState('')
+  const [formattedPhone, setFormattedPhone] = useState(''); 
+      const [address,setaddress]= useState('')
+      const [password,setpassword]= useState('')
+
+      const phoneToSend = formattedPhone.replace('+','');
+
+const [inputDate,setInputDate]= useState(undefined)
+
+  async function signupauth() {
+  setLoading(true);
+  try {
+    if (!email || !password) {
+      Alert.alert('Missing Credentials', 'Please enter email and password.');
+      setLoading(false);
+      return;
+    }
+    if (!inputDate) {
+      Alert.alert('Missing Birthdate', 'Please select your birthdate.');
+      setLoading(false);
+      return;
+    }
+
+    const normalizedPhone = formattedPhone ? formattedPhone.replace('+','') : phonenumber;
+    const birthDateString = new Date(inputDate).toISOString();
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: password,
+    });
+
+    if (authError) {
+      Alert.alert('Sign-up Error', authError.message);
+      setLoading(false);
+      return;
+    }
+
+    router.push({
+      pathname: '/otp',
+      params: {
+        email: email.trim(),
+        
+        password: password,
+        phone: normalizedPhone,
+        fullname: fullname.trim(),
+        birthDateString: birthDateString,
+        gender: gender,
+        address: address.trim(),
+      },
+    });
+  } finally {
+    setLoading(false);
+  }
+}
+  
+  
+
+const today = new Date();
+
+
   return (
             <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
@@ -57,6 +121,9 @@ const auth = () => {
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Full Name'
                            placeholderTextColor='#7398A9'
+                             onChangeText={(text)=>setFullName(text)}
+                            value={fullname}
+                             autoCapitalize='none' 
                            />
                            
                            </View> 
@@ -64,17 +131,34 @@ const auth = () => {
                             <View style={styles.rowinput}> 
                            <View style={styles.inputcontainerr}>
                              <Text  style={styles.title} >Date of Birth</Text>
-                           <TextInput style={styles.textinput}
-                           placeholder='mm/dd/yyyy'
-                           placeholderTextColor='#7398A9'
-                           />
+                   
+      <View style={styles.container}>
+        <DatePickerInput
+          locale="en"
+          label="Birthdate"
+          value={inputDate}
+          
+          onChange={(date) => setInputDate(date)}
+          endDate={today}
+          inputMode="start" 
+          mode="flat" 
+          
+          borderColor='#ffffff'
+           placeholderTextColor='#7398A9'
+           style={{ width: 100,height: 50,borderRadius:8,marginBottom:-23,backgroundColor:'#',}}
+        />
+      </View>
+   
                            </View>
+
+
                            <View style={styles.inputcontainerr}>
                              <Text  style={styles.title} >Gender</Text>
                              <RadioForm
                                   radio_props={radio_props}
-                                  initial={0}
-                                  onPress={(val) => setValue(val)}
+                              
+                                  initial={radio_props.findIndex(r => r.value === gender)}
+                                  onPress={(value) => setgender(String(value))}
                                   buttonSize={10}
                                   buttonOuterSize={20}
                                   selectedButtonColor="#2196F3"
@@ -87,15 +171,28 @@ const auth = () => {
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Email Address'
                            placeholderTextColor='#7398A9'
+                            onChangeText={(text)=>setEmailAddress(text)}
+                            value={email}
+                             autoCapitalize='none'    
+
                            />
                            </View> 
 
                               <View style={styles.inputcontainer}>
                             <Text style={styles.title}>Phone Number</Text>
-                           <TextInput style={styles.textinput}
-                           placeholder='+63 |  '
-                           placeholderTextColor='#7398A9'
-                           />
+                            <PhoneInput
+                                    defaultValue={phonenumber}
+                                    defaultCode="PH" 
+                                    layout="first"
+                                    onChangeText={(text) => {
+                                      setphonenumber(text); 
+                                    }}
+                                    onChangeFormattedText={(text) => {
+                                      setFormattedPhone(text); 
+                                    }}
+                                    containerStyle={styles.phoneInputContainer}
+                                    textInputStyle={styles.textinputphone}
+                                  />
                            </View> 
 
                              <View style={styles.inputcontainer}>
@@ -103,6 +200,9 @@ const auth = () => {
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Address'
                            placeholderTextColor='#7398A9'
+                            onChangeText={(text)=>setaddress(text)}
+                            value={address}
+                             autoCapitalize='none'
                            />
                            </View> 
 
@@ -111,6 +211,10 @@ const auth = () => {
                            <TextInput style={styles.textinput}
                            placeholder='Enter Your Password'
                            placeholderTextColor='#7398A9'
+                            onChangeText={(text)=>setpassword(text)}
+                            value={password}
+                             autoCapitalize='none'
+                           
                            />
                            </View> 
 
@@ -141,7 +245,8 @@ const auth = () => {
                                           </View>
                                         </View>
                                         <Pressable style={styles.mainbutton}
-                                        onPress={()=>router.push('otp')}
+                                        onPress={()=>signupauth()}
+                                        disabled={loading} 
                                         > 
                                            <Text style={styles.maintextbutton}>Continue</Text>
                                               </Pressable>       
@@ -314,5 +419,18 @@ fontSize:18,
 color:'black',
 fontFamily: 'Roboto', 
 fontWeight: '700',
+},
+phoneInputContainer:{
+width:'95%',
+height:'80%',
+maxWidth:1024,
+padding:0,
+borderColor:'#ffffff',
+
+borderRadius: 10,
+},
+textinputphone:{
+
+  
 }
 })
