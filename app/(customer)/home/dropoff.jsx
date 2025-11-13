@@ -21,6 +21,7 @@ export default function DropoffScreen() {
         </Pressable>
               </View>  
                <View style={styles.maininputcontainer}>
+                {'iN THE PICKUP WILL BE THE GEOCODING   REVERSE GEOCODING AUTO COMPLETE '}
                       <View style={styles.inputcontainer}>
                       <TextInput style={styles.textinput}
                       placeholder='Enter Your Drop-Off Location'
@@ -29,15 +30,19 @@ export default function DropoffScreen() {
                     </View> 
                    </View> 
               <View style={styles.mainContent}>
+                 {'In the Main CONTENT WILL BE THE MAP AREA MAP TILES   ROUTING '}
                       <Text style={styles.title}>Map Area</Text>
                       <Text style={styles.subtitle}>Soon To Be kuan</Text>
                     </View>
     
             <View  style={styles.bottomcontainer}>
               <View style={styles.bottomcontent}>
+                 {'FETCH OR GET THE DATA OF THE AUTO COMPLETE DATA  in the subtitle  <text> '}
               <Text style={styles.title}>Where To Drop-Off</Text>
               <Text style={styles.subtitle}>Zone 2 Lower Jasaan Misamis Oriental </Text>
               </View>
+
+               {'PRESSABLE BUTTON WILL ENABLE THE INSERTING FUNCTION OF THE DONE UNRDEGO PROCESS OF THE GEOAPIFY API THE DATA WILL BE INSERTED TO THE DATABASE COLUMN OF ORDER TABLE "pickup_address ,pickup_latitude , pickup_longitude ,distance,order ID with the usersID creation of orders "'}
               <Pressable style={styles.mainbutton}
                                                       onPress={()=>router.back('index')}
                                                       > 
