@@ -2,9 +2,10 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { CheckBox } from 'react-native-elements';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { verticalScale } from 'react-native-size-matters';
 import Swiper from 'react-native-swiper';
 
@@ -26,7 +27,8 @@ export default function index() {
   const router = useRouter(); 
   const [value, setValue] = useState(null);
   const [isSelected, setSelected] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [isPickerVisible, setPickerVisible] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState(null);
   const [selectedSlide, setSelectedSlide] = useState(null);
   const data = [
     { label: 'Pasundo', value: '1' },
@@ -36,6 +38,18 @@ export default function index() {
     { label: 'Cash On Delivery', value: '3' },
     { label: 'G-Cash', value: '4' },
   ];
+
+  const showPicker = () => {
+    if (!isSelected) {
+      return;
+    }
+    setPickerVisible(true);
+  };
+  const hidePicker = () => setPickerVisible(false);
+  const handleConfirm = (date) => {
+    setScheduledDate(date);
+    hidePicker();
+  };
 
   const renderItem = item => {
     return (
@@ -179,11 +193,27 @@ export default function index() {
 
               <View style={styles.gridItem}>
                 <Pressable
-                  style={[styles.button, styles.buttonOpen]}
-                  onPress={() => setModalVisible(true)}>
-                  <Text style={styles.textStyle}>Set Schedule</Text>
+                  style={[
+                    styles.button,
+                    styles.buttonOpen,
+                    !isSelected && styles.buttonDisabled,
+                  ]}
+                  onPress={showPicker}
+                  disabled={!isSelected}>
+                  <Text
+                    style={[
+                      styles.textStyle,
+                      !isSelected && styles.textDisabled,
+                    ]}>
+                    Set Schedule
+                  </Text>
                     <Image  source={time} style={styles.ordericon}/>
                 </Pressable>
+                {scheduledDate && (
+                  <Text style={styles.scheduleText}>
+                    {scheduledDate.toLocaleString()}
+                  </Text>
+                )}
               </View>
             </View>
           </View>
@@ -215,24 +245,13 @@ export default function index() {
     ))}
   </Swiper>
 </View>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => {
-              Alert.alert('Modal has been closed.');
-              setModalVisible(!modalVisible);
-            }}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <Pressable
-                  style={[styles.button, styles.buttonClose]}
-                  onPress={() => setModalVisible(!modalVisible)}>
-                  <Text style={styles.textStyle}>Hide Modal</Text>
-                </Pressable>
-              </View>
-            </View>
-          </Modal>
+          <DateTimePickerModal
+            isVisible={isPickerVisible}
+            mode="datetime"
+            onConfirm={handleConfirm}
+            onCancel={hidePicker}
+            date={scheduledDate || new Date()}
+          />
 
 
 
@@ -459,24 +478,6 @@ nexticon: {
             alignItems: 'center',
             flex: 1,
           },
-            
-	 modalView: {
-    margin: 20,
-    width: '80%',
-    height: '25%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
   button: {
     borderRadius: 20,
     padding: 10,
@@ -500,8 +501,16 @@ nexticon: {
   resizeMode:'contain',
   marginRight:10,
 },
-  buttonClose: {
-    backgroundColor: '#2196F3',
+  buttonDisabled: {
+    backgroundColor: '#0f151c',
+    opacity: 0.5,
+  },
+  scheduleText: {
+    color: '#7398A9',
+    fontFamily: 'Roboto-regular',
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
   },
   textStyle: {
     color: '#7398A9',
@@ -511,16 +520,8 @@ nexticon: {
     fontSize: 15,
     flex: 1,
   },
-  modalText: {
-    marginBottom: 15,
-    textAlign: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-   centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
+  textDisabled: {
+    color: '#4a5a68',
   },
   swiperContainer: {
     height: 200,
