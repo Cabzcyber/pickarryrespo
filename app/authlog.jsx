@@ -1,7 +1,7 @@
 
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState ,useEffect} from 'react';
+import { Image, Pressable, StyleSheet, Text, TextInput, View ,Alert} from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import {
   heightPercentageToDP as hp,
@@ -13,6 +13,41 @@ import supabase from '../lib/supabase';
 import { verticalScale } from 'react-native-size-matters';
 const logoimg =require("@/assets/images/logologin.png")
 const auth = () => {
+
+const [loading, setLoading] = useState(false);
+    const [email,setEmailAddress]=useState('')
+    const [password,setPassword]=useState('')
+async function signlogauth(){
+        setLoading(true);
+        try{
+            // 1. Get email and password from state
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            // 2. Check if there was an error
+            if (error) {
+                // 3. If error, show a React Native Alert
+                Alert.alert('Login Failed', error.message);
+                console.error('Login Error:', error.message);
+            } else if (data.user) {
+                // 4. If no error and we have a user, authentication is successful
+                console.log('Login Successful, user:', data.user);
+                // 5. Navigate to the home screen
+                router.replace('/(customer)/home');
+            } else {
+                // Fallback just in case
+                Alert.alert('Login Failed', 'An unknown error occurred.');
+            }
+        } catch (error) {
+             Alert.alert('Login Error', error.message);
+             console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
    console.log(supabase)
       const [isSelected, setSelected] = useState(false);
        const router = useRouter(); 
@@ -44,18 +79,33 @@ const auth = () => {
                </View>
                <View style={styles.separator} />
           <View style={styles.maininputcontainer}>
+
+
             <View style={styles.inputcontainer}>
               <Text style={styles.title}>Email</Text>
             <TextInput style={styles.textinput}
             placeholder='Enter Your Email Address'
             placeholderTextColor='#7398A9'
+
+                        onChangeText={(text)=>setEmailAddress(text)}
+                            value={email}
+                             autoCapitalize='none'
+  keyboardType="email-address"
+
             />
             </View>
             <View style={styles.inputcontainer}>
               <Text  style={styles.title} >Password</Text>
             <TextInput style={styles.textinput}
+
+
             placeholder='Enter Your Password'
             placeholderTextColor='#7398A9'
+
+                 onChangeText={(text)=>setPassword(text)}
+                                        value={password}
+                                         autoCapitalize='none'
+secureTextEntry={true}
             />
             </View>
            </View>
@@ -80,7 +130,10 @@ const auth = () => {
 
              
               <Pressable style={styles.mainbutton}
-                onPress={()=> router.replace('/(customer)/home')}
+
+
+                onPress={()=>signlogauth()}
+                disabled={loading}
               > 
               <Text style={styles.maintextbutton}>Log In</Text>
               </Pressable>

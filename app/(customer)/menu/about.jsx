@@ -1,13 +1,71 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+// --- CHANGED: Removed TextInput ---
+import { Pressable, ScrollView, StyleSheet, Text, View, Alert, ActivityIndicator, Image } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import { supabase } from '../../../lib/supabase';
+import { useEffect, useState } from 'react';
 
 export default function About() {
   const router = useRouter();
   const backimg = require("@/assets/images/back.png");
-  const headerlogo = require("@/assets/images/headerlogo.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
-  const edit = require("@/assets/images/edit.png");
+
+  // --- STATE (Simplified) ---
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- Kept your state initialization as requested ---
+  const [contentMap, setContentMap] = useState({
+    'about': '',
+    'terms': '',
+    'contact': '',
+    'terms-and-policies': '',
+    'courier-policies': '',
+    'customer-policies': '',
+    'fare-policies': ''
+  });
+
+  // --- FETCH (Simplified) ---
+  useEffect(() => {
+    const fetchOverviewContent = async () => {
+      try {
+        setIsLoading(true);
+
+        // --- Removed user fetch, as it's not needed for public content ---
+        const { data, error } = await supabase
+          .from('overview')
+          .select('slug, content');
+
+        if (error) throw error;
+
+        if (data) {
+          const map = data.reduce((acc, row) => {
+            acc[row.slug] = row.content || '';
+            return acc;
+          }, {});
+          setContentMap(map);
+        }
+      } catch (error) {
+        console.error("Fetch Overview Error:", error.message);
+        Alert.alert('Error', 'Could not load page content.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOverviewContent();
+  }, []);
+
+  // --- LOADING SPINNER (NEW) ---
+  // Added this for a better user experience
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#0AB3FF" />
+      </View>
+    );
+  }
+
+  // --- RENDER (Simplified) ---
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -15,11 +73,11 @@ export default function About() {
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
-        
+        {/* Removed Edit button container */}
       </View>
       <View style={styles.separator} />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.mainContent}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -27,59 +85,66 @@ export default function About() {
         <View style={styles.logoContainer}>
           <Image source={aboutlogo} style={styles.aboutlogo}/>
         </View>
-        
-        <Text style={styles.descriptionText}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-          Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-          Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-          faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-          felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-          euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-          varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-          in nisi a accumsan.
-        </Text>
 
+        {/* --- Section 1: about --- */}
+        <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+
+        {/* --- Section 2: terms --- */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
+          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
+          <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
         </View>
 
+        {/* --- Section 3: contact --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Contact Us</Text>
+          <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
+        </View>
+
+        {/* --- Section 4: terms and policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Terms of Use</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
+          <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
+        </View>
+
+        {/* --- Section 5: customer policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Customer Policies</Text>
+          <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
+        </View>
+
+        {/* --- Section 6: courier policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Courier Policies</Text>
+          <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
+        </View>
+
+        {/* --- Section 7: fare policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Fare Policies</Text>
+          <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
         </View>
       </ScrollView>
     </View>
   );
 }
 
+// --- STYLES (Unchanged, but added loading) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#141519',
   },
+  // --- NEW ---
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-   gap:20,
+    gap: 20,
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(31),
@@ -98,8 +163,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
-    marginLeft:''
-    
   },
   separator: {
     height: 1,

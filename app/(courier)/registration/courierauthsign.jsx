@@ -186,7 +186,7 @@ const auth = () => {
              <View>
                   <Image  source={logoimg} style={styles.TopImage}/>
              </View>
-               <View style={styles.form} > 
+               <View style={styles.form} >  \\\\\\
                                <View style={styles.authbarcontainer}>
                                     
                                      <View style={styles.logincontainer}>

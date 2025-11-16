@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 export default function About() {
   const router = useRouter();
@@ -8,6 +10,77 @@ export default function About() {
   const headerlogo = require("@/assets/images/headerlogo.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
   const edit = require("@/assets/images/edit.png");
+
+
+  // --- STATE ---
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+ // --- AFTER (Safer) ---
+ const [contentMap, setContentMap] = useState({
+   'about': '',
+   'terms': '',
+   'contact': '',
+   'terms-and-policies': '',
+   'courier-policies': '',
+   'customer-policies': '',
+   'fare-policies': ''
+ });
+ const [originalContentMap, setOriginalContentMap] = useState({
+   'about': '',
+   'terms': '',
+   'contact': '',
+   'terms-and-policies': '',
+   'customer-policies': '',
+   'customer-policies': '',
+   'fare-policies':''
+});
+
+
+ // --- FETCH ---
+   useEffect(() => {
+     const fetchOverviewContent = async () => {
+       try {
+         setIsLoading(true);
+
+         // --- NEW: Get the current user's ID ---
+         const { data: { user } } = await supabase.auth.getUser();
+         if (!user) {
+           throw new Error("User not authenticated.");
+         }
+         setCurrentUserId(user.id);
+         // --- End of new code ---
+
+         const { data, error } = await supabase
+           .from('overview')
+           .select('slug, content');
+
+         if (error) throw error;
+
+         if (data) {
+           const map = data.reduce((acc, row) => {
+             acc[row.slug] = row.content || '';
+             return acc;
+           }, {});
+           setContentMap(map);
+           setOriginalContentMap(map);
+         }
+       } catch (error) {
+         console.error("Fetch Overview Error:", error.message);
+         Alert.alert('Error', 'Could not load page content.');
+       } finally {
+         setIsLoading(false);
+       }
+     };
+
+     fetchOverviewContent();
+   }, []);
+
+
+
+
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -28,43 +101,120 @@ export default function About() {
           <Image source={aboutlogo} style={styles.aboutlogo}/>
         </View>
         
-        <Text style={styles.descriptionText}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-          Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-          Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-          faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-          felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-          euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-          varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-          in nisi a accumsan.
-        </Text>
+        {/* --- Section 1: about --- */}
+        {isEditing ? (
+          <TextInput
+            style={styles.input}
+            value={contentMap['about']}
+            onChangeText={(text) => handleInputChange('about', text)}
+            placeholder="Enter about"
+            placeholderTextColor="#9ca3af"
+            multiline
+          />
+        ) : (
+          <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+        )}
 
+        {/* --- Section 2: terms --- */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
+          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['terms']}
+              onChangeText={(text) => handleInputChange('terms', text)}
+              placeholder="Enter general terms"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
+          )}
         </View>
 
+        {/* --- Section 3: contact --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Contact Us</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['contact']}
+              onChangeText={(text) => handleInputChange('contact', text)}
+              placeholder="Enter Contact"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
+          )}
+        </View>
+
+        {/* --- Section 4: terms and policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Terms of Use</Text>
-          <Text style={styles.sectionText}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-            Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-            Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
-            faucibus vel sollicitudin ut, malesuada et justo. Morbi et ligula eu 
-            felis blandit pellentesque nec sit amet ligula. Aenean justo arcu, 
-            euismod vitae libero in, luctus tincidunt massa. Nunc odio dolor, 
-            varius egestas velit non, scelerisque porttitor dui. Quisque molestie 
-            in nisi a accumsan.
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['terms-and-policies']}
+              onChangeText={(text) => handleInputChange('terms-and-policies', text)}
+              placeholder="Enter Terms of Use"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
+          )}
+        </View>
+
+        {/* --- Section 5: customer policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Customer Policies</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['customer-policies']}
+              onChangeText={(text) => handleInputChange('customer-policies', text)}
+              placeholder="Enter Customer Policies"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
+          )}
+        </View>
+
+        {/* --- Section 6: courier policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Courier Policies</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['courier-policies']}
+              onChangeText={(text) => handleInputChange('courier-policies', text)}
+              placeholder="Enter Courier Policies"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
+          )}
+        </View>
+
+        {/* --- Section 7: fare policies --- */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Fare Policies</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={contentMap['fare-policies']}
+              onChangeText={(text) => handleInputChange('fare-policies', text)}
+              placeholder="Enter Fare Policies"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          ) : (
+            <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
+          )}
         </View>
       </ScrollView>
     </View>
