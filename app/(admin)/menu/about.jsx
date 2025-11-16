@@ -58,7 +58,7 @@ export default function About() {
           supabase
             .from('type_vehicle')
             .select('slug,base_fare,distance_rate_per_km,vehicle_name')
-            .eq('user_id', user.id)
+
 
         ]);
 
