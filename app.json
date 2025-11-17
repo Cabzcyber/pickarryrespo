@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.pickarrymb",
+      "package": "com.cabzcyber.pickarrymb",
       "minSdkVersion": 24
     },
     "web": {
