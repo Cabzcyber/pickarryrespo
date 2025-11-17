@@ -287,7 +287,7 @@ export default function About() {
 
 
                   <Pressable style={styles.mainbutton} onPress={isConfigEditing ? handleSaveConfig : () => setIsConfigEditing(true)}>
-                    <Text style={styles.maintextbutton}>{isConfigEditing ? 'Save Config' : 'Edit Config'}</Text>
+                    <Text style={styles.maintextbutton}>{isConfigEditing ? 'Save Fare' : 'Edit Fare'}</Text>
                   </Pressable>
                   {isConfigEditing && (
                     <Pressable style={[styles.mainbutton, styles.cancelButton]} onPress={handleCancelConfig}>
