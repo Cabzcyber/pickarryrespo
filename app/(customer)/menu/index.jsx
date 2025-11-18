@@ -2,101 +2,107 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
-import supabase from '../../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
+
 export default function CustomerMenu() {
   const router = useRouter();
+
+  // Assets
   const edit = require("@/assets/images/edit.png");
-const setting = require("@/assets/images/setting.png");
-const notification = require("@/assets/images/notification.png");
-const switchcour = require("@/assets/images/switchcour.png");
-const about = require("@/assets/images/about.png");
-const share = require("@/assets/images/share.png");
-const logout = require("@/assets/images/logout.png");
+  const setting = require("@/assets/images/setting.png");
+  const notification = require("@/assets/images/notification.png");
+  const switchcour = require("@/assets/images/switchcour.png");
+  const about = require("@/assets/images/about.png");
+  const share = require("@/assets/images/share.png");
+  const logout = require("@/assets/images/logout.png");
 
+  const [isCourier, setIsCourier] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState({
+    fullName: 'Loading...',
+    phoneNumber: ''
+  });
 
-const [isCourier, setIsCourier] = useState(null);
-
-// This useEffect runs when the component loads to check the user's status
   useEffect(() => {
-    const checkCourierStatus = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
         // 1. Get the current logged-in user
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // 2. Check your 'couriers' table to see if a record exists for this user.
-          // *** Please adjust 'couriers' and 'user_id' to match your database schema. ***
-          const { data, error } = await supabase
-            .from('courier') // Your table for registered couriers
-            .select('user_id') // We just need to know if a record exists
-            .eq('user_id', user.id) // Match against the logged-in user's ID
-            .single(); // Fetch a single record
+          // 2. Parallel Fetch: Get Profile AND Check Courier Status
+          const [profileResult, courierResult] = await Promise.all([
+             supabase
+              .from('service_user')
+              .select('full_name, phone_number')
+              .eq('user_id', user.id)
+              .single(),
 
-          if (error && error.code !== 'PGRST116') {
-             // PGRST116 means "No rows found", which is not an error for .single()
-             // Throw other errors
-             throw error;
+             supabase
+              .from('courier')
+              .select('user_id')
+              .eq('user_id', user.id)
+              .maybeSingle() // Use maybeSingle to avoid errors if not found
+          ]);
+
+          // Handle Profile Data
+          if (profileResult.data) {
+             setProfile({
+               fullName: profileResult.data.full_name || 'No Name',
+               phoneNumber: profileResult.data.phone_number ? String(profileResult.data.phone_number) : ''
+             });
           }
 
-          if (data) {
-            // Record found - this user IS a registered courier
-            setIsCourier(true);
+          // Handle Courier Status
+          if (courierResult.data) {
+            setIsCourier(true); // Is a registered courier
           } else {
-            // No record found - this user is NOT a registered courier
-            setIsCourier(false);
+            setIsCourier(false); // Not a courier
           }
         } else {
-          // No user is logged in, treat as not a courier
           setIsCourier(false);
         }
       } catch (error) {
-        // Handle cases where no row is found
-        if (error.code === 'PGRST116') {
-            setIsCourier(false); // No record found, not a courier
-        } else {
-            console.error("Error checking courier status:", error.message);
-            setIsCourier(false); // On any other error, assume not a courier
-        }
+        console.error("Error fetching menu data:", error.message);
+        setIsCourier(false);
+      } finally {
+        setLoading(false);
       }
     };
 
-    checkCourierStatus();
-  }, []); // The empty array [] means this runs once on component mount
+    fetchData();
+  }, []);
 
-  // This function now holds the logic you requested
   const handleSwitchToCourier = () => {
     if (isCourier === true) {
       // User is already registered, go to courier home
-      console.log('User is a courier, pushing to home.');
       router.push('/(courier)/home');
     } else if (isCourier === false) {
       // User is not registered, go to courier registration
-      console.log('User is not a courier, pushing to registration.');
       router.push('/(courier)/registration/courierauthsign');
     }
-    // if isCourier is null, the button is disabled, so no action is taken
   };
 
-  // Added a function for logging out
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error('Error logging out:', error.message);
-    }
-    router.replace('/authlog'); // Use replace to prevent going back
+    if (error) console.error('Error logging out:', error.message);
+    router.replace('/authlog');
   };
-
-
-
-
 
   return (
     <View style={styles.container}>
       <View style={styles.mainContent}>
         <View style={styles.header}>
           <View style={styles.maintext}>
-            <Text style={styles.subtext}>Gayramara, Dominic</Text>
-            <Text style={styles.subtext1}>+6312345678910</Text>
+             {loading ? (
+                <ActivityIndicator size="small" color="#0AB3FF" style={{alignSelf:'flex-start'}} />
+             ) : (
+                <>
+                  <Text style={styles.subtext}>{profile.fullName}</Text>
+                  <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
+                </>
+             )}
           </View>
           <Pressable onPress={() => router.push('/(customer)/menu/profile')}>
             <Image source={edit} style={styles.editicon}/>
@@ -109,59 +115,39 @@ const [isCourier, setIsCourier] = useState(null);
             <Image source={setting} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Settings</Text>
           </Pressable>
-          
+
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/notification')}>
             <Image source={notification} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Notification</Text>
           </Pressable>
 
-          {/* This is the button with the new logic. */}
-                    <Pressable
-                      style={styles.settingsubcontent}
-                      onPress={handleSwitchToCourier}
-                      disabled={isCourier === null} // Disable button while checking
-                    >
-                      <Image source={switchcour} style={styles.ordericon}/>
-                      <Text style={styles.settingsubtext}>Switch To Courier</Text>
-                      {/* Show a loading spinner while checking status */}
-                      {isCourier === null && <ActivityIndicator size="small" color="#ffffff" style={{marginLeft: 10}} />}
-                    </Pressable>
-         
-          
+           <Pressable
+            style={styles.settingsubcontent}
+            onPress={handleSwitchToCourier}
+            disabled={isCourier === null}
+          >
+            <Image source={switchcour} style={styles.ordericon}/>
+            <Text style={styles.settingsubtext}>Switch To Courier</Text>
+            {isCourier === null && <ActivityIndicator size="small" color="#ffffff" style={{marginLeft: 10}} />}
+          </Pressable>
+
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/about')}>
             <Image source={about} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>About</Text>
           </Pressable>
-          
+
           <View style={styles.settingsubcontent}>
             <Image source={share} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Check Our Pickarry Website</Text>
           </View>
-          
-          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/authlog')}>
+
+          <Pressable style={styles.settingsubcontent} onPress={handleLogout}>
             <Image source={logout} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Log Out</Text>
           </Pressable>
         </View>
       </View>
     </View>
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
   );
 }
 
@@ -192,8 +178,9 @@ const styles = StyleSheet.create({
     marginTop:'5'
   },
   subtext: {
-    fontFamily: 'Roboto Flex',
+    fontFamily: 'Roboto-Bold',
     fontSize: 20,
+    fontWeight: 'bold',
     color: '#0AB3FF',
     marginBottom: 5,
   },

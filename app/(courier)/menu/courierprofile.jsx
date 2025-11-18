@@ -1,10 +1,22 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Dropdown } from 'react-native-element-dropdown'; // Import dropdown
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  SafeAreaView, // Added SafeAreaView
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  StatusBar // Added StatusBar
+} from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 import { verticalScale } from 'react-native-size-matters';
-import { supabase } from '../../../lib/supabase'; // [cite: cabzcyber/pickarryrespo/Cabzcyber-pickarryrespo-25da884b095159f4a0ac245cb7aebbd30bc9a947/lib/supabase.js]
-import ImageViewing from 'react-native-image-viewing'; // **NEW: Import ImageViewing**
+import { supabase } from '../../../lib/supabase';
+import ImageViewing from 'react-native-image-viewing';
 
 export default function Profile() {
   const router = useRouter();
@@ -18,11 +30,8 @@ export default function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // **NEW: State for the image viewer**
   const [viewerVisible, setViewerVisible] = useState(false);
 
-  // --- State for all profile data ---
   const [profile, setProfile] = useState({
     full_name: '',
     phone_number: '',
@@ -32,16 +41,13 @@ export default function Profile() {
     plate_number: '',
     vehicle_brand: '',
     otherdetails_vehicle: '',
-    license_image_url: null,
+    licenseFront: null,
+    licenseBack: null,
   });
 
-  // **NEW: State to hold original data for "Cancel" button**
   const [originalProfile, setOriginalProfile] = useState(null);
-
-  // --- State for the vehicle dropdown options ---
   const [allVehicles, setAllVehicles] = useState([]);
 
-  // --> 1. Fetch data with a JOIN
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -49,13 +55,12 @@ export default function Profile() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           Alert.alert("Error", "No user session found.");
-          router.replace('/auth/login'); // [cite: cabzcyber/pickarryrespo/Cabzcyber-pickarryrespo-25da884b095159f4a0ac245cb7aebbd30bc9a947/app/auth/login.jsx]
+          router.replace('/auth/login');
           return;
         }
         const user = session.user;
 
-        // --- Fetch 1: Get all vehicle types for the dropdown ---
-        // **ASSUMPTION: Your table is 'type_vehicle' with columns 'vehicle_id', 'vehicle_name'**
+        // Fetch Vehicles
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from('type_vehicle')
           .select('vehicle_id, vehicle_name');
@@ -63,15 +68,14 @@ export default function Profile() {
         if (vehiclesError) throw vehiclesError;
 
         if (vehiclesData) {
-          // **FIX 1: Map 'vehicle_id' (from your table) to 'value'**
           const formattedVehicles = vehiclesData.map(v => ({
-            label: v.vehicle_name, // e.g., "Motorcycle"
-            value: v.vehicle_id    // e.g., 1 (was v.id, which was wrong)
+            label: v.vehicle_name,
+            value: v.vehicle_id
           }));
           setAllVehicles(formattedVehicles);
         }
 
-        // --- Fetch 2: Get the courier's profile with JOINs ---
+        // Fetch Courier Profile
         const { data, error, status } = await supabase
           .from('courier')
           .select(`
@@ -95,12 +99,12 @@ export default function Profile() {
             otherdetails_vehicle: data.otherdetails_vehicle || '',
             vehicle_id: data.vehicle_id,
             vehicle_color: data.vehicle_color  || '',
-            license_image_url: data.license_image || null, // Fetch the license image URL
-            // **FIX 2: Join from 'type_vehicle', not 'vehicle_types'**
             vehicle_name: data.type_vehicle?.vehicle_name || 'Not Selected',
+            licenseFront: data.license_front || null,
+            licenseBack: data.license_back || null,
           };
           setProfile(profileData);
-          setOriginalProfile(profileData); // **NEW: Save a backup for "Cancel"**
+          setOriginalProfile(profileData);
         }
       } catch (error) {
         console.error("Fetch Profile Error:", error.message);
@@ -113,7 +117,6 @@ export default function Profile() {
     fetchProfileData();
   }, []);
 
-  // --> 2. Handle saving data to BOTH tables
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -123,7 +126,6 @@ export default function Profile() {
       const serviceUserUpdates = {
         full_name: profile.full_name,
         phone_number: profile.phone_number,
-
       };
 
       const courierUpdates = {
@@ -132,7 +134,6 @@ export default function Profile() {
         otherdetails_vehicle: profile.otherdetails_vehicle,
         vehicle_id: profile.vehicle_id,
         vehicle_color: profile.vehicle_color,
-
       };
 
       const [serviceUserResult, courierResult] = await Promise.all([
@@ -145,14 +146,13 @@ export default function Profile() {
 
       Alert.alert('Success', 'Profile updated!');
 
-      // Refresh vehicle name after saving
       const newVehicleName = allVehicles.find(v => v.value === profile.vehicle_id)?.label || 'Not Selected';
       const updatedProfile = { ...profile, vehicle_name: newVehicleName };
 
-      setProfile(updatedProfile); // Refresh profile state
-      setOriginalProfile(updatedProfile); // Set new "original" state to the saved data
+      setProfile(updatedProfile);
+      setOriginalProfile(updatedProfile);
 
-      setIsEditing(false); // Switch back to view mode
+      setIsEditing(false);
 
     } catch (error) {
       console.error("Save Error:", error.message);
@@ -162,13 +162,11 @@ export default function Profile() {
     }
   };
 
-  // **NEW: Handle canceling an edit**
   const handleCancel = () => {
-    setProfile(originalProfile); // Revert all changes
-    setIsEditing(false); // Exit edit mode
+    setProfile(originalProfile);
+    setIsEditing(false);
   };
 
-  // Helper function to update state
   const handleInputChange = (field, value) => {
     setProfile(prevProfile => ({
       ...prevProfile,
@@ -176,12 +174,16 @@ export default function Profile() {
     }));
   };
 
-  // **NEW: Handle opening the image viewer**
+  const licenseImages = [
+    profile.licenseFront ? { uri: profile.licenseFront } : null,
+    profile.licenseBack ? { uri: profile.licenseBack } : null,
+  ].filter(Boolean);
+
   const openLicenseViewer = () => {
-    if (profile.license_image_url) {
+    if (licenseImages.length > 0) {
       setViewerVisible(true);
     } else {
-      Alert.alert("No License", "No license image has been uploaded for this profile.");
+      Alert.alert("No License", "No license images found for this profile.");
     }
   };
 
@@ -195,7 +197,6 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      {/* --- MODIFIED: Header now shows Cancel/Save or just Edit --- */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} disabled={isEditing}>
           <Image source={backimg} style={[styles.backicon, isEditing && styles.disabledButton]}/>
@@ -222,6 +223,8 @@ export default function Profile() {
 
       <ScrollView style={styles.mainContent}>
         <View style={styles.settingcontent}>
+
+          {/* Full Name */}
           <View style={styles.settingsubcontent}>
             <Image source={person} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -240,6 +243,7 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Phone Number */}
           <View style={styles.settingsubcontent}>
             <Image source={contact} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -259,7 +263,7 @@ export default function Profile() {
             </View>
           </View>
 
-          {/* --- MODIFIED: "Type of Vehicle" now uses a Dropdown --- */}
+          {/* Type of Vehicle */}
           <View style={styles.settingsubcontent}>
             <Image source={vehicle} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -270,21 +274,21 @@ export default function Profile() {
                     placeholderStyle={styles.dropdownPlaceholder}
                     selectedTextStyle={styles.dropdownSelectedText}
                     data={allVehicles}
-                    labelField="label" // Matches 'formattedVehicles'
-                    valueField="value" // Matches 'formattedVehicles'
+                    labelField="label"
+                    valueField="value"
                     placeholder="Select vehicle type"
-                    value={profile.vehicle_id} // The ID (e.g., 1)
+                    value={profile.vehicle_id}
                     onChange={item => {
                       handleInputChange('vehicle_id', item.value);
                     }}
                   />
                 ) : (
-                  // **FIX: This now shows the correct vehicle name**
                   <Text style={styles.settingsubinnertext}>{profile.vehicle_name}</Text>
                 )}
             </View>
           </View>
 
+          {/* Vehicle Color */}
           <View style={styles.settingsubcontent}>
             <Image source={theme} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -303,6 +307,7 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Plate Number */}
           <View style={styles.settingsubcontent}>
             <Image source={platenum} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -321,6 +326,7 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Other Details */}
           <View style={styles.settingsubcontent}>
             <Image source={platenum} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -339,6 +345,7 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Vehicle Brand */}
           <View style={styles.settingsubcontent}>
             <Image source={vehicle} style={styles.ordericon}/>
             <View style={styles.textContainer}>
@@ -357,15 +364,18 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* License Viewer Trigger */}
           <View style={styles.settingsubcontent}>
             <Image source={license} style={styles.ordericon}/>
             <View style={styles.textContainer}>
               <Pressable
-                onPress={openLicenseViewer} // **MODIFIED: Use new handler**
-                disabled={isEditing} // **NEW: Disable button while editing**
+                onPress={openLicenseViewer}
+                disabled={isEditing}
               >
                 <Text style={[styles.settingsubtext, isEditing && styles.disabledButton]}>Driver License</Text>
-                <Text style={[styles.settingsubinnertext, isEditing && styles.disabledButton]}>View License</Text>
+                <Text style={[styles.settingsubinnertext, isEditing && styles.disabledButton]}>
+                   {licenseImages.length > 0 ? "Tap to View Licenses" : "No Images Available"}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -374,19 +384,31 @@ export default function Profile() {
         </View>
       </ScrollView>
 
-      {/* --- NEW: Replaced Modal with ImageViewing --- */}
-      {/* This component displays the fetched image from your Supabase bucket */}
+      {/* --- FIX: VISIBLE CLOSE BUTTON --- */}
       <ImageViewing
-        images={profile.license_image_url ? [{ uri: profile.license_image_url }] : []}
+        images={licenseImages}
         imageIndex={0}
         visible={viewerVisible}
         onRequestClose={() => setViewerVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+        // Add HeaderComponent for the visual "X" button
+        HeaderComponent={() => (
+            <SafeAreaView style={styles.viewerHeader}>
+                <Pressable
+                    onPress={() => setViewerVisible(false)}
+                    style={styles.closeButton}
+                    hitSlop={20} // Increase touch area
+                >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                </Pressable>
+            </SafeAreaView>
+        )}
       />
     </View>
   );
 }
 
-// **NOTE: These styles are updated to include your fixes**
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -395,7 +417,7 @@ const styles = StyleSheet.create({
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1, // Make sure loading takes full screen
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -420,32 +442,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Bold',
     fontSize: 24,
     color: '#0AB3FF',
-    // **NEW: Added margin to help center title when buttons appear**
     marginLeft: 20,
   },
   editSaveButton: {
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
-    color: '#3BF579', // Green
+    color: '#3BF579',
   },
-  // **NEW: Styles for Cancel button and edit container**
   editButtonsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1, // Take up remaining space
-    justifyContent: 'flex-end', // Push buttons to the right
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   cancelButton: {
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
-    color: '#FF4444', // Red
+    color: '#FF4444',
     marginRight: 15,
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  placeholder: {
-    width: 35,
   },
   mainContent: {
     flex: 1,
@@ -489,7 +506,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#363D47',
     borderRadius: 5,
     padding: 10,
-    height: 44, // Consistent height
+    height: 44,
   },
   ordericon: {
     width: 24,
@@ -497,7 +514,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginRight: 15,
   },
-  // --- New Dropdown Styles ---
   dropdown: {
     height: 44,
     backgroundColor: '#363D47',
@@ -518,4 +534,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-regular',
     marginLeft: 4,
   },
+  // --- NEW VIEWER HEADER STYLES ---
+  viewerHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+    paddingTop: 40, // Space for status bar
+    position: 'absolute',
+    top: 0,
+    zIndex: 999,
+  },
+  closeButton: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    lineHeight: 28, // Adjust to center X vertically
+  }
 });

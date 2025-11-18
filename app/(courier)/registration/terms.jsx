@@ -1,39 +1,41 @@
 import { decode } from 'base64-arraybuffer';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
-const backimg =require("@/assets/images/back.png")
-const headerlogo =require("@/assets/images/headerlogo.png")
-const headerheart =require("@/assets/images/heart.png")
+
+const backimg = require("@/assets/images/back.png");
+const headerlogo = require("@/assets/images/headerlogo.png");
+const headerheart = require("@/assets/images/heart.png");
+
 export default function Terms() {
-    const router = useRouter(); 
+    const router = useRouter();
     const [isSelected, setSelected] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Receive params from previous screen
     const params = useLocalSearchParams();
 
+    // Parse the incoming data
     const registrationData = useMemo(() => {
       try {
         return {
-          value: params?.value || '',
-          color: params?.color || '',
-          plate: params?.plate || '',
+          value: params?.vehicle_id || '',
+          color: params?.vehicle_color || '',
+          plate: params?.plate_number || '',
           vehicle_brand: params?.vehicle_brand || '',
           otherdetails_vehicle: params?.otherdetails_vehicle || '',
-          assets: params?.assets ? JSON.parse(String(params.assets)) : [],
+          // Parse the JSON strings back into objects
+          licenseFront: params?.licenseFront ? JSON.parse(String(params.licenseFront)) : null,
+          licenseBack: params?.licenseBack ? JSON.parse(String(params.licenseBack)) : null,
         };
-      } catch {
+      } catch (e) {
+        console.log("Error parsing params", e);
         return {
-          value: '',
-          color: '',
-          plate: '',
-          vehicle_brand: '',
-          otherdetails_vehicle: '',
-          assets: [],
+          value: '', color: '', plate: '', vehicle_brand: '', otherdetails_vehicle: '',
+          licenseFront: null, licenseBack: null
         };
       }
     }, [params]);
@@ -44,136 +46,142 @@ export default function Terms() {
         return;
       }
 
+      // Double check we have images
+      if (!registrationData.licenseFront || !registrationData.licenseBack) {
+        Alert.alert('Error', 'Image data missing. Please go back and select images again.');
+        return;
+      }
+
       try {
         setLoading(true);
 
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
-          Alert.alert('Error', authError?.message || 'Could not get current user.');
-          return;
+          throw new Error(authError?.message || 'Could not get current user.');
         }
 
         const serviceid = user.id;
+        let frontImageUrl = null;
+        let backImageUrl = null;
 
-        // Upload first license image (required as per previous screen logic)
-        if (!registrationData.assets || registrationData.assets.length === 0) {
-          Alert.alert('Missing Info', 'Please upload your driver license image.');
-          return;
-        }
+        // --- 1. Upload Front Image ---
+        const frontFile = registrationData.licenseFront.base64;
+        const frontFileExt = registrationData.licenseFront.uri.split('.').pop();
+        const frontFilePath = `${serviceid}/license_front_${Date.now()}.${frontFileExt}`;
 
-        const firstAsset = registrationData.assets[0];
-        const file = firstAsset.base64;
-        const fileExt = firstAsset.uri.split('.').pop();
-        const filePath = `${serviceid}/license_front.${fileExt}`;
-        const contentType = `image/${fileExt}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { data: frontData, error: frontError } = await supabase.storage
           .from('licenses')
-          .upload(filePath, decode(file), { contentType, upsert: true });
+          .upload(frontFilePath, decode(frontFile), { contentType: `image/${frontFileExt}`, upsert: true });
 
-        if (uploadError) {
-          Alert.alert('Error', 'Failed to upload license image.');
-          return;
-        }
+        if (frontError) throw new Error('Front Image Upload Failed: ' + frontError.message);
 
-        const { data: urlData } = supabase.storage
+        const { data: frontUrlData } = supabase.storage.from('licenses').getPublicUrl(frontData.path);
+        frontImageUrl = frontUrlData.publicUrl;
+
+        // --- 2. Upload Back Image ---
+        const backFile = registrationData.licenseBack.base64;
+        const backFileExt = registrationData.licenseBack.uri.split('.').pop();
+        const backFilePath = `${serviceid}/license_back_${Date.now()}.${backFileExt}`;
+
+        const { data: backData, error: backError } = await supabase.storage
           .from('licenses')
-          .getPublicUrl(uploadData.path);
+          .upload(backFilePath, decode(backFile), { contentType: `image/${backFileExt}`, upsert: true });
 
-        const imageUrl = urlData.publicUrl;
+        if (backError) throw new Error('Back Image Upload Failed: ' + backError.message);
 
+        const { data: backUrlData } = supabase.storage.from('licenses').getPublicUrl(backData.path);
+        backImageUrl = backUrlData.publicUrl;
+
+        // --- 3. Insert Database Record ---
         const { error: insertError } = await supabase.from('courier').insert({
           user_id: serviceid,
           vehicle_id: registrationData.value,
           vehicle_color: registrationData.color,
-          plate_number: (typeof registrationData.plate === 'string' ? registrationData.plate.trim() : String(registrationData.plate)),
+          plate_number: registrationData.plate,
           vehicle_brand: registrationData.vehicle_brand,
           otherdetails_vehicle: registrationData.otherdetails_vehicle,
-          license_image: imageUrl,
+          license_front: frontImageUrl, // Column Name: license_front
+          license_back: backImageUrl,   // Column Name: license_back
         });
 
         if (insertError) {
-          Alert.alert('Error', 'Failed to create courier profile: ' + insertError.message);
-          return;
+          throw new Error('Database Insert Failed: ' + insertError.message);
         }
 
-        // Success → proceed to OTP
+        // Success
         router.replace('/(courier)/registration/otp');
+
       } catch (e) {
-        Alert.alert('Error', 'An unexpected error occurred.');
+        console.log(e);
+        Alert.alert('Error', e.message || 'An unexpected error occurred.');
       } finally {
         setLoading(false);
       }
     };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-                                <Pressable style={styles.headerbutton}
-                                onPress={()=>router.replace('/(courier)/registration/courierauthsign')}
-                                >
-                                <Image  source={backimg} style={styles.backIcon}/>
-                                </Pressable>
-      
-                                <Image  source={headerlogo} style={styles.logo}/>
-      
-                                <Pressable style={styles.headerbutton}
-                                onPress={()=>{}}
-                                >
-                                    <Image  source={headerheart} style={styles.heartIcon}/>  
-                                </Pressable>
-                        </View> 
+        <View style={styles.header}>
+            <Pressable style={styles.headerbutton} onPress={()=>router.back()}>
+            <Image  source={backimg} style={styles.backIcon}/>
+            </Pressable>
+            <Image  source={headerlogo} style={styles.logo}/>
+            <Pressable style={styles.headerbutton} onPress={()=>{}}>
+                <Image  source={headerheart} style={styles.heartIcon}/>
+            </Pressable>
+        </View>
+
       <Text style={{ color: '#2196F3', fontSize: 20, fontWeight: 'bold', alignSelf: 'center', marginTop: 10, marginBottom: 10 }}>
         Terms of Service & Policy Use
       </Text>
+
       <View style={{ height: 2, backgroundColor: '#2196F3', width: '100%', marginBottom: 16 }} />
-      <View style={{ flex: 1 }}>
+
+      <ScrollView style={{ flex: 1, marginBottom: 20 }}>
         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Section 1:</Text>
         <Text style={{ color: '#fff', fontSize: 15, marginBottom: 16, lineHeight: 22 }}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nulla nunc, condimentum a libero at, convallis mollis est. Morbi in arcu sodales, vehicula magna et, ullamcorper orci. In blandit purus in rutrum mattis. Proin nec auctor magna. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sit amet felis non elit cursus convallis eu quis augue. Donec non magna ut nisl dignissim rutrum vitae in leo.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nulla nunc, condimentum a libero at, convallis mollis est.
         </Text>
         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Section 2:</Text>
         <Text style={{ color: '#fff', fontSize: 15, marginBottom: 16, lineHeight: 22 }}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nulla nunc, condimentum a libero at, convallis mollis est. Morbi in arcu sodales, vehicula magna et, ullamcorper orci. In blandit purus in rutrum mattis. Proin nec auctor magna. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sit amet felis non elit cursus convallis eu quis augue. Donec non magna ut nisl dignissim rutrum vitae in leo.
+           Morbi in arcu sodales, vehicula magna et, ullamcorper orci. In blandit purus in rutrum mattis.
         </Text>
-        
-      </View>
-       {/* onPress={()=>signupauthcour()}
-                                        disabled={loading}*/}
-                                          {/* When Next BUTTON IS transfer to another page the insert function on
-                                           hold here when go to terms page the insert function will be executed it will be executed if the radio button is
-                                            checked then click submit then it executes if the radiobutton is not check and click the sumbmit will not execute */}
+      </ScrollView>
+
       <View style={styles.recover}>
-        {/* Double check the Checkbox function if cliked the check appear */}
-                                          <CheckBox
-                                            checked={isSelected}
-                                            onPress={() => setSelected(!isSelected)}
-                                            checkedColor='#1976d2'
-                                            uncheckedColor='#aaa'
-                                            style={{marginRight:0}} />
-                                          <Text style={{ color: '#FFFFFF',}}>
-                                              I Agree to
-                                                <Text
-                                                  style={{ color: '#1976d2', textDecorationLine: 'underline' }}
-                                                  onPress={() => router.push('terms')}
-                                                >
-                                                  {"  "}Terms of Service{"  "}
-                                                </Text>&
-                                                <Text
-                                                  style={{ color: '#1976d2', textDecorationLine: 'underline' }}
-                                                  onPress={() => router.push('terms')}
-                                                >
-                                                  {"  "}
-                                                  Privacy Policy
-                                                </Text>
-                                              </Text>
-                                          </View>
-
-
-
-
+          <CheckBox
+            checked={isSelected}
+            onPress={() => setSelected(!isSelected)}
+            checkedColor='#1976d2'
+            uncheckedColor='#aaa'
+            containerStyle={{padding: 0, margin: 0, marginLeft: 0, marginRight: 10, backgroundColor: 'transparent', borderWidth: 0}}
+           />
+          <View style={{flex: 1}}>
+            <Text style={{ color: '#FFFFFF', flexWrap: 'wrap'}}>
+                I Agree to
+                <Text
+                    style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                    onPress={() => router.push('terms')}
+                >
+                    {"  "}Terms of Service{"  "}
+                </Text>&
+                <Text
+                    style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                    onPress={() => router.push('terms')}
+                >
+                    {"  "}
+                    Privacy Policy
+                </Text>
+            </Text>
+          </View>
+      </View>
 
       <Pressable style={styles.mainbutton} onPress={handleSubmit} disabled={loading}>
-        <Text style={styles.maintextbutton}>{loading ? 'Submitting...' : 'Sign Up'}</Text>
+        {loading ? (
+            <ActivityIndicator color="black" />
+        ) : (
+            <Text style={styles.maintextbutton}>Sign Up</Text>
+        )}
       </Pressable>
     </View>
   );
@@ -185,44 +193,27 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#141519',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
-  },
-  content: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    lineHeight: 24,
-  },
   mainbutton:{
-  flexDirection:'column',
-  width:'84%',
-  maxWidth:1024,
-  padding:10,
-  marginHorizontal:'auto',
-  pointerEvents:'auto',
-  backgroundColor:'#3BF579',
-  borderRadius: 10,
-  justifyContent:"center",
-  alignItems:'center',
-   marginTop: verticalScale(100),
+    width:'100%',
+    padding:15,
+    backgroundColor:'#3BF579',
+    borderRadius: 10,
+    justifyContent:"center",
+    alignItems:'center',
+    marginTop: 20,
+    marginBottom: 20
   },
   maintextbutton:{
-  fontSize:18,
-  color:'black',
-  fontFamily: 'Roboto-Bold', 
+    fontSize:18,
+    color:'black',
+    fontFamily: 'Roboto',
+    fontWeight: 'bold'
   },
   header:{
     flexDirection:'row',
     alignItems:'center',
     justifyContent:'space-between',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    marginTop: verticalScale(30),
-  },
-  header1:{
+    marginTop: verticalScale(20),
   },
   headerbutton:{
     width:37,
@@ -247,15 +238,10 @@ const styles = StyleSheet.create({
     height:20,
     resizeMode:'contain',
   },
-  remembercontainer:{
-    flexDirection: 'row',
-      width: '100%',               
-      marginTop: verticalScale(1),
-      
-    },
-    recover:{
+  recover:{
     flexDirection:'row',
     alignItems: 'center',
-    marginHorizontal:'auto',
-    },
+    marginTop: 10,
+    width: '100%'
+  },
 });

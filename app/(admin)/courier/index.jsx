@@ -12,109 +12,105 @@ const ITEMS_PER_PAGE = 7;
 
 export default function AdminCourier() {
   const router = useRouter();
-    const [page, setPage] = useState(0);
-    const [allCouriers, setAllCouriers] = useState([]);
-    const [couriers, setCouriers] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [allCouriers, setAllCouriers] = useState([]);
+  const [couriers, setCouriers] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-    const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(null);
-    const [items, setItems] = useState([
-      { label: 'All', value: 'All' },
-      { label: 'Active', value: 'Active' },
-      { label: 'Inactive', value: 'Inactive' },
-      { label: 'Pending', value: 'Pending' },
-      { label: 'Suspended', value: 'Suspended' },
-    ]);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [items, setItems] = useState([
+    { label: 'All', value: 'All' },
+    { label: 'Active', value: 'Active' },
+    { label: 'Inactive', value: 'Inactive' },
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Suspended', value: 'Suspended' },
+  ]);
 
-    const [open1, setOpen1] = useState(false);
-    const [value1, setValue1] = useState(null);
-    const [items1, setItems1] = useState([
-      { label: 'Fraudulent Activity', value: '1' },
-      { label: 'Customer Complaints', value: '2' },
-      { label: 'Violation of Policies', value: '3' },
-      { label: 'Unprofessional Behavior', value: '4' },
-      { label: 'Fake/Invalid Documents', value: '5' },
-      { label: 'Unprofessional Behavior', value: '6' },
-      { label: 'Repeated Late Deliveries', value: '7' },
-      { label: 'Tampering with Orders', value: '8' },
-    ]);
+  const [open1, setOpen1] = useState(false);
+  const [value1, setValue1] = useState(null);
+  const [items1, setItems1] = useState([
+    { label: 'Fraudulent Activity', value: '1' },
+    { label: 'Customer Complaints', value: '2' },
+    { label: 'Violation of Policies', value: '3' },
+    { label: 'Unprofessional Behavior', value: '4' },
+    { label: 'Fake/Invalid Documents', value: '5' },
+    { label: 'Unprofessional Behavior', value: '6' },
+    { label: 'Repeated Late Deliveries', value: '7' },
+    { label: 'Tampering with Orders', value: '8' },
+  ]);
 
-    // 🚀 [RPC SOLUTION - FINAL]
-    const fetchCouriers = async (status, search) => {
+  // 🚀 [RPC SOLUTION - FINAL]
+  const fetchCouriers = async (status, search) => {
+    const { data, error } = await supabase.rpc('get_couriers_with_filters', {
+      status_filter: status || 'All',
+      search_filter: search || ''
+    });
 
-      // 1. Call the new 4-table-join SQL function
-      const { data, error } = await supabase.rpc('get_couriers_with_filters', {
-        status_filter: status || 'All',
-        search_filter: search || ''
-      });
+    if (error) {
+      console.error('Error fetching couriers via RPC:', error.message);
+      setAllCouriers([]);
+      return;
+    }
 
-      if (error) {
-        console.error('Error fetching couriers via RPC:', error.message);
-        setAllCouriers([]);
-        return;
+    const formattedData = data.map(item => ({
+      user_id: item.user_id,
+      vehicle: item.vehicle_name,
+      service_user: {
+        full_name: item.full_name,
+        user_status: item.status_name
       }
+    }));
 
-      // 2. Format the data.
-      const formattedData = data.map(item => ({
-        user_id: item.user_id,
-        vehicle: item.vehicle_name, // Map vehicle_name -> vehicle
-        service_user: {
-            full_name: item.full_name,
-            user_status: item.status_name // *** THIS IS THE NEW FIX ***
-        }
-      }));
+    setAllCouriers(formattedData || []);
+    setPage(0);
+  };
 
-      // 3. Set the state
-      setAllCouriers(formattedData || []);
-      setPage(0);
-    };
+  useEffect(() => {
+    fetchCouriers(value, searchQuery);
+  }, [value, searchQuery]);
 
-    // This useEffect calls the fetchCouriers function when filters change
-    useEffect(() => {
-      fetchCouriers(value, searchQuery);
-    }, [value, searchQuery]);
-
-    // This useEffect handles pagination
-    useEffect(() => {
-      const from = page * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE;
-      setCouriers(allCouriers.slice(from, to));
-    }, [page, allCouriers]);
+  useEffect(() => {
+    const from = page * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE;
+    setCouriers(allCouriers.slice(from, to));
+  }, [page, allCouriers]);
 
 
-    const getStatusStyle = (status) => {
-      if (!status) return { color: '#BDC3C7' };
-      let color;
-      // This logic remains the same, as it's based on the text name
-      switch (status.toLowerCase()) {
-        case 'active': color = '#2ECC71'; break;
-        case 'inactive': color = '#E74C3C'; break;
-        case 'pending': color = '#F1C40F'; break;
-        case 'suspended': color = '#E74C3C'; break;
-        default: color = '#BDC3C7'; break;
-      }
-      return { color, fontWeight: 'bold' };
-    };
+  const getStatusStyle = (status) => {
+    if (!status) return { color: '#BDC3C7' };
+    let color;
+    switch (status.toLowerCase()) {
+      case 'active': color = '#2ECC71'; break;
+      case 'inactive': color = '#E74C3C'; break;
+      case 'pending': color = '#F1C40F'; break;
+      case 'suspended': color = '#E74C3C'; break;
+      default: color = '#BDC3C7'; break;
+    }
+    return { color, fontWeight: 'bold' };
+  };
 
-    const headerlogo = require("@/assets/images/headerlogo.png");
+  const headerlogo = require("@/assets/images/headerlogo.png");
 
-    const [visibleMenuId, setVisibleMenuId] = useState(null);
-    const openMenu = (id) => setVisibleMenuId(id);
-    const closeMenu = () => setVisibleMenuId(null);
+  const [visibleMenuId, setVisibleMenuId] = useState(null);
+  const openMenu = (id) => setVisibleMenuId(id);
+  const closeMenu = () => setVisibleMenuId(null);
 
-    const handleView = (id) => {
-      console.log('Navigating to user profile:', id);
-      router.push({ pathname: '/(admin)/courier/[id]', params: { id: String(id), from: 'courier' } });
-      closeMenu();
-    };
+  const handleView = (id) => {
+    closeMenu(); // Close menu first
+    console.log('Navigating to user profile:', id);
+    router.push({ pathname: '/(admin)/courier/[id]', params: { id: String(id), from: 'courier' } });
+  };
 
-    const handleSuspend = (id) => {
-      console.log('Suspend courier:', id);
+  const handleSuspend = (id) => {
+    closeMenu(); // Close menu first
+    console.log('Suspend courier:', id);
+    // Small delay to ensure menu closes smoothly before modal opens
+    setTimeout(() => {
       setModalVisible(true);
-      closeMenu();
-    };
+    }, 100);
+  };
 
   return (
     <View style={styles.container}>
@@ -178,11 +174,7 @@ export default function AdminCourier() {
                 <DataTable.Row key={courier.user_id} style={styles.row}>
                   <DataTable.Cell style={styles.idColumn} textStyle={styles.cellText}>{courier.user_id}</DataTable.Cell>
                   <DataTable.Cell style={styles.nameColumn} textStyle={styles.cellText}>{fullName}</DataTable.Cell>
-
-                  {/* This now works, because 'courier.vehicle' was mapped from 'item.vehicle_name' */}
                   <DataTable.Cell style={styles.vehicleColumn} textStyle={styles.cellText}>{courier.vehicle}</DataTable.Cell>
-
-                   {/* This now works, because 'courier.service_user.user_status' was mapped from 'item.status_name' */}
                   <DataTable.Cell style={styles.statusColumn}>
                     <Text style={[styles.cellText, getStatusStyle(status)]}>
                       {status}
@@ -201,9 +193,10 @@ export default function AdminCourier() {
                         />
                       }>
                       <Menu.Item onPress={() => handleView(courier.user_id)} title="View" />
-                      <Pressable onPress={() => handleSuspend(courier.user_id)}>
-                        <Menu.Item title="Suspend" />
-                      </Pressable>
+
+                      {/* --- FIX: REMOVED PRESSABLE, USED onPress DIRECTLY ON Menu.Item --- */}
+                      <Menu.Item onPress={() => handleSuspend(courier.user_id)} title="Suspend" />
+
                     </Menu>
                   </DataTable.Cell>
                 </DataTable.Row>
@@ -283,8 +276,6 @@ export default function AdminCourier() {
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -381,8 +372,6 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontFamily: 'Roboto-Bold',
     minHeight: 0,
-
-
   },
   tableContainer: {
     borderRadius: 8,
