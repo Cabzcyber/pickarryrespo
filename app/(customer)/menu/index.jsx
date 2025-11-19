@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
 
@@ -16,8 +17,12 @@ export default function CustomerMenu() {
   const share = require("@/assets/images/share.png");
   const logout = require("@/assets/images/logout.png");
 
-  const [isCourier, setIsCourier] = useState(null);
+  // State
+  const [courierStatus, setCourierStatus] = useState('loading');
+  const [rejectionReason, setRejectionReason] = useState(null);
+  const [suspensionReason, setSuspensionReason] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [profile, setProfile] = useState({
     fullName: 'Loading...',
     phoneNumber: ''
@@ -27,11 +32,11 @@ export default function CustomerMenu() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // 1. Get the current logged-in user
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // 2. Parallel Fetch: Get Profile AND Check Courier Status
+          setUserId(user.id);
+
           const [profileResult, courierResult] = await Promise.all([
              supabase
               .from('service_user')
@@ -41,12 +46,11 @@ export default function CustomerMenu() {
 
              supabase
               .from('courier')
-              .select('user_id')
+              .select('user_id, user_status, rejection_reason, suspension_reason')
               .eq('user_id', user.id)
-              .maybeSingle() // Use maybeSingle to avoid errors if not found
+              .maybeSingle()
           ]);
 
-          // Handle Profile Data
           if (profileResult.data) {
              setProfile({
                fullName: profileResult.data.full_name || 'No Name',
@@ -54,18 +58,19 @@ export default function CustomerMenu() {
              });
           }
 
-          // Handle Courier Status
           if (courierResult.data) {
-            setIsCourier(true); // Is a registered courier
+            setCourierStatus(courierResult.data.user_status);
+            setRejectionReason(courierResult.data.rejection_reason);
+            setSuspensionReason(courierResult.data.suspension_reason);
           } else {
-            setIsCourier(false); // Not a courier
+            setCourierStatus('not_registered');
           }
         } else {
-          setIsCourier(false);
+          setCourierStatus('not_registered');
         }
       } catch (error) {
         console.error("Error fetching menu data:", error.message);
-        setIsCourier(false);
+        setCourierStatus('not_registered');
       } finally {
         setLoading(false);
       }
@@ -74,13 +79,90 @@ export default function CustomerMenu() {
     fetchData();
   }, []);
 
-  const handleSwitchToCourier = () => {
-    if (isCourier === true) {
-      // User is already registered, go to courier home
-      router.push('/(courier)/home');
-    } else if (isCourier === false) {
-      // User is not registered, go to courier registration
+  const handleSwitchToCourier = async () => {
+    if (loading || courierStatus === 'loading') return;
+
+    if (courierStatus === 'not_registered') {
       router.push('/(courier)/registration/courierauthsign');
+
+    } else if (courierStatus === 3) { // Pending
+      Alert.alert(
+        "Application Pending",
+        "Your application is currently being reviewed by the admin. You cannot switch until it is approved."
+      );
+
+    } else if (courierStatus === 5) { // Rejected
+      Alert.alert(
+        "Application Rejected",
+        `Your application was rejected.\n\nReason: ${rejectionReason || "No specific reason provided."}\n\nPlease contact support.`
+      );
+
+    } else if (courierStatus === 1) { // Active
+      try {
+        const approvedKey = `hasSeenApprovedAlert_${userId}`;
+        const unsuspendedKey = `hasSeenUnsuspendedAlert_${userId}`; // New Key
+
+        const hasSeenApproved = await AsyncStorage.getItem(approvedKey);
+        const hasSeenUnsuspended = await AsyncStorage.getItem(unsuspendedKey);
+
+        // Scenario 1: User was just Approved (First time)
+        if (hasSeenApproved !== 'true') {
+            Alert.alert(
+                "Application Approved",
+                "Congratulations! Your courier application has been approved. You can now access the courier dashboard.",
+                [{
+                    text: "Go to Dashboard",
+                    onPress: async () => {
+                        await AsyncStorage.setItem(approvedKey, 'true');
+                        // Also mark unsuspend as seen to prevent double alerts if they were never suspended
+                        await AsyncStorage.setItem(unsuspendedKey, 'true');
+                        router.push('/(courier)/home');
+                    }
+                }]
+            );
+            return;
+        }
+
+        // Scenario 2: User was Suspended and is now Active (Unsuspended)
+        // We detect this because hasSeenUnsuspended will be null/false (we clear it on suspension)
+        if (hasSeenUnsuspended !== 'true' && hasSeenApproved === 'true') {
+             Alert.alert(
+                "Account Reactivated",
+                "Your account has been unsuspended and is now Active. You may proceed to the dashboard.",
+                [{
+                    text: "Go to Dashboard",
+                    onPress: async () => {
+                        await AsyncStorage.setItem(unsuspendedKey, 'true');
+                        router.push('/(courier)/home');
+                    }
+                }]
+            );
+            return;
+        }
+
+        // Scenario 3: Normal Active User
+        router.push('/(courier)/home');
+
+      } catch (error) {
+        console.log("Storage Error", error);
+        router.push('/(courier)/home');
+      }
+
+    } else if (courierStatus === 4) { // Suspended
+       // IMPORTANT: Reset the 'Unsuspended' flag so they see the alert when they get active again
+       try {
+           await AsyncStorage.removeItem(`hasSeenUnsuspendedAlert_${userId}`);
+       } catch(e) {}
+
+       // Display Suspension Reason
+       const reasonText = suspensionReason ? suspensionReason : "Violation of policies.";
+       Alert.alert(
+         "Account Suspended",
+         `Your courier account has been suspended.\n\nReason: ${reasonText}\n\nPlease contact support.`
+       );
+
+    } else {
+      Alert.alert("Access Denied", `Your account status code is: ${courierStatus}`);
     }
   };
 
@@ -124,11 +206,10 @@ export default function CustomerMenu() {
            <Pressable
             style={styles.settingsubcontent}
             onPress={handleSwitchToCourier}
-            disabled={isCourier === null}
           >
             <Image source={switchcour} style={styles.ordericon}/>
             <Text style={styles.settingsubtext}>Switch To Courier</Text>
-            {isCourier === null && <ActivityIndicator size="small" color="#ffffff" style={{marginLeft: 10}} />}
+            {loading && <ActivityIndicator size="small" color="#ffffff" style={{marginLeft: 10}} />}
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/about')}>
