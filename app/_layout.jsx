@@ -9,15 +9,15 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    'Roboto-Thin': require("@/assets/images/fonts/Roboto-Thin.ttf"),
-    'Roboto-ExtraLight': require("@/assets/images/fonts/Roboto-ExtraLight.ttf"),
-    'Roboto-Light': require("@/assets/images/fonts/Roboto-Light.ttf"),
-    'Roboto-Regular': require("@/assets/images/fonts/Roboto-Regular.ttf"),
-    'Roboto-Medium': require("@/assets/images/fonts/Roboto-Medium.ttf"),
-    'Roboto-SemiBold': require("@/assets/images/fonts/Roboto-SemiBold.ttf"),
-    'Roboto-Bold': require("@/assets/images/fonts/Roboto-Bold.ttf"),
-    'Roboto-ExtraBold': require("@/assets/images/fonts/Roboto-ExtraBold.ttf"),
-    'Roboto-Black': require("@/assets/images/fonts/Roboto-Black.ttf"),
+    'Roboto-Thin': require("../assets/fonts/Roboto-Thin.ttf"),
+    'Roboto-ExtraLight': require("../assets/fonts/Roboto-ExtraLight.ttf"),
+    'Roboto-Light': require("../assets/fonts/Roboto-Light.ttf"),
+    'Roboto-Regular': require("../assets/fonts/Roboto-Regular.ttf"),
+    'Roboto-Medium': require("../assets/fonts/Roboto-Medium.ttf"),
+    'Roboto-SemiBold': require("../assets/fonts/Roboto-SemiBold.ttf"),
+    'Roboto-Bold': require("../assets/fonts/Roboto-Bold.ttf"),
+    'Roboto-ExtraBold': require("../assets/fonts/Roboto-ExtraBold.ttf"),
+    'Roboto-Black': require("../assets/fonts/Roboto-Black.ttf"),
   });
 
   useEffect(() => {
