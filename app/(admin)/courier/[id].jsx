@@ -1,41 +1,42 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, View, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { IconButton, Menu } from 'react-native-paper';
 import { verticalScale } from 'react-native-size-matters';
+import ImageViewing from 'react-native-image-viewing'; // New Import
 import supabase from '../../../lib/supabase';
 
 const Userprofile = () => {
 
     const backimg = require("@/assets/images/back.png");
-    const geopick =require("@/assets/images/geopick.png")
-    const license =require("@/assets/images/license.png")
-    const vehicle =require("@/assets/images/vehicle.png")
-    const platenum =require("@/assets/images/platenum.png")
-    const theme =require("@/assets/images/theme.png")
-    const feature =require("@/assets/images/feature.png")
+    const geopick = require("@/assets/images/geopick.png")
+    const license = require("@/assets/images/license.png")
+    const vehicle = require("@/assets/images/vehicle.png")
+    const platenum = require("@/assets/images/platenum.png")
+    const theme = require("@/assets/images/theme.png")
+    const feature = require("@/assets/images/feature.png")
 
     const [modalVisible, setModalVisible] = useState(false);
-    const [modalVisible1, setModalVisible1] = useState(false);
+    // removed modalVisible1
+    const [viewerVisible, setViewerVisible] = useState(false); // State for Image Viewer
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState(null);
 
     const { id, from } = useLocalSearchParams();
     const router = useRouter();
 
-    // --- NEW: FETCH VIA RPC (Bypasses RLS) ---
+    // --- FETCH VIA RPC ---
     useEffect(() => {
       const fetchUserProfile = async () => {
         if (!id) return;
 
         try {
           setLoading(true);
-
           // Call the new SQL function
           const { data, error } = await supabase
             .rpc('get_profile_details', { target_id: id })
-            .maybeSingle(); // Use maybeSingle to avoid crashes
+            .maybeSingle();
 
           if (error) {
             console.error('Error fetching profile:', error.message);
@@ -52,9 +53,23 @@ const Userprofile = () => {
       fetchUserProfile();
     }, [id]);
 
+    // Construct images array based on fetched data
+    const licenseImages = [
+      userData?.license_front ? { uri: userData.license_front } : null,
+      userData?.license_back ? { uri: userData.license_back } : null, // Assuming license_back exists in data
+    ].filter(Boolean);
+
+    const openLicenseViewer = () => {
+      if (licenseImages.length > 0) {
+        setViewerVisible(true);
+      } else {
+        Alert.alert("No License", "No license images found for this profile.");
+      }
+    };
+
     const handleBack = () => {
       setModalVisible(false);
-      setModalVisible1(false);
+      setViewerVisible(false);
 
       if (from === 'courier'){
         router.replace('/(admin)/courier');
@@ -179,7 +194,8 @@ const Userprofile = () => {
               <View style={styles.licenseprofilecontainer}>
                 <View style={styles.sublocationcontainer}>
                   <Image source={license} style={styles.licenseicon}/>
-                  <Pressable onPress={() => setModalVisible1(true)}>
+                  {/* Updated to use Image Viewer Logic */}
+                  <Pressable onPress={openLicenseViewer}>
                       <Text style={styles.sublocationtext1}>View Driver License </Text>
                   </Pressable>
                 </View>
@@ -225,35 +241,6 @@ const Userprofile = () => {
           )}
 
           </View>
-
-          {/* License Modal */}
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisible1}
-            onRequestClose={() => {
-              setModalVisible1(!modalVisible1);
-            }}>
-            <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                  <Pressable
-                    style={{ alignSelf: 'flex-start', marginBottom: 8 }}
-                    onPress={() => setModalVisible1(false)}
-                  >
-                      <Image source={backimg} style={{ width:40, height:40, resizeMode:'contain'}}/>
-                  </Pressable>
-
-                  {userData?.license_front ? (
-                    <Image
-                      source={{ uri: userData.license_front }}
-                      style={{ width: '100%', height: 200, resizeMode: 'contain' }}
-                    />
-                  ) : (
-                    <Text style={{color:'white', alignSelf:'center', marginTop: 20}}>No License Image Found</Text>
-                  )}
-                </View>
-            </View>
-          </Modal>
 
           {/* Suspend Modal */}
           <Modal
@@ -309,6 +296,14 @@ const Userprofile = () => {
                 </View>
               </View>
           </Modal>
+
+          {/* Image Viewer Component */}
+          <ImageViewing
+            images={licenseImages}
+            imageIndex={0}
+            visible={viewerVisible}
+            onRequestClose={() => setViewerVisible(false)}
+          />
 
         </View>
     </>
@@ -448,23 +443,7 @@ const styles = StyleSheet.create({
     padding:18,
     height:'38%',
   },
-   modalView: {
-    margin: 20,
-    width: '95%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
+  // Removed modalView (old license modal style)
    modalView1: {
     margin: 20,
     width: '95%',

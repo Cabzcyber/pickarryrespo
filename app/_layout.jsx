@@ -5,6 +5,10 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+// IMPORT THE CONTEXT
+import { OrderProvider } from '../context/OrderContext';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -30,21 +34,24 @@ export default function RootLayout() {
     return null;
   }
 
-  return  (
-    <PaperProvider> 
-  <GestureHandlerRootView style={{ flex: 1 }}>
-    <SafeAreaProvider>
-      <Stack  screenOptions={{headerShown:false}}>
-        <Stack.Screen name="index" />
-        {/** Auth stack lives under app/auth */}
-        <Stack.Screen name="auth" />
-        {/** Role groups */}
-        <Stack.Screen name="(customer)" />
-        <Stack.Screen name="(courier)" />
-        <Stack.Screen name="(admin)" />
-      </Stack>
-    </SafeAreaProvider>
-  </GestureHandlerRootView>
-  </PaperProvider>
-      )
+  return (
+    <PaperProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          {/* WRAP THE STACK WITH ORDER PROVIDER */}
+          <OrderProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              {/** Auth stack lives under app/auth */}
+              <Stack.Screen name="auth" />
+              {/** Role groups */}
+              <Stack.Screen name="(customer)" />
+              <Stack.Screen name="(courier)" />
+              <Stack.Screen name="(admin)" />
+            </Stack>
+          </OrderProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </PaperProvider>
+  );
 }
