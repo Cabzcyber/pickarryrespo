@@ -2,8 +2,20 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  Dimensions
+} from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { CheckBox } from 'react-native-elements';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -11,6 +23,9 @@ import { verticalScale } from 'react-native-size-matters';
 import Swiper from 'react-native-swiper';
 import { useOrder } from '../../../context/OrderContext';
 import supabase from '../../../lib/supabase';
+import { calculateAndPrepareOrder } from '../../../services/FareCalculator';
+import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
+import { sanitizeGoodsDetails } from '../../../utils/InputSanitizer';
 
 const onfoot = require("../../../assets/images/onfoot.png");
 const dulog = require("../../../assets/images/dulog.png");
@@ -22,38 +37,83 @@ const truck = require("../../../assets/images/truck.png");
 const next = require("../../../assets/images/next.png");
 const time = require("../../../assets/images/time.png");
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const { width } = Dimensions.get('window');
+
 export default function index() {
   const router = useRouter();
   const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => ['10%', '25%', '50%', '70%'], []);
+  const snapPoints = useMemo(() => ['15%', '40%', '85%'], []);
 
   const {
     pickupLocation,
     dropoffLocation,
+    goodsDetails,
     orderMetrics,
-    createOrder,
-    isLoading
+    setPickupLocation,
+    setDropoffLocation,
+    setGoodsDetails,
+    isLoading: isOrderLoading
   } = useOrder();
 
-  const [deliveryType, setDeliveryType] = useState('Pasundo');
-  const [paymentMethod, setPaymentMethod] = useState('Cash On Delivery');
+  const [deliveryType, setDeliveryType] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState(1);
   const [isSelected, setSelected] = useState(false);
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(null);
-  const [selectedSlide, setSelectedSlide] = useState(null);
+
+  const [uiVisible, setUiVisible] = useState(true);
+
+  const [vehicleList, setVehicleList] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [userStatusId, setUserStatusId] = useState(null);
   const [suspensionReason, setSuspensionReason] = useState(null);
   const [userId, setUserId] = useState(null);
 
   const deliveryOptions = [
-    { label: 'Pasundo', value: 'Pasundo' },
-    { label: 'Pasugo', value: 'Pasugo' },
+    { label: 'Pasundo', value: 1 },
+    { label: 'Pasugo', value: 2 },
   ];
   const paymentOptions = [
-    { label: 'Cash On Delivery', value: 'COD' },
-    { label: 'G-Cash', value: 'GCash' },
+    { label: 'Cash On Delivery', value: 1 },
+    { label: 'G-Cash', value: 2 },
   ];
+
+  const vehicleImageMap = {
+    'onfoot': onfoot,
+    'motorcycle': motorcycle,
+    'bicycle': bike,
+    'rela': rela,
+    'dulog': dulog,
+    'passenger-car': passengercar,
+    'truck': truck
+  };
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setLoadingVehicles(true);
+        const { data, error } = await supabase
+          .from('type_vehicle')
+          .select('vehicle_id, vehicle_name, slug, base_fare')
+          .order('vehicle_id', { ascending: true });
+
+        if (error) throw error;
+        if (data) setVehicleList(data);
+      } catch (error) {
+        console.error("Error fetching vehicles:", error.message);
+      } finally {
+        setLoadingVehicles(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,65 +137,86 @@ export default function index() {
     }, [])
   );
 
+  const toggleUiVisibility = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setUiVisible(!uiVisible);
+  };
+
   const handleOrderPress = async () => {
     if (!userId) return;
 
     if (userStatusId === 4) {
-      await AsyncStorage.setItem(`wasSuspended_${userId}`, 'true');
-      Alert.alert("Account Suspended", `Reason: ${suspensionReason || "Violation of policies."}`);
-      return;
+        await AsyncStorage.setItem(`wasSuspended_${userId}`, 'true');
+        Alert.alert("Account Suspended", `Reason: ${suspensionReason}`);
+        return;
     }
-    if (userStatusId === 1) {
-      const wasSuspended = await AsyncStorage.getItem(`wasSuspended_${userId}`);
-      if (wasSuspended === 'true') {
-        Alert.alert("Welcome Back", "Your account has been reactivated.");
-        await AsyncStorage.removeItem(`wasSuspended_${userId}`);
-      }
-    }
-
     if (!pickupLocation || !dropoffLocation) {
-      Alert.alert("Missing Location", "Please select both Pickup and Drop-off locations.");
+      Alert.alert("Missing Location", "Please select locations.");
       return;
     }
-    if (!selectedSlide) {
+    if (!goodsDetails) {
+      Alert.alert("Missing Details", "Please specify 'What To Deliver?'.");
+      return;
+    }
+    if (!selectedVehicle) {
       Alert.alert("Vehicle Required", "Please select a vehicle type.");
       return;
     }
 
-    const baseFare = 50;
-    const calculatedFare = baseFare + (parseFloat(orderMetrics?.distanceKm || 0) * 15);
+    try {
+      setIsSubmitting(true);
 
-    // Payload Construction matching DB schema
-    const payload = {
-      pickup_latitude: pickupLocation.latitude,
-      pickup_longitude: pickupLocation.longitude,
-      pickup_address: pickupLocation.address,
-      dropoff_latitude: dropoffLocation.latitude,
-      dropoff_longitude: dropoffLocation.longitude,
-      dropoff_address: dropoffLocation.address,
-      distance: parseFloat(orderMetrics.distanceKm),
-      estimated_duration: parseInt(orderMetrics.durationMin),
-      status_name: 'Pending',
-      // Additional fields needed for the app logic but maybe not in the strict schema list provided?
-      // The user listed specific columns for "Location Data" and "Metrics".
-      // I'll include the other necessary fields for the order to make sense (vehicle, price, etc.)
-      // as part of a larger object or separate columns if they exist.
-      // For now, I'll stick to the user's request to "consolidate context data... matching the orders table columns listed".
-      // I will also include the other UI fields.
-      vehicle_type: selectedSlide,
-      payment_method: paymentMethod,
-      delivery_type: deliveryType,
-      scheduled_date: isSelected ? scheduledDate : null,
-      total_fare: calculatedFare.toFixed(2),
-      user_id: userId
-    };
+      const cleanGoods = sanitizeGoodsDetails(goodsDetails);
+      console.log("Sanitized Goods:", JSON.stringify(cleanGoods));
 
-    console.log("Order Payload:", JSON.stringify(payload, null, 2));
+      const orderInputs = {
+        pickupLocation,
+        dropoffLocation,
+        goodsDetails: cleanGoods,
+        orderMetrics,
+        vehicleId: selectedVehicle.vehicle_id,
+        serviceId: deliveryType,
+        paymentId: paymentMethod,
+        userId,
+        isScheduled: isSelected,
+        scheduledDate
+      };
 
-    const newOrder = await createOrder(payload);
+      const payload = await calculateAndPrepareOrder(orderInputs);
 
-    if (newOrder) {
-      router.push('/(customer)/home/ordersearch');
+      // --- CRITICAL FIX: Get the new Order ID ---
+      const { data, error } = await supabase
+        .from('order')
+        .insert([payload])
+        .select() // Need this to get the ID back
+        .single();
+
+      if (error) throw error;
+
+      // Reset Form
+      setPickupLocation(null);
+      setDropoffLocation(null);
+      setGoodsDetails(null);
+      setSelectedVehicle(null);
+      setSelected(false);
+      setScheduledDate(null);
+
+      // --- CRITICAL FIX: Pass the new Order ID to the search screen ---
+      Alert.alert("Order Submitted!", `Total: ₱${payload.total_fare}`, [
+          {
+            text: "OK",
+            onPress: () => router.push({
+              pathname: '/(customer)/home/ordersearch',
+              params: { orderId: data.order_id } // Pass explicit ID
+            })
+          }
+      ]);
+
+    } catch (error) {
+      console.error("Order Error:", error);
+      Alert.alert("Error", "Failed to submit order.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,50 +224,57 @@ export default function index() {
   const hidePicker = () => setPickerVisible(false);
   const handleConfirm = (date) => { setScheduledDate(date); hidePicker(); };
 
-  const renderItem = item => (
-    <View style={styles.item}>
-      <Text style={styles.textItem}>{item.label}</Text>
-      {(item.value === deliveryType || item.value === paymentMethod) && (
-        <AntDesign style={styles.icon} color="black" name="checkcircle" size={20} />
-      )}
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.mainContent}>
-        <Text style={styles.title}>Map Area</Text>
-        <Text style={styles.subtitle}>
-          {orderMetrics.distanceKm > 0
-            ? `${orderMetrics.distanceKm} km • ${orderMetrics.durationMin} min`
-            : "Select locations to see route"}
-        </Text>
+        <View style={styles.mapWrapper}>
+          <GeoapifyRouteMap
+            pickup={pickupLocation}
+            dropoff={dropoffLocation}
+          />
+
+          <Pressable style={styles.viewModeButton} onPress={toggleUiVisibility}>
+             <AntDesign name={uiVisible ? "eye" : "eyeo"} size={24} color="#0AB3FF" />
+          </Pressable>
+
+          {orderMetrics.distanceKm > 0 && uiVisible && (
+            <View style={styles.statsOverlay}>
+              <Text style={styles.statsText}>
+                {orderMetrics.distanceKm} km • {orderMetrics.durationMin} min
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      <View style={styles.inputlocationcontainer}>
-        <View style={styles.inputcontainer}>
-          <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/pickup')}>
-            <Text style={[styles.textloc, pickupLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
-              {pickupLocation ? pickupLocation.address : "Where To Pickup?"}
-            </Text>
-            <Image source={next} style={styles.nexticon} />
-          </Pressable>
+      {uiVisible && (
+        <View style={styles.inputlocationcontainer} pointerEvents="box-none">
+          <View style={styles.inputcontainer}>
+            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/pickup')}>
+              <Text style={[styles.textloc, pickupLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
+                {pickupLocation ? pickupLocation.address : "Where To Pickup?"}
+              </Text>
+              <Image source={next} style={styles.nexticon} />
+            </Pressable>
+          </View>
+          <View style={styles.inputcontainer}>
+            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/dropoff')}>
+              <Text style={[styles.textloc, dropoffLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
+                {dropoffLocation ? dropoffLocation.address : "Where To Drop-off?"}
+              </Text>
+              <Image source={next} style={styles.nexticon} />
+            </Pressable>
+          </View>
+          <View style={styles.inputcontainer}>
+            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/setgoods')}>
+              <Text style={[styles.textloc, goodsDetails && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]}>
+                {goodsDetails ? `${goodsDetails.other_details.substring(0, 20)}...` : "What To Deliver?"}
+              </Text>
+              <Image source={next} style={styles.nexticon} />
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.inputcontainer}>
-          <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/dropoff')}>
-            <Text style={[styles.textloc, dropoffLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
-              {dropoffLocation ? dropoffLocation.address : "Where To Drop-off?"}
-            </Text>
-            <Image source={next} style={styles.nexticon} />
-          </Pressable>
-        </View>
-        <View style={styles.inputcontainer}>
-          <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/setgoods')}>
-            <Text style={styles.textloc}>What To Deliver?</Text>
-            <Image source={next} style={styles.nexticon} />
-          </Pressable>
-        </View>
-      </View>
+      )}
 
       <BottomSheet
         ref={bottomSheetRef}
@@ -195,9 +283,9 @@ export default function index() {
         enablePanDownToClose={false}
         backgroundStyle={styles.bottomSheetBackground}
         handleIndicatorStyle={styles.handleIndicator}
+        style={{ zIndex: 50 }}
       >
         <BottomSheetView style={styles.contentContainer}>
-
           <View style={styles.bottomsheetcontainer}>
             <View style={styles.gridRow}>
               <View style={styles.gridItem}>
@@ -214,10 +302,8 @@ export default function index() {
                   placeholder="Delivery Type"
                   value={deliveryType}
                   onChange={item => setDeliveryType(item.value)}
-                  renderItem={renderItem}
                 />
               </View>
-
               <View style={styles.gridItem}>
                 <View style={styles.remembercontainer}>
                   <View style={styles.recover}>
@@ -250,10 +336,8 @@ export default function index() {
                   placeholder="Payment"
                   value={paymentMethod}
                   onChange={item => setPaymentMethod(item.value)}
-                  renderItem={renderItem}
                 />
               </View>
-
               <View style={styles.gridItem}>
                 <Pressable
                   style={[styles.button, styles.buttonOpen, !isSelected && styles.buttonDisabled]}
@@ -269,26 +353,37 @@ export default function index() {
           </View>
 
           <View style={styles.swiperContainer}>
-            <Swiper style={styles.swiperWrapper} showsButtons={true} height={200} showsPagination={false}>
-              {[
-                { id: 'foot', label: 'On Foot - ₱ 10', image: onfoot },
-                { id: 'dulog', label: 'Dulog - ₱ 25', image: dulog },
-                { id: 'motorcycle', label: 'Motorcycle - ₱ 20', image: motorcycle },
-                { id: 'rela', label: 'Rela - ₱ 15', image: rela },
-                { id: 'bike', label: 'Bicycle - ₱ 10', image: bike },
-                { id: 'passenger', label: 'Car - ₱ 40', image: passengercar },
-                { id: 'truck', label: 'Truck - ₱ 90', image: truck },
-              ].map(item => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => setSelectedSlide(selectedSlide === item.id ? null : item.id)}
-                  style={[styles.slide, selectedSlide === item.id && styles.selectedSlide]}
-                >
-                  <Text style={styles.swiperText}>{item.label}</Text>
-                  <Image source={item.image} style={styles.slideimg} />
-                </Pressable>
-              ))}
-            </Swiper>
+            {loadingVehicles ? (
+              <ActivityIndicator size="large" color="#0AB3FF" style={{ marginTop: 50 }} />
+            ) : (
+              <Swiper
+                style={styles.swiperWrapper}
+                showsButtons={true}
+                height={240}
+                showsPagination={false}
+                loop={false}
+                removeClippedSubviews={false}
+                containerStyle={{ overflow: 'visible' }}
+                nextButton={<Text style={{ fontSize: 40, color: '#0AB3FF' }}>›</Text>}
+                prevButton={<Text style={{ fontSize: 40, color: '#0AB3FF' }}>‹</Text>}
+              >
+                {vehicleList.map((item) => {
+                  const isSelected = selectedVehicle?.vehicle_id === item.vehicle_id;
+                  const imageSource = vehicleImageMap[item.slug] || onfoot;
+                  return (
+                    <View key={item.vehicle_id} style={styles.slideOuter}>
+                      <Pressable
+                        onPress={() => setSelectedVehicle(isSelected ? null : item)}
+                        style={[styles.slide, isSelected && styles.selectedSlide]}
+                      >
+                        <Text style={styles.swiperText}>{item.vehicle_name} - ₱ {item.base_fare}</Text>
+                        <Image source={imageSource} style={styles.slideimg} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </Swiper>
+            )}
           </View>
 
           <DateTimePickerModal
@@ -299,8 +394,8 @@ export default function index() {
             date={scheduledDate || new Date()}
           />
 
-          <Pressable style={styles.mainbutton} onPress={handleOrderPress} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color="black" /> : <Text style={styles.maintextbutton}>Order</Text>}
+          <Pressable style={styles.mainbutton} onPress={handleOrderPress} disabled={isSubmitting}>
+            {isSubmitting ? <ActivityIndicator color="black" /> : <Text style={styles.maintextbutton}>Order</Text>}
           </Pressable>
 
         </BottomSheetView>
@@ -311,19 +406,23 @@ export default function index() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#141519' },
-  mainContent: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#CCCCCC', textAlign: 'center' },
-  bottomSheetBackground: { backgroundColor: '#363D47' },
-  handleIndicator: { backgroundColor: '#0AB3FF' },
-  contentContainer: { flex: 1, padding: 16 },
-  inputlocationcontainer: { position: 'absolute', width: '90%', maxWidth: 381, alignSelf: 'center', top: 95, backgroundColor: '#363D47', borderRadius: 28, paddingVertical: 10 },
-  inputcontainer: { flexDirection: 'column', width: '100%', height: '30%', maxWidth: 1024, padding: 9, marginHorizontal: 'auto', pointerEvents: 'auto' },
+  mainContent: { flex: 1, padding: 0, alignItems: 'center', justifyContent: 'flex-start' },
+  mapWrapper: { flex: 1, width: '100%', marginBottom: 0 },
+  viewModeButton: { position: 'absolute', top: 340, right: 20, backgroundColor: 'rgba(30, 30, 30, 0.9)', padding: 12, borderRadius: 30, zIndex: 100, borderWidth: 1, borderColor: '#363D47' },
+  statsOverlay: { position: 'absolute', top: 340, alignSelf: 'center', backgroundColor: 'rgba(20, 21, 25, 0.9)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, zIndex: 10, borderWidth: 1, borderColor: '#363D47' },
+  statsText: { color: '#0AB3FF', fontFamily: 'Roboto-Bold', fontSize: 14 },
+  inputlocationcontainer: { position: 'absolute', width: '90%', maxWidth: 381, alignSelf: 'center', top: 70, backgroundColor: '#363D47', borderRadius: 28, paddingVertical: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8 },
+  inputcontainer: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 9, marginHorizontal: 'auto', pointerEvents: 'auto' },
   textinputloc: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#192028', borderColor: '#192028', borderWidth: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 8 },
   textloc: { flexShrink: 1, color: '#7398A9', fontFamily: 'Roboto-Light', fontSize: 16, lineHeight: 23 },
   nexticon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#00bfff' },
-  mainbutton: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 15, justifyContent: "center", alignItems: 'center', marginHorizontal: 'auto', pointerEvents: 'auto', backgroundColor: '#3BF579', borderRadius: 10, marginTop: verticalScale(20) },
-  maintextbutton: { fontSize: 18, color: 'black', fontFamily: 'Roboto-Bold' },
+  bottomSheetBackground: { backgroundColor: '#363D47' },
+  handleIndicator: { backgroundColor: '#0AB3FF' },
+  contentContainer: { flex: 1, padding: 16 },
+
+  bottomsheetcontainer: { flex: 1, marginBottom: 10, paddingHorizontal: 8, paddingVertical: 8 },
+  gridRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'stretch', width: '100%' },
+  gridItem: { flex: 1, marginHorizontal: 2, justifyContent: 'center', minWidth: 0 },
   dropdown: { backgroundColor: '#192028', borderColor: '#192028', color: '#7398A9', height: 50, borderRadius: 12, padding: 12, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0.1 },
   icon: { marginRight: 5, color: '#3BF579' },
   item: { color: '#7398A9', padding: 17, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -332,9 +431,6 @@ const styles = StyleSheet.create({
   selectedTextStyle: { fontSize: 14, color: '#FFFFFF', fontFamily: 'Roboto-Regular', marginLeft: 5 },
   iconStyle: { width: 20, height: 20, color: '#7398A9' },
   inputSearchStyle: { height: 40, fontSize: 16, color: '#7398A9', marginLeft: 5 },
-  bottomsheetcontainer: { flex: 1, marginBottom: 10, paddingHorizontal: 8, paddingVertical: 8 },
-  gridRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'stretch', width: '100%' },
-  gridItem: { flex: 1, marginHorizontal: 2, justifyContent: 'center', minWidth: 0 },
   remembercontainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#192028', borderRadius: 12, height: 50, justifyContent: 'flex-start', flex: 1 },
   recover: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   button: { borderRadius: 12, padding: 10, elevation: 2 },
@@ -343,10 +439,15 @@ const styles = StyleSheet.create({
   textStyle: { color: '#7398A9', fontFamily: 'Roboto-Regular', textAlign: 'center', fontSize: 14, flex: 1 },
   textDisabled: { color: '#4a5a68' },
   ordericon: { width: 20, height: 20, resizeMode: 'contain', marginRight: 10 },
-  swiperContainer: { height: 180, marginVertical: 20, width: '100%' },
-  swiperWrapper: { height: 200 },
-  slide: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#465569', borderRadius: 17, width: '70%', alignContent: 'center', alignSelf: 'center', borderWidth: 2, borderColor: 'transparent' },
-  selectedSlide: { borderColor: '#0AB3FF', backgroundColor: '#2A3B4D', shadowColor: '#0AB3FF', shadowOpacity: 0.6, shadowRadius: 5 },
-  swiperText: { fontWeight: 'bold', fontFamily: 'Roboto-Regular', fontSize: 18, color: '#FFFFFF', marginBottom: 10 },
+
+  swiperContainer: { height: 220, marginVertical: 20, width: width },
+  swiperWrapper: { height: 240 },
+  slideOuter: { width: width, flex: 1, alignItems: 'center', justifyContent: 'center' },
+  slide: { width: width * 0.75, height: 180, backgroundColor: '#465569', borderRadius: 17, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent', marginVertical: 10 },
+  selectedSlide: { borderColor: '#0AB3FF', backgroundColor: '#2A3B4D', shadowColor: '#0AB3FF', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.8, shadowRadius: 8, elevation: 10 },
+  swiperText: { fontWeight: 'bold', fontFamily: 'Roboto-Regular', fontSize: 18, color: '#FFFFFF', marginBottom: 10, textAlign: 'center' },
   slideimg: { width: 100, height: 100, alignSelf: 'center', resizeMode: 'contain' },
+
+  mainbutton: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 15, justifyContent: "center", alignItems: 'center', marginHorizontal: 'auto', pointerEvents: 'auto', backgroundColor: '#3BF579', borderRadius: 10, marginTop: verticalScale(20) },
+  maintextbutton: { fontSize: 18, color: 'black', fontFamily: 'Roboto-Bold' },
 });

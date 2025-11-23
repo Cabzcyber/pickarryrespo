@@ -1,153 +1,272 @@
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Stack, useRouter } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
-const backimg =require("@/assets/images/back.png")
-const headerlogo =require("@/assets/images/headerlogo.png")
-const headerheart =require("@/assets/images/heart.png")
-const eye =require("@/assets/images/eye.png")
-const cancel =require("@/assets/images/cancel.png")
-const report =require("@/assets/images/report.png")
-const geopick =require("@/assets/images/geopick.png")
-const geodrop =require("@/assets/images/geodrop.png")
-const goods =require("@/assets/images/goods.png")
-const calculator =require("@/assets/images/calculator.png")
+import supabase from '../../../lib/supabase';
 
+// Assets
+const backimg = require("@/assets/images/back.png");
+const headerlogo = require("@/assets/images/headerlogo.png");
+const headerheart = require("@/assets/images/heart.png");
+const geopick = require("@/assets/images/geopick.png");
+const geodrop = require("@/assets/images/geodrop.png");
+const goods = require("@/assets/images/goods.png");
+const calculator = require("@/assets/images/calculator.png");
 
 const OrderCancel = () => {
-const router = useRouter(); 
-  const snapPoints = useMemo(() => ['10%', '25%', '50%','60%'], []);
+  const router = useRouter();
+  const { orderId } = useLocalSearchParams();
   const bottomSheetRef = useRef(null);
-const [modalVisible, setModalVisible] = useState(false);
+  const snapPoints = useMemo(() => ['10%', '25%', '50%', '60%'], []);
+  const [modalVisible, setModalVisible] = useState(false);
 
- const handleSheetChanges = (index) => {
+  // State for Dynamic Data
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch Order Details on Mount
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (!orderId) return;
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('order')
+          .select('*')
+          .eq('order_id', orderId)
+          .single();
+
+        if (error) throw error;
+        setOrder(data);
+      } catch (error) {
+        console.error("Error fetching order details:", error.message);
+        Alert.alert("Error", "Could not load order details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [orderId]);
+
+  const handleRetry = () => {
+    router.push('/(customer)/home');
+  };
+
+  const handleSheetChanges = (index) => {
     console.log('Bottom sheet index changed to:', index);
   };
 
-  return (
+  // Helper for currency formatting
+  const fmt = (amount) => {
+    return '₱' + parseFloat(amount || 0).toFixed(2);
+  };
 
+  // Loading State UI
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#0AB3FF" />
+      </View>
+    );
+  }
+
+  // Fallback if no order found
+  if (!order) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Text style={{ color: 'white' }}>Order not found.</Text>
+        <Pressable onPress={() => router.back()} style={{ marginTop: 20, padding: 10, backgroundColor: '#333' }}>
+           <Text style={{ color: '#0AB3FF' }}>Go Back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: '',
-          headerShown: false,  
+          headerShown: false,
         }}
       />
-      
-              <View style={styles.container}>
-                  <View style={styles.header}>
-                          <Pressable style={styles.headerbutton}
-                          onPress={()=>router.back()}
-                          >
-                          <Image  source={backimg} style={styles.backIcon}/>
-                          </Pressable>
 
-                          <Image  source={headerlogo} style={styles.logo}/>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable style={styles.headerbutton} onPress={() => router.replace('/(customer)/orders')}>
+            <Image source={backimg} style={styles.backIcon} />
+          </Pressable>
 
-                          <Pressable style={styles.headerbutton}
-                          onPress={()=>{}}
-                          >
-                              <Image  source={headerheart} style={styles.heartIcon}/>  
-                          </Pressable>
-                  </View> 
+          <Image source={headerlogo} style={styles.logo} />
 
+          <Pressable style={styles.headerbutton} onPress={() => {}}>
+            <Image source={headerheart} style={styles.heartIcon} />
+          </Pressable>
+        </View>
 
+        <View style={styles.mainContent}>
+          {/* Placeholder for Map */}
+          <Text style={styles.title}>Map Area</Text>
+          <Text style={styles.subtitle}>Order #{order.order_id}</Text>
+        </View>
 
-      <View style={styles.mainContent}>
-        <Text style={styles.title}>Map Area</Text>
-        <Text style={styles.subtitle}>Soon To Be kuan</Text>
-      </View>
-      
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={3}
+          snapPoints={snapPoints}
+          enablePanDownToClose={false}
+          onChange={handleSheetChanges}
+          backgroundStyle={styles.bottomSheetBackground}
+          handleIndicatorStyle={styles.handleIndicator}
+        >
+          <BottomSheetView style={styles.contentContainer}>
+            <View style={styles.bottomsheetcontainer}>
 
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={1} 
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
-        onChange={handleSheetChanges}
-        backgroundStyle={styles.bottomSheetBackground}
-        handleIndicatorStyle={styles.handleIndicator}
-      >
-        <BottomSheetView style={styles.contentContainer}>
-          <View style={styles.bottomsheetcontainer}>
-          <View style={styles.orderinfo}>
-            <View style={styles.info}>
-              <Text style={styles.infotext}>
-              Order Canceled
-              </Text> 
-              <Text style={styles.infosubtext}>
-              Driver Search Failed...
-              </Text>
-            </View>
-            <View style={styles.farecontainer}>
-              <Text style={styles.totalfare}>₱ 20.00 
-                in Cash
-                 </Text>
-            </View>
-          </View>
-          
+              {/* Dynamic Order Status Info */}
+              <View style={styles.orderinfo}>
+                <View style={styles.info}>
+                  <Text style={styles.infotext}>
+                    Order {order.status || 'Canceled'}
+                  </Text>
+                  <Text style={styles.infosubtext}>
+                    {order.cancellation_reason || "Driver Search Failed..."}
+                  </Text>
+                </View>
+                <View style={styles.farecontainer}>
+                  <Text style={styles.totalfare}>{fmt(order.total_fare)}
+                        {"\n"}<Text style={{fontSize:12, color:'#8796AA'}}>Cash</Text>
+                  </Text>
+                </View>
+              </View>
 
-          <View style={styles.locationcontainer}>
-          <View style={styles.sublocationcontainer}>
-          <Image  source={geopick} style={styles.geopickicon}/>
-          <Text  style={styles.sublocationtext}>Zone 2 Upper Jasaan Misamis Oriental  </Text>
-          </View>
-          <View style={styles.sublocationcontainer}>
-          <Image  source={geodrop} style={styles.geodropicon}/>
-          <Text style={styles.sublocationtext}>Zone 2 Jampason Jasaan Misamis Oriental  </Text>
-          </View>
-          <View style={styles.sublocationcontainer}>
-          <Image  source={goods} style={styles.goodsicon}/>
-          <Text style={styles.sublocationtext}>2 Iced Macha Coffer and 2 fries and 2 kwekkwek  </Text>
-          </View>
-          </View>
-
-          <Pressable style={styles.mainbutton}
-            onPress={()=>router.push('/(customer)/home/orderongoing')}
-              > 
-              <Text style={styles.maintextbutton}>Retry Order</Text>
-              </Pressable>   
-
-
-            </View>
-         
-            <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => {
-              Alert.alert('Modal has been closed.');
-              setModalVisible(!modalVisible);
-            }}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <Pressable
-                  style={[styles.button, styles.buttonClose]}
-                  onPress={() => setModalVisible(!modalVisible)}>
-                  <Text style={styles.textStyle}>Hide Modal</Text>
+              <View style={styles.optionbtn}>
+                <Pressable style={styles.optionItem} onPress={() => setModalVisible(true)}>
+                  <View style={styles.optionCircle}>
+                    <Image source={calculator} style={styles.calculatoricon}/>
+                  </View>
+                  <Text style={styles.optionLabel}>Fare Details</Text>
                 </Pressable>
               </View>
+
+              {/* Dynamic Location & Goods */}
+              <View style={styles.locationcontainer}>
+                <View style={styles.sublocationcontainer}>
+                  <Image source={geopick} style={styles.geopickicon} />
+                  <Text style={styles.sublocationtext} numberOfLines={2}>
+                    {order.pickup_address}
+                  </Text>
+                </View>
+                <View style={styles.sublocationcontainer}>
+                  <Image source={geodrop} style={styles.geodropicon} />
+                  <Text style={styles.sublocationtext} numberOfLines={2}>
+                    {order.dropoff_address}
+                  </Text>
+                </View>
+                <View style={styles.sublocationcontainer}>
+                  <Image source={goods} style={styles.goodsicon} />
+                  <Text style={styles.sublocationtext} numberOfLines={2}>
+                    {order.other_details || "No items details available"}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Retry Button */}
+              <Pressable style={styles.mainbutton} onPress={handleRetry}>
+                <Text style={styles.maintextbutton}>Retry Order</Text>
+              </Pressable>
+
             </View>
-          </Modal>
 
+            {/* --- UPDATED FARE BREAKDOWN MODAL --- */}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => {
+                setModalVisible(!modalVisible);
+              }}>
+              <View style={styles.centeredView}>
+                <View style={styles.modalView}>
 
+                  {/* Modal Header */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, width: '100%' }}>
+                    <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
+                      <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                    </Pressable>
+                    <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
+                  </View>
 
-        </BottomSheetView> 
-      </BottomSheet>
-      
-    </View>
-    
+                  {/* Modal Content - Dynamic Data */}
+                  <View style={{ marginBottom: 18, width: '100%' }}>
 
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
+                      <Text style={{ color: '#fff' }}>{fmt(order.base_fare_component)}</Text>
+                    </View>
 
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ color: '#b0c4d4' }}>
+                        Distance ({parseFloat(order.distance || 0).toFixed(1)} km)
+                      </Text>
+                      <Text style={{ color: '#fff' }}>{fmt(order.distance_charge_component)}</Text>
+                    </View>
 
-    
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
+                      <Text style={{ color: '#fff' }}>{fmt(order.time_charge_component)}</Text>
+                    </View>
 
-</>
-  )
-  
-}
+                    {/* Combine Vehicle/Bonus into "Other Charges" or separate if preferred */}
+                    {(parseFloat(order.vehicle_charge_component) > 0) && (
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text style={{ color: '#b0c4d4' }}>Vehicle Charge</Text>
+                        <Text style={{ color: '#fff' }}>{fmt(order.vehicle_charge_component)}</Text>
+                      </View>
+                    )}
 
+                    {(parseFloat(order.bonus_charge_component) > 0) && (
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text style={{ color: '#b0c4d4' }}>Bonus/Rush</Text>
+                        <Text style={{ color: '#fff' }}>{fmt(order.bonus_charge_component)}</Text>
+                      </View>
+                    )}
+
+                    {(parseFloat(order.penalty_amount) > 0) && (
+                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text style={{ color: '#FF4444' }}>Penalty</Text>
+                        <Text style={{ color: '#FF4444' }}>{fmt(order.penalty_amount)}</Text>
+                      </View>
+                    )}
+
+                    <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
+                      <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>{fmt(order.total_fare)}</Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
+
+          </BottomSheetView>
+        </BottomSheet>
+      </View>
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -160,38 +279,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(30),
   },
-  header1:{
-  },
-  headerbutton:{
-    width:37,
-    height:36,
+  headerbutton: {
+    width: 37,
+    height: 36,
     borderRadius: 10,
-    backgroundColor:'#22262F',
-    alignItems:'center',
-    justifyContent:'center',
+    backgroundColor: '#22262F',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backIcon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
+  backIcon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
   },
-  logo:{
-    width:120,
-    height:28,
-    resizeMode:'contain',
+  logo: {
+    width: 120,
+    height: 28,
+    resizeMode: 'contain',
   },
-  heartIcon:{
-    width:20,
-    height:20,
-    resizeMode:'contain',
+  heartIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,
@@ -216,227 +333,139 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  text: {
-    color: '#FFFFFF',
-    fontSize: 18,
+  orderinfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  info: {
+    width: '60%'
+  },
+  infotext: {
+    fontFamily: 'Roboto-Bold',
     fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 21,
+    color: '#ffffff',
   },
-  subText: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    marginBottom: 20,
+  infosubtext: {
+    fontFamily: 'Roboto-Regular',
+    fontSize: 16,
+    color: '#8796AA',
   },
-  orderinfo:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    alignItems:'center',
+  farecontainer: {
+    flexDirection: 'row',
+    backgroundColor: '#192028',
+    width: 'auto',
+    minWidth: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  info:{
-    width:'60%'
-
+  totalfare: {
+    fontFamily: 'Roboto-Regular',
+    fontSize: 20,
+    color: '#87AFB9',
   },
-  infotext:{
-    fontFamily:'roboto',
-    fontWeight:'bold',
-    fontSize:21,
-    color:'#ffffff',
-    overflow:'hidden'
+  locationcontainer: {
+    flexDirection: 'column',
+    marginTop: 16,
   },
-  infosubtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:16,
-    color:'#8796AA',
-    overflow:'hidden'
-
+  sublocationcontainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 16,
   },
-  farecontainer:{
-    flexDirection:'row',
-    backgroundColor:'#192028',
-    width:'40%',
-    alignItems:'center',
-    justifyContent:'space-between',
-    borderRadius:12,
-    paddingHorizontal:12,
-    paddingVertical:10,
+  sublocationtext: {
+    fontFamily: 'Roboto-Regular',
+    fontSize: 16,
+    color: '#ffffff',
+    flex: 1,
+    flexWrap: 'wrap',
   },
-  totalfare:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:20,
-    color:'#87AFB9',
-    overflow:'hidden',
-    marginRight:8,
-
+  geopickicon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    marginRight: 10,
   },
-  eyeicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
+  geodropicon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    marginRight: 10,
   },
-  optionbtn:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    gap:48,
-    marginTop:16,
+  goodsicon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    marginRight: 10,
   },
-  optionItem:{
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  optionCircle:{
-    width:72,
-    height:72,
-    borderRadius:36,
-    backgroundColor:'#22262F',
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  cancelicon:{
-    width:34,
-    height:34,
-    resizeMode:'contain',
-  },
-  reporticon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  calculatoricon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  optionLabel:{
-    marginTop:6,
-    color:'#8796AA',
-    textAlign:'center',
-    fontSize:12,
-  },
-  locationcontainer:{
-    flexDirection:'column',
-    marginTop:16,
-
-
-
-
-  },
-  sublocationcontainer:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-  },
-  sublocationtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  geopickicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  geodropicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  goodsicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  bottomshtcontainer:{
-
-
-
-
-
-  },
-  mainbutton:{
-    flexDirection:'column',
-    width:'100%',
-    maxWidth:1024,
-    padding:10,
-    justifyContent:"center",
-    alignItems:'center',
-    marginHorizontal:'auto',
-    pointerEvents:'auto',
-    backgroundColor:'#3BF579',
+  mainbutton: {
+    flexDirection: 'column',
+    width: '100%',
+    padding: 14,
+    justifyContent: "center",
+    alignItems: 'center',
+    backgroundColor: '#3BF579',
     borderRadius: 10,
-     marginTop: verticalScale(30),
-    },
-    maintextbutton:{
-    fontSize:18,
-    color:'black',
-    fontFamily: 'Roboto-Bold', 
-    },
-  
-          bottomsheetcontainer:{
-            flex: 1,
-            paddingHorizontal: 8,
-            paddingVertical: 8,
-          },
-  
-   modalView: {
+    marginTop: verticalScale(20),
+  },
+  maintextbutton: {
+    fontSize: 18,
+    color: 'black',
+    fontFamily: 'Roboto-Bold',
+  },
+  bottomsheetcontainer: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  modalView: {
     margin: 20,
-    width: '80%',
-    height: '25%',
+    width: '85%',
     backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
     elevation: 5,
   },
-  button: {
-  
+  calculatoricon:{
+    width:29,
+    height:29,
+    resizeMode:'contain',
   },
-  buttonOpen: {
-    
- 
+  optionCircle:{
+    width:60,
+    height:60,
+    borderRadius:30,
+    backgroundColor:'#22262F',
+    alignItems:'center',
+    justifyContent:'center',
+    marginBottom: 5,
   },
-  buttonClose: {
-    backgroundColor: '#2196F3',
+  optionbtn:{
+    flexDirection:'row',
+    alignItems:'center',
+    justifyContent:'center', // Changed to flex-end to align right or keep space-around if other buttons exist
+    marginRight: 10,
+    marginTop:20,
+    marginBottom: 20,
   },
-  textStyle: {
-    color: '#7398A9',
-    fontFamily: 'Roboto-regular',
-
-    textAlign: 'center',
-    fontSize: 15,
-    flex: 1,
+  optionLabel:{
+    color:'#8796AA',
+    textAlign:'center',
+    fontSize:14,
   },
-  modalText: {
-    marginBottom: 15,
-    textAlign: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-   centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-  
-}); 
-
-
+});
 
 export default OrderCancel;

@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View, Alert } from 'react-native'; // Added Alert
 import { verticalScale } from 'react-native-size-matters';
 import GeoapifyMap from '../../../components/GeoapifyMap';
 import { useOrder } from '../../../context/OrderContext';
@@ -9,14 +9,26 @@ const backimg = require("../../../assets/images/back.png");
 
 export default function DropoffScreen() {
   const router = useRouter();
-  const { setDropoffLocation, dropoffLocation } = useOrder();
+  // Destructure pickupLocation to check against
+  const { setDropoffLocation, dropoffLocation, pickupLocation } = useOrder();
 
   const handleLocationSelect = (locationData) => {
-    // 1. Save to Context
+    // --- CONSTRAINT CHECK ---
+    if (pickupLocation) {
+      const isSameLat = Math.abs(locationData.latitude - pickupLocation.latitude) < 0.0001;
+      const isSameLon = Math.abs(locationData.longitude - pickupLocation.longitude) < 0.0001;
+
+      if (isSameLat && isSameLon) {
+        Alert.alert(
+          "Invalid Location",
+          "Drop-off location cannot be the same as Pickup location. Please choose a different point."
+        );
+        return; // Stop execution
+      }
+    }
+
     console.log("Setting Dropoff:", locationData);
     setDropoffLocation(locationData);
-
-    // 2. Navigate back to Home/Index
     router.back();
   };
 
