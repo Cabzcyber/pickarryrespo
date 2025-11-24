@@ -7,8 +7,7 @@ import { verticalScale } from 'react-native-size-matters';
 import supabase from '../../../lib/supabase';
 
 // --- ROBUSTNESS: Local Status Map ---
-// This allows us to display status names without needing a complex Database Join.
-// IDs based on your app logic: 1=Pending, 2=Accepted/Ongoing, 5=Cancelled.
+// IDs based on your app logic: 1=Pending, 2=Accepted, 3=Ongoing, 4=Completed, 5=Cancelled
 const STATUS_MAP = {
   1: 'Pending',
   2: 'Accepted',
@@ -87,32 +86,29 @@ export default function OrderHistory() {
       // Optimistic Update
       if (isFavorited) {
         setFavoriteIds(prev => prev.filter(id => id !== orderId));
-        // If viewing Favorites tab, remove immediately from view
         if (statusFilter === 'Favorites') {
             setOrders(prev => prev.filter(o => o.order_id !== orderId));
         }
 
-        const { error } = await supabase
+        await supabase
           .from('favorites')
           .delete()
           .eq('user_id', user.id)
           .eq('order_id', orderId);
-        if (error) throw error;
       } else {
         setFavoriteIds(prev => [...prev, orderId]);
-        const { error } = await supabase
+        await supabase
           .from('favorites')
           .insert({ user_id: user.id, order_id: orderId });
-        if (error) throw error;
       }
     } catch (error) {
       console.error("Error toggling favorite:", error.message);
       Alert.alert("Error", "Could not update favorites");
-      fetchFavorites();
+      fetchFavorites(); // Revert on error
     }
   };
 
-  // --- 3. FETCH ORDERS (FIXED) ---
+  // --- 3. FETCH ORDERS ---
   const fetchOrders = async (pageNumber = 0, isRefresh = false) => {
     if (!isRefresh && (!hasMore || loadingMore)) return;
 
@@ -122,12 +118,10 @@ export default function OrderHistory() {
 
       let fetchedData = [];
 
-      // BRANCH LOGIC: Favorites vs Standard RPC
       if (statusFilter === 'Favorites') {
         if (favoriteIds.length === 0) {
             fetchedData = [];
         } else {
-            // FIX: Removed "deliverystatus ( status_name )" join to prevent schema error.
             const { data, error } = await supabase
                 .from('order')
                 .select('*')
@@ -136,16 +130,16 @@ export default function OrderHistory() {
 
             if (error) throw error;
 
-            // FIX: Manually map status_name using local STATUS_MAP
+            // Use local map for status names in Favorites view
             fetchedData = data.map(order => ({
                 ...order,
                 status_name: STATUS_MAP[order.deliverystatus_id] || 'Unknown'
             }));
         }
-        setHasMore(false);
+        setHasMore(false); // No pagination for favorites currently
 
       } else {
-        // Standard Case: Use existing RPC
+        // Call the RPC
         const { data, error } = await supabase.rpc('get_customer_orders', {
             status_filter: statusFilter,
             search_query: searchQuery,
@@ -154,14 +148,14 @@ export default function OrderHistory() {
         });
 
         if (error) throw error;
-        fetchedData = data;
+        fetchedData = data || [];
 
-        if (fetchedData && fetchedData.length < PAGE_SIZE) setHasMore(false);
+        if (fetchedData.length < PAGE_SIZE) setHasMore(false);
         else setHasMore(true);
       }
 
       // State Updates
-      if (fetchedData && fetchedData.length > 0) {
+      if (fetchedData.length > 0) {
         if (isRefresh || pageNumber === 0) {
           setOrders(fetchedData);
         } else {
@@ -174,7 +168,6 @@ export default function OrderHistory() {
 
     } catch (error) {
       console.error("Error fetching orders:", error.message);
-      // Optional: Alert user roughly what went wrong (dev mode only)
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -187,8 +180,7 @@ export default function OrderHistory() {
       fetchFavorites().then(() => {
           setPage(0);
           setHasMore(true);
-          // Manually triggering fetchOrders via effect dependency update usually works,
-          // but we ensure clean state here.
+          fetchOrders(0, true);
       });
     }, [])
   );
@@ -197,7 +189,7 @@ export default function OrderHistory() {
       setPage(0);
       setHasMore(true);
       fetchOrders(0, true);
-  }, [statusFilter, searchQuery, favoriteIds.length]);
+  }, [statusFilter, searchQuery]); // Removed favoriteIds.length to prevent loop
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -214,19 +206,44 @@ export default function OrderHistory() {
     }
   };
 
-  const handleViewOrder = (order) => {
-    const status = order.status_name?.toLowerCase() || '';
-    const params = { orderId: order.order_id };
+  // --- 4. FIXED NAVIGATION LOGIC ---
+  const handleViewOrder = (item) => {
+    // Use ID for reliable routing, fallback to name if ID is missing (RPC vs Table)
+    // Check RPC logic: usually returns 'status_name' AND 'deliverystatus_id' is implied or mapped?
+    // IMPORTANT: Your RPC `get_customer_orders` returns `status_name`.
+    // Ideally, it should also return `deliverystatus_id`.
+    // Since we can't see the RPC definition right now, we'll try to infer from ID if available,
+    // or use strict string matching.
 
-    if (status === 'pending') {
+    // Logic:
+    // 1 (Pending) -> OrderSearch
+    // 2 (Accepted), 3 (Ongoing) -> OrderOngoing
+    // 4 (Completed) -> OrderComplete
+    // 5 (Cancelled) -> OrderCancel
+
+    // If RPC doesn't return ID, we map string to ID
+    let statusId = item.deliverystatus_id;
+    if (!statusId && item.status_name) {
+        const lowerName = item.status_name.toLowerCase();
+        if (lowerName === 'pending') statusId = 1;
+        else if (lowerName === 'accepted') statusId = 2;
+        else if (lowerName === 'ongoing') statusId = 3;
+        else if (lowerName === 'completed') statusId = 4;
+        else if (lowerName === 'cancelled') statusId = 5;
+    }
+
+    const params = { orderId: item.order_id };
+
+    if (statusId === 1) {
       router.push({ pathname: '/(customer)/home/ordersearch', params });
-    } else if (status === 'accepted' || status === 'ongoing' || status === 'picked up') {
+    } else if (statusId === 2 || statusId === 3) {
       router.push({ pathname: '/(customer)/home/orderongoing', params });
-    } else if (status === 'completed') {
+    } else if (statusId === 4) {
       router.push({ pathname: '/(customer)/home/ordercomplete', params });
-    } else if (status === 'cancelled' || status === 'failed' || status === 'timeout') {
+    } else if (statusId === 5 || statusId === 6 || statusId === 7) {
       router.push({ pathname: '/(customer)/home/ordercancel', params });
     } else {
+      // Fallback
       router.push({ pathname: '/(customer)/home/ordersearch', params });
     }
   };
@@ -260,12 +277,12 @@ export default function OrderHistory() {
             <View style={styles.productInfo}>
               <Image source={goods} style={styles.ordericon}/>
               <Text style={styles.productText} numberOfLines={1}>
-                {item.goods_details || "No details"}
+                {item.goods_details || item.other_details || "No details"}
               </Text>
             </View>
 
             <View style={[styles.statusBadge, { borderColor: statusColor }]}>
-              <Text style={[styles.statusText, { color: statusColor }]}>{item.status_name}</Text>
+              <Text style={[styles.statusText, { color: statusColor }]}>{item.status_name || "Unknown"}</Text>
             </View>
           </View>
 
@@ -307,10 +324,10 @@ export default function OrderHistory() {
                 </Pressable>
 
                 <Pressable
-                style={styles.viewButton}
-                onPress={() => handleViewOrder(item)}
+                    style={styles.viewButton}
+                    onPress={() => handleViewOrder(item)}
                 >
-                <Text style={styles.viewButtonText}>View</Text>
+                    <Text style={styles.viewButtonText}>View</Text>
                 </Pressable>
             </View>
           </View>
@@ -359,11 +376,9 @@ export default function OrderHistory() {
               setValue={setStatusFilter}
               setItems={setItems}
               placeholder="Status"
-
               maxHeight={300}
               autoScroll={true}
               dropDownDirection="BOTTOM"
-
               style={styles.dropdown}
               textStyle={styles.dropdownText}
               placeholderStyle={styles.placeholderText}

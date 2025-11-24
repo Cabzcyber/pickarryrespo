@@ -1,574 +1,221 @@
-import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import ImageViewing from 'react-native-image-viewing';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
-const orderview = () => {
-  const router = useRouter(); 
-  const backimg =require("@/assets/images/back.png")
-const headerlogo =require("@/assets/images/headerlogo.png")
-const headerheart =require("@/assets/images/heart.png")
-const geopick =require("@/assets/images/geopick.png")
-const geodrop =require("@/assets/images/geodrop.png")
-const feature =require("@/assets/images/feature.png")
-const goodimg =require("@/assets/images/goodimg.png")
-const urgent =require("@/assets/images/urgent.png")
-const calculator =require("@/assets/images/calculator.png")
- const [modalVisible, setModalVisible] = useState(false);
-  const [reportVisible, setReportVisible] = useState(false);
-const [viewerVisible, setViewerVisible] = useState(false);
-const sampleImages = [
-  { uri: Image.resolveAssetSource(require('@/assets/images/react-logo.png')).uri },
-  { uri: Image.resolveAssetSource(require('@/assets/images/onfoot.png')).uri },
-  { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
-];
+
+// Services & Libs
+import { supabase } from '../../../lib/supabase';
+import OrderDispatch from '../../../services/OrderDispatch';
+
+// Assets
+const backimg = require("@/assets/images/back.png");
+const geopick = require("@/assets/images/geopick.png");
+const geodrop = require("@/assets/images/geodrop.png");
+const goods = require("@/assets/images/goods.png");
+const urgent = require("@/assets/images/urgent.png");
+
+const OrderView = () => {
+  const router = useRouter();
+  const { orderId } = useLocalSearchParams();
+
+  const [order, setOrder] = useState(null);
+  const [fareConfig, setFareConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+
+  // 1. Fetch Order & Fare Configuration
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // A. Fetch Order Details
+        const { data: orderData, error: orderError } = await supabase
+          .from('order')
+          .select('*')
+          .eq('order_id', orderId)
+          .single();
+
+        if (orderError) throw orderError;
+
+        // B. Fetch Fare Config (As requested)
+        // We usually fetch the active config or the one linked to the order if stored
+        const { data: configData, error: configError } = await supabase
+          .from('fare_configuration')
+          .select('*')
+          .eq('is_active', true)
+          .single();
+
+        if (configError) console.warn("Could not fetch fare config:", configError.message);
+
+        setOrder(orderData);
+        setFareConfig(configData);
+
+      } catch (err) {
+        Alert.alert("Error", "Order no longer available.");
+        router.back();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) fetchData();
+  }, [orderId]);
+
+  // 2. Handle Accept Logic (Race-Condition Safe)
+  const handleAccept = async () => {
+    if (!order) return;
+    setProcessing(true);
+
+    try {
+      // Get Current Courier ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Call the Service to Attempt Accept
+      const result = await OrderDispatch.attemptAcceptOrder(order.order_id, user.id);
+
+      if (result.success) {
+        Alert.alert("Success", "You have accepted the order!");
+        // Navigate to Delivery Tracking Screen
+        router.replace({
+          pathname: '/(courier)/home/deliverongoing',
+          params: { orderId: order.order_id }
+        });
+      } else {
+        Alert.alert("Too Late", result.message || "Order was taken by another driver.");
+        router.replace('/(courier)/home/index');
+      }
+
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3BF579" />
+      </View>
+    );
+  }
 
   return (
-
     <>
-          <Stack.Screen 
-            options={{
-              title: '',
-              headerShown: false,  
-            }}
-          />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.container}>
 
-          <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-  showsVerticalScrollIndicator={true}
-          >
-          <View  style={styles.container}>
-            <View style={styles.header}>
-                                      <Pressable style={styles.headerbutton}
-                                      onPress={()=>router.back()}
-                                      >
-                                      <Image  source={backimg} style={styles.backIcon}/>
-                                      </Pressable>
-            
-                                      <Image  source={headerlogo} style={styles.logo}/>
-            
-                                      <Pressable style={styles.headerbutton}
-                                      onPress={()=>{}}
-                                      >
-                                          <Image  source={headerheart} style={styles.heartIcon}/>  
-                                      </Pressable>
-                              </View> 
+          {/* Navbar */}
+          <View style={styles.header}>
+            <Pressable onPress={() => router.back()} style={styles.backButton}>
+              <Image source={backimg} style={styles.backIcon} />
+            </Pressable>
+            <Text style={styles.headerTitle}>Order Request</Text>
+            <View style={{width: 40}} />
+          </View>
 
+          <View style={styles.content}>
 
-            <View style={styles.mainContent}>
-               <View style={styles.orderinfo}>
-                          <View style={styles.info}>
-                            <Text style={styles.infotext}>
-                                Order For August 20,2025 1:00 PM
-                            </Text> 
-                            <Text style={styles.infosubtext}>
-                              Pasundo
-                            </Text>
-                          </View>
-                          <View style={styles.farecontainer}>
-                            <Text style={styles.totalfare}>₱ 20.00 
-                              in Cash
-                               </Text>
-                          </View>
-                        </View>
-               <View style={styles.locationcontainer1}>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={geopick} style={styles.geopickicon}/>
-                        <Text  style={styles.sublocationtext}>Zone 2 Upper Jasaan Misamis Oriental  </Text>
-                        </View>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={geodrop} style={styles.geodropicon}/>
-                        <Text style={styles.sublocationtext}>Zone 2 Jampason Jasaan Misamis Oriental  </Text>
-                        </View>
-                        </View>
-              <View style={styles.locationcontainer1}>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={feature} style={styles.geopickicon}/>
-                        </View>
-                         <View style={styles.viewimgcontainer}>
-                                    <Pressable style={styles.viewPhotos} onPress={()=> setViewerVisible(true)}>
-                                      <Text style={styles.viewPhotosText}>View Goods To Deliver Photos</Text>
-                                    </Pressable>
-                        
-                        
-                                    </View>
-                        </View>
-              <View style={styles.locationcontainer2}>
-                        <View style={styles.sublocationcontainer2}>
-                        <Image  source={feature} style={styles.geopickicon}/>
-                        <Text style={styles.sublocationtext2} >
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque in lacus quis lectus consequat dapibus ut ac nisi. Maecenas ultricies sit a
-
-                        </Text>
-                        </View>
-                         <View style={styles.sublocationcontainer2}>
-                        <Image  source={urgent} style={styles.geopickicon}/>
-                        <Text style={styles.sublocationtext2} >
-                         Ipa-Dali Deliver Bonus ₱ 20.00
-
-                        </Text>
-                        </View>
-                        </View>
-
-                         <View style={styles.optionbtn}>                 
-                                                      <View style={styles.optionItem}>
-                                                        <View style={styles.optionCircle}>
-                                                          <Pressable
-                                                          onPress={() => setModalVisible(true)}>
-                                                          <Image  source={calculator} style={styles.calculatoricon}
-                                                          /> 
-                                                          </Pressable>
-                                                        </View>
-                                                        <Text style={styles.optionLabel}>Delivery Fare</Text>
-                                                      </View>
-                                                    </View>
-               <View style={styles.remembercontainer}>
-                                            <View style={styles.recover}>
-                                          <Text style={{ color: '#FFFFFF', marginLeft: 1 }}>
-                                                Tap
-                                                <Text
-                                                  style={{ color: '#1976d2', textDecorationLine: 'none' }}
-                                                  onPress={() => router.push('terms')}
-                                                >
-                                                  {"  "}Request{"  "}
-                                                </Text>
-                                                and  you’re locked to this Task no new orders request until you Tap
-                                                <Text
-                                                  style={{ color: '#1976d2', textDecorationLine: 'none' }}
-                                                  onPress={() => router.push('terms')}
-                                                >
-                                                  {"  "} “Arrived.”
-                                                </Text>
-                                              </Text>
-                                          </View>
-                                        </View>
-
-
-              <Pressable style={styles.mainbutton}
-                          onPress={() => router.push('/(courier)/home/deliverongoing')}
-                            > 
-                            <Text style={styles.maintextbutton}>Request Order</Text>
-                            </Pressable>  
-
-
+            {/* Fare Card */}
+            <View style={styles.fareCard}>
+              <Text style={styles.fareTitle}>Estimated Earnings</Text>
+              <Text style={styles.fareAmount}>₱ {order.total_fare}</Text>
+              {order.bonus_charge_component > 0 && (
+                 <View style={styles.bonusTag}>
+                   <Image source={urgent} style={styles.iconTiny}/>
+                   <Text style={styles.bonusText}>Includes ₱{order.bonus_charge_component} Bonus</Text>
+                 </View>
+              )}
             </View>
 
-            
-                                    <Modal
-                                    animationType="slide"
-                                    transparent={true}
-                                    visible={modalVisible}
-                                    onRequestClose={() => {
-                                      Alert.alert('Modal has been closed.');
-                                      setModalVisible(!modalVisible);
-                                    }}>
-                                    <View style={styles.centeredView}>
-                                                  <View style={styles.modalView}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                                                      <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
-                                                        <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
-                                                      </Pressable>
-                                                      <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
-                                                    </View>
-                                                    <View style={{ marginBottom: 18 }}>
-                                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                        <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
-                                                        <Text style={{ color: '#fff' }}>₱20.00</Text>
-                                                      </View>
-                                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                        <Text style={{ color: '#b0c4d4' }}>Distance (1.8 km)</Text>
-                                                        <Text style={{ color: '#fff' }}>₱8.00</Text>
-                                                      </View>
-                                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                        <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
-                                                        <Text style={{ color: '#fff' }}>₱5.00</Text>
-                                                      </View>
-                                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                        <Text style={{ color: '#b0c4d4' }}>Goods Cost:</Text>
-                                                        <Text style={{ color: '#fff' }}>₱00.0</Text>
-                                                      </View>
-                                                      <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
-                                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                        <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
-                                                        <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>₱33.0</Text>
-                                                      </View>
-                                                    </View>
-                                                    <Pressable
-                                                      style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
-                                                      onPress={() => setModalVisible(false)}
-                                                    >
-                                                      <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
-                                                    </Pressable>
-                                                  </View>
-                                                </View>
-                                  </Modal>
-                        
-                                  <Modal
-                                    animationType="fade"
-                                    transparent={true}
-                                    visible={reportVisible}
-                                    onRequestClose={() => setReportVisible(false)}
-                                  >
-                                    <View style={styles.centeredView}>
-                                      <View style={styles.modalView}>
-                                        <Text style={styles.textStyle}>Report an Issue</Text>
-                                        <Text style={[styles.textStyle, { marginTop: 8 }]}>This is a placeholder modal.</Text>
-                                        <Pressable
-                                          style={[styles.button, styles.buttonClose]}
-                                          onPress={() => setReportVisible(false)}
-                                        >
-                                          <Text style={styles.textStyle}>Close</Text>
-                                        </Pressable>
-                                      </View>
-                                    </View>
-                                  </Modal>
-              <ImageViewing
-            images={sampleImages}
-            imageIndex={0}
-            visible={viewerVisible}
-            onRequestClose={() => setViewerVisible(false)}
-          />
+            {/* Details */}
+            <View style={styles.detailsContainer}>
+              <Text style={styles.sectionHeader}>Route Details</Text>
+
+              <View style={styles.locationRow}>
+                <Image source={geopick} style={styles.icon} />
+                <View style={styles.textBlock}>
+                   <Text style={styles.label}>Pickup</Text>
+                   <Text style={styles.address}>{order.pickup_address}</Text>
+                </View>
+              </View>
+
+              <View style={styles.locationRow}>
+                <Image source={geodrop} style={styles.icon} />
+                <View style={styles.textBlock}>
+                   <Text style={styles.label}>Dropoff</Text>
+                   <Text style={styles.address}>{order.dropoff_address}</Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.locationRow}>
+                <Image source={goods} style={styles.icon} />
+                <View style={styles.textBlock}>
+                   <Text style={styles.label}>Items</Text>
+                   <Text style={styles.address}>{order.other_details || 'No item description provided.'}</Text>
+                </View>
+              </View>
+
+              {/* Show Rate Config info if available (as requested) */}
+              {fareConfig && (
+                <Text style={styles.rateInfo}>
+                   Rate applied: ₱{fareConfig.time_rate_per_minute}/min • Comm: {fareConfig.platform_commission_percentage * 100}%
+                </Text>
+              )}
+            </View>
+
           </View>
-                                    </ScrollView>
+        </View>
+      </ScrollView>
 
-     </>
-  )
-}
-
-export default orderview
+      {/* Fixed Bottom Button */}
+      <View style={styles.footer}>
+        {processing ? (
+          <ActivityIndicator color="black" />
+        ) : (
+          <Pressable style={styles.acceptButton} onPress={handleAccept}>
+            <Text style={styles.acceptButtonText}>ACCEPT ORDER</Text>
+          </Pressable>
+        )}
+      </View>
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
-  container: {
-    
-    backgroundColor: '#141519',
-  },
-  mainContent: {
-    flex: 1,
-    padding: 24,
-    
-  },
-  header:{
-      flexDirection:'row',
-      alignItems:'center',
-      justifyContent:'space-between',
-      paddingHorizontal: 12,
-      paddingTop: 12,
-      marginTop: verticalScale(30),
-    },
-    header1:{
-    },
-    headerbutton:{
-      width:37,
-      height:36,
-      borderRadius: 10,
-      backgroundColor:'#22262F',
-      alignItems:'center',
-      justifyContent:'center',
-    },
-    backIcon:{
-      width:30,
-      height:30,
-      resizeMode:'contain',
-    },
-    logo:{
-      width:120,
-      height:28,
-      resizeMode:'contain',
-    },
-    heartIcon:{
-      width:20,
-      height:20,
-      resizeMode:'contain',
-    },
-    orderinfo:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    alignItems:'center',
-  },
-  info:{
-    width:'60%'
+  container: { flex: 1, backgroundColor: '#141519' },
+  loadingContainer: { flex: 1, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: verticalScale(40), marginBottom: 20 },
+  backButton: { padding: 10, backgroundColor: '#22262F', borderRadius: 12 },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  content: { paddingHorizontal: 20, paddingBottom: 100 },
 
-  },
-  infotext:{
-    fontFamily:'roboto',
-    fontWeight:'bold',
-    fontSize:21,
-    color:'#ffffff',
-    overflow:'hidden'
-  },
-  infosubtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:16,
-    color:'#8796AA',
-    overflow:'hidden'
+  fareCard: { backgroundColor: '#22262F', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#3BF579' },
+  fareTitle: { color: '#8796AA', fontSize: 14, textTransform: 'uppercase' },
+  fareAmount: { color: '#3BF579', fontSize: 36, fontWeight: 'bold', marginVertical: 5 },
+  bonusTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(59, 245, 121, 0.1)', padding: 5, borderRadius: 5 },
+  bonusText: { color: '#3BF579', fontSize: 12, marginLeft: 5, fontWeight: 'bold' },
+  iconTiny: { width: 12, height: 12 },
 
-  },
-  farecontainer:{
-    flexDirection:'row',
-    backgroundColor:'#192028',
-    width:'40%',
-    alignItems:'center',
-    justifyContent:'space-between',
-    borderRadius:12,
-    paddingHorizontal:12,
-    paddingVertical:10,
-  },
-  totalfare:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:20,
-    color:'#87AFB9',
-    overflow:'hidden',
-    marginRight:8,
+  detailsContainer: { backgroundColor: '#22262F', borderRadius: 16, padding: 20 },
+  sectionHeader: { color: '#87AFB9', fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
+  locationRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+  icon: { width: 24, height: 24, marginRight: 15, resizeMode: 'contain' },
+  textBlock: { flex: 1 },
+  label: { color: '#8796AA', fontSize: 12, marginBottom: 2 },
+  address: { color: 'white', fontSize: 16 },
+  divider: { height: 1, backgroundColor: '#363D47', marginVertical: 10 },
+  rateInfo: { color: '#555', fontSize: 10, textAlign: 'center', marginTop: 10 },
 
-  },
-  locationcontainer1:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer1:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-  locationcontainer2:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer2:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-   sublocationtext2:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  locationcontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-  sublocationtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  geopickicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  geodropicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  goodsicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-   viewPhotos:{
-    marginTop:16,
-    paddingVertical:10,
-    paddingHorizontal:14,
-    backgroundColor:'#22262F',
-    borderRadius:10,
-  },
-  viewPhotosText:{
-    color:'#87AFB9',
-    fontSize:14,
-    textAlign:'center',
-  },
-mainbutton:{
-    flexDirection:'column',
-    width:'100%',
-    maxWidth:1024,
-    padding:10,
-    justifyContent:"center",
-    alignItems:'center',
-    marginHorizontal:'auto',
-    pointerEvents:'auto',
-    backgroundColor:'#3BF579',
-    borderRadius: 10,
-     marginTop: verticalScale(15),
-    },
-    maintextbutton:{
-    fontSize:18,
-    color:'black',
-    fontFamily: 'Roboto-Bold', 
-    },
-    remembercontainer:{
-flexDirection: 'row',
-   // pushes the two items apart
-  width: '90%',                    // same width as your inputs
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#141519' },
+  acceptButton: { backgroundColor: '#3BF579', padding: 16, borderRadius: 12, alignItems: 'center' },
+  acceptButtonText: { color: '#141519', fontSize: 18, fontWeight: 'bold' }
+});
 
-  marginTop: verticalScale(28),
- 
-},
-recover:{
-flexDirection:'row',
-alignItems: 'center',
-},
-optionbtn:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    gap:48,
-    marginTop:16,
-  },
-  optionItem:{
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  optionCircle:{
-    width:72,
-    height:72,
-    borderRadius:36,
-    backgroundColor:'#22262F',
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  cancelicon:{
-    width:34,
-    height:34,
-    resizeMode:'contain',
-  },
-  reporticon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  calculatoricon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  optionLabel:{
-    marginTop:6,
-    color:'#8796AA',
-    textAlign:'center',
-    fontSize:12,
-  },
-  optionbtn:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    gap:48,
-    marginTop:16,
-  },
-  optionItem:{
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  optionCircle:{
-    width:72,
-    height:72,
-    borderRadius:36,
-    backgroundColor:'#22262F',
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  cancelicon:{
-    width:34,
-    height:34,
-    resizeMode:'contain',
-  },
-  reporticon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  calculatoricon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  optionLabel:{
-    marginTop:6,
-    color:'#8796AA',
-    textAlign:'center',
-    fontSize:12,
-  },
-  
-   modalView: {
-    margin: 20,
-    width: '80%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  button: {
-  
-  },
-  buttonOpen: {
-    
- 
-  },
-  buttonClose: {
-    backgroundColor: '#2196F3',
-  },
-  textStyle: {
-    color: '#7398A9',
-    fontFamily: 'Roboto-regular',
-
-    textAlign: 'center',
-    fontSize: 15,
-    flex: 1,
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-   centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-})
+export default OrderView;

@@ -1,527 +1,321 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { IconButton, Menu } from 'react-native-paper';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Alert,
+  Modal
+} from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import supabase from '../../../lib/supabase';
 
-const deliveryprofile = () => {
-  
-      const backimg = require("@/assets/images/back.png");
-      const goodimg =require("@/assets/images/goodimg.png")
-      const vehicle =require("@/assets/images/vehicle.png")
-        const platenum =require("@/assets/images/platenum.png")
-        const theme =require("@/assets/images/theme.png")
-        const feature =require("@/assets/images/feature.png")
-        const geopick =require("@/assets/images/geopick.png")
-        const geodrop =require("@/assets/images/geodrop.png")
-        const person =require("@/assets/images/person.png")
-        const money =require("@/assets/images/money.png")
-        const category =require("@/assets/images/category.png")
-         const goods =require("@/assets/images/goods.png")
-         const urgent =require("@/assets/images/urgent.png")
+// Assets
+const backimg = require("@/assets/images/back.png");
+const geopick = require("@/assets/images/geopick.png");
+const geodrop = require("@/assets/images/geodrop.png");
+const goods = require("@/assets/images/goods.png");
+const person = require("@/assets/images/person.png");
+const vehicle = require("@/assets/images/vehicle.png");
+const money = require("@/assets/images/money.png");
+const calculator = require("@/assets/images/calculator.png"); // New Asset
 
-          
-      const [modalVisible, setModalVisible] = useState(false);
-       const [modalVisible1, setModalVisible1] = useState(false);
-  
-      const{id,from} = useLocalSearchParams();
-      const router = useRouter();
-  
-      const handleBack=()=>{
-        if (from === 'order'){
-          router.replace('/(admin)/order');
-        } else{
-          router.replace('/(admin)/customer');
-        }
-      };
-  
-     const [open, setOpen] = useState(false);
-          const [value, setValue] = useState(null);
-          const [items, setItems] = useState([
-            {label: 'Fraudulent Activity', value: '1'},
-            {label: 'Customer Complaints', value: '2'},
-            {label: 'Violation of Policies', value: '3'},
-            {label: 'Unprofessional Behavior', value: '4'},
-            {label: 'Fake/Invalid Documents', value: '5'},
-            {label: 'Unprofessional Behavior', value: '6'},
-            {label: 'Repeated Late Deliveries', value: '7'},
-             {label: 'Tampering with Orders', value: '8'},
-          ]);
-  
-  
-  
-  const [visibleMenuId, setVisibleMenuId] = useState(null);
-      const openMenu = (id) => {
-        setVisibleMenuId(prev => prev === id ? null : id);
-      };
-      const closeMenu = () => setVisibleMenuId(null);
-    
-      
-    
-      const handleFare = (id) => {
-        console.log('Suspend couriesr:', id);
-        setModalVisible(true);
-        closeMenu();
-      };
+export default function OrderDetails() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false); // Modal State
+
+  useEffect(() => {
+    fetchOrderDetails();
+  }, [id]);
+
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true);
+      // Calling the updated RPC
+      const { data, error } = await supabase.rpc('get_admin_order_details', {
+        target_order_id: id
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setOrder(data[0]);
+      } else {
+        Alert.alert("Error", "Order not found");
+        router.back();
+      }
+    } catch (err) {
+      console.error("Fetch Error:", err.message);
+      Alert.alert("Error", "Could not load order details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0AB3FF" />
+      </View>
+    );
+  }
+
+  if (!order) return null;
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return '#2ECC71';
+      case 'cancelled': return '#E74C3C';
+      case 'ongoing': return '#3498DB';
+      case 'pending': return '#F1C40F';
+      default: return '#BDC3C7';
+    }
+  };
+
   return (
-     <>
-      <Stack.Screen
-        options={{
-          headerTitle: `Profile: ${id}`,
-        }}
-      />
-   <View style={styles.container}>
-         <View style={styles.header}>
-           <Pressable onPress={handleBack}>
-             <Image source={backimg} style={styles.backicon}/>
-           </Pressable>
-         
-           <Text style={styles.title}>Delivery Detail</Text>
-           <View style={styles.placeholder}/>
-         </View>
-         <View style={styles.separator} />
-         <View style={styles.mainContent}>
+    <View style={styles.container}>
 
-           <View style={styles.mainprofilecontainer}>
-            <View   style={{flexDirection:'row', justifyContent:'space-between'}}>
-            <View style={styles.columnprofile}>
-                                    
-                                          <Text  style={{fontFamily:'Roboto-Bold', fontSize:20, color:'#ffffff',marginBottom:'3'}}>
-                                        Order Delivery
-                                      </Text>
-                                      <Text style={{fontFamily:'Roboto-Regular', fontSize:13, color:'#ffffff',marginBottom:'9'}}>
-                                         Pasundo
-                                        </Text>
-                                         <Text style={{fontFamily:'Roboto-Regular', fontSize:13, color:'#ffffff'}}>
-                                         Total: ₱20.00
-                                        </Text>
-                                  </View>
-                                     <View style={styles.rowprofile}>
-                                      <View style={{ flexDirection: 'row', gap: 8,marginTop: 3 }}>
-                                     
-                                          <Text style={{fontFamily:'Roboto-Regular', fontSize:15, color:'#ffffff'}}>
-                                        Active
-                                      </Text>
-                                        <Menu
-                  visible={visibleMenuId === id}
-                  onDismiss={closeMenu}
-                  anchor={
-                    <IconButton
-                      icon="dots-vertical"
-                      iconColor="#0AB3FF"
-                      size={20}
-                      style={{marginTop: -5}}
-                      onPress={() => openMenu(id)}
-                    />
-                  }>
-                  
-                  <Menu.Item onPress={() => handleFare(id)} title="Fare Detail" />
-                </Menu>
-       
-                                      </View>
-   
-                                      </View> 
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Image source={backimg} style={styles.backIcon} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Order #{order.order_id}</Text>
+        <View style={{width: 40}} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+
+        {/* Status Card */}
+        <View style={[styles.card, { borderColor: getStatusColor(order.status_name) }]}>
+          <Text style={styles.label}>Status</Text>
+          <Text style={[styles.statusText, { color: getStatusColor(order.status_name) }]}>
+            {order.status_name}
+          </Text>
+          <Text style={styles.dateText}>{new Date(order.created_at).toLocaleString()}</Text>
+        </View>
+
+        {/* Locations */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Route</Text>
+
+          <View style={styles.row}>
+            <Image source={geopick} style={styles.icon} />
+            <View style={styles.infoBlock}>
+               <Text style={styles.label}>Pickup</Text>
+               <Text style={styles.value}>{order.pickup_address}</Text>
             </View>
-                         
-                                  </View>
-                        <View style={styles.infoprofilecontainer}>
-                                                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={geopick} style={styles.geopickicon}/>
-                                                          <Text  style={styles.sublocationtext}>Bobuntogan Zone 4 Misamis Oriental</Text>
-                                                          </View>
-                                                            
-                                                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={geodrop} style={styles.geopickicon}/>
-                                                          <Text style={styles.sublocationtext}>Jampason Jasaan Zone 2</Text>
-                                                          </View>
-                                                           
-                                                          </View>
+          </View>
 
-                           <View style={styles.infoprofilecontainer}>
-                                                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={person} style={styles.geopickicon}/>
-                                                          <Text  style={styles.sublocationtext}>Kent Dominic</Text>
-                                                          </View>
-                                                           
-                                                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={vehicle} style={styles.geopickicon}/>
-                                                          <Text style={styles.sublocationtext}>James Juntilla</Text>
-                                                          </View>
-                                                               
-                                                          </View>
-                                  
-                                   <View style={styles.licenseprofilecontainer}>
-                                    <View style={styles.sublocationcontainer}>
-                                                          <Image  source={goodimg} style={styles.licenseicon}/>
-                                                          <Pressable
-                                                           onPress={() => setModalVisible1(true)}>
-                                                             <Text  style={styles.sublocationtext1}>View Delivered Items </Text>
-                                                          </Pressable>
-                                                          
-                                                          </View>
-                                  </View>
-                        <View style={styles.vehicleprofilecontainer}>                   
-                              <View style={{flexDirection:'column',}}>
-                                      <View style={styles.sublocationcontainer}>
-                                                          <Image  source={category} style={styles.geopickicon}/>
-                                                          <Text  style={styles.sublocationtext}>School & Office Supplies</Text>
-                                                          </View>
-                                                          
-                                                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={money} style={styles.geopickicon}/>
-                                                          <Text style={styles.sublocationtext}>Cash On Delivery </Text>
-                                                          </View>
-                              </View> 
-                              
-                          <View style={styles.sublocationcontainer}>
-                                                          <Image  source={vehicle} style={styles.geopickicon}/>
-                                                          <Text  style={styles.sublocationtext}>Motorcycle</Text>
-                                                          </View>
-                                                         
-                              <View style={styles.sublocationcontainer2}>
-                                                      <Image  source={feature} style={styles.geopickicon}/>
-                                                      <Text style={styles.sublocationtext2} >
-                                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque in lacus quis lectus 
-                                                        consequat dapibus ut ac nisi. Maecenas ultricies sit a
-                                                      </Text>
-                                                      </View>
-                                  <View style={styles.sublocationcontainer2}>
-                                                      <Image  source={urgent} style={styles.geopickicon}/>
-                                                      <Text style={styles.sublocationtext2} >
-                                                       Ipa-Dali Deliver Bonus ₱20.00
-                                                      </Text>
-                                                      </View>
-                         
-                            </View>                              
+          <View style={styles.divider} />
 
+          <View style={styles.row}>
+            <Image source={geodrop} style={styles.icon} />
+            <View style={styles.infoBlock}>
+               <Text style={styles.label}>Dropoff</Text>
+               <Text style={styles.value}>{order.dropoff_address}</Text>
+            </View>
+          </View>
 
-                                                            
+          <View style={styles.metaRow}>
+             <Text style={styles.metaText}>Distance: {order.distance} km</Text>
+             <Text style={styles.metaText}>Est. Time: {order.duration} min</Text>
+          </View>
+        </View>
 
+        {/* People Involved */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Parties</Text>
 
+          <View style={styles.row}>
+            <Image source={person} style={styles.icon} />
+            <View style={styles.infoBlock}>
+               <Text style={styles.label}>Customer</Text>
+               <Text style={styles.value}>{order.customer_name}</Text>
+               <Text style={styles.subValue}>{order.customer_phone}</Text>
+            </View>
+          </View>
 
+          <View style={styles.divider} />
 
+          <View style={styles.row}>
+            <Image source={vehicle} style={styles.icon} />
+            <View style={styles.infoBlock}>
+               <Text style={styles.label}>Courier</Text>
+               <Text style={styles.value}>{order.courier_name}</Text>
+               <Text style={styles.subValue}>
+                 {order.vehicle_name} • {order.plate_number}
+               </Text>
+            </View>
+          </View>
+        </View>
 
+        {/* Goods & Financials (With Modal Trigger) */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Details</Text>
 
+          <View style={styles.row}>
+            <Image source={goods} style={styles.icon} />
+            <View style={styles.infoBlock}>
+               <Text style={styles.label}>Category: {order.category_name}</Text>
+               <Text style={styles.value}>{order.goods_details || 'No description'}</Text>
+            </View>
+          </View>
 
+          <View style={styles.divider} />
 
+          <View style={[styles.row, {alignItems: 'center', justifyContent: 'space-between'}]}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Image source={money} style={styles.icon} />
+                <View>
+                    <Text style={styles.label}>Total Fare</Text>
+                    <Text style={[styles.value, {color: '#0AB3FF', fontSize: 20}]}>
+                        ₱ {order.total_fare}
+                    </Text>
+                </View>
+            </View>
 
-                                  
-                                  
-          
-            </View>  
-                              <Modal
-                                animationType="slide"
-                                transparent={true}
-                                visible={modalVisible1}
-                                onRequestClose={() => {
-                                  Alert.alert('Modal has been closed.');
-                                  setModalVisible1(!modalVisible1);
-                                }}>
-                                  
-                                <View style={styles.centeredView}>
-                               
-                               
-                                    <View style={styles.modalView}>
-                                      <Pressable
-                                        style={{ alignSelf: 'flex-start', marginBottom: 8 }}
-                                        onPress={() => setModalVisible1(false)}
-                                      >
-                                         <Image  source={backimg} style={{ width:40, height:40, resizeMode:'contain'}}/>
-                                        
-                                      </Pressable>
-                                    </View>
-                                    
-                                </View>
-                                
-                                
-                                
-                                
-                              </Modal>       
+            {/* Breakdown Button */}
+            <Pressable onPress={() => setModalVisible(true)} style={styles.breakdownButton}>
+               <Image source={calculator} style={styles.smallIcon} />
+               <Text style={styles.breakdownText}>Breakdown</Text>
+            </Pressable>
+          </View>
+        </View>
 
-                              
-                                    
-                               <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() => {
-                      Alert.alert('Modal has been closed.');
-                      setModalVisible(!modalVisible);
-                    }}>
-                    <View style={styles.centeredView}>
-                                  <View style={styles.modalView1}>
-                                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                                                                               <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
-                                                                                 <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
-                                                                               </Pressable>
-                                                                               <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
-                                                                             </View>
-                                                                             <View style={{ marginBottom: 18 }}>
-                                                                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                                                 <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
-                                                                                 <Text style={{ color: '#fff' }}>₱20.00</Text>
-                                                                               </View>
-                                                                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                                                 <Text style={{ color: '#b0c4d4' }}>Distance (1.8 km)</Text>
-                                                                                 <Text style={{ color: '#fff' }}>₱8.00</Text>
-                                                                               </View>
-                                                                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                                                 <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
-                                                                                 <Text style={{ color: '#fff' }}>₱5.00</Text>
-                                                                               </View>
-                                                                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                                                 <Text style={{ color: '#b0c4d4' }}>Goods Cost:</Text>
-                                                                                 <Text style={{ color: '#fff' }}>₱00.0</Text>
-                                                                               </View>
-                                                                               <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
-                                                                               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                                                 <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
-                                                                                 <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>₱20.00</Text>
-                                                                               </View>
-                                                                             </View>
-                                                                             <Pressable
-                                                                               style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
-                                                                               onPress={() => setModalVisible(false)}
-                                                                             >
-                                                                               <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
-                                                                             </Pressable>
-                                                                           
-                                      
-                                      
-                                    
-                                  </View>
-                                </View>
-                  </Modal>
-              
-           </View>
-          
-             
-    </>
-  )
-};
+        {/* Proof Image */}
+        {order.goods_receivedimg && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Proof of Delivery</Text>
+            <Image
+              source={{ uri: order.goods_receivedimg }}
+              style={styles.proofImage}
+              resizeMode="cover"
+            />
+          </View>
+        )}
 
-export default deliveryprofile;
+      </ScrollView>
 
+      {/* FARE BREAKDOWN MODAL */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Fare Breakdown</Text>
+
+            <View style={styles.breakdownContainer}>
+                <View style={styles.breakdownRow}>
+                    <Text style={styles.breakdownLabel}>Base Fare</Text>
+                    <Text style={styles.breakdownValue}>₱ {order.base_fare || '0.00'}</Text>
+                </View>
+                <View style={styles.breakdownRow}>
+                    <Text style={styles.breakdownLabel}>Distance Charge</Text>
+                    <Text style={styles.breakdownValue}>₱ {order.distance_charge || '0.00'}</Text>
+                </View>
+                {Number(order.time_charge) > 0 && (
+                    <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Time Charge</Text>
+                        <Text style={styles.breakdownValue}>₱ {order.time_charge}</Text>
+                    </View>
+                )}
+                {Number(order.bonus) > 0 && (
+                    <View style={styles.breakdownRow}>
+                        <Text style={[styles.breakdownLabel, {color: '#2ECC71'}]}>Bonus (Tip)</Text>
+                        <Text style={[styles.breakdownValue, {color: '#2ECC71'}]}>+ ₱ {order.bonus}</Text>
+                    </View>
+                )}
+                 {/* Admin Only View: Commission/Penalty */}
+                <View style={styles.divider} />
+                <View style={styles.breakdownRow}>
+                    <Text style={[styles.breakdownLabel, {fontSize: 12}]}>Platform Commission</Text>
+                    <Text style={[styles.breakdownValue, {fontSize: 12, color: '#E74C3C'}]}>- ₱ {order.commission}</Text>
+                </View>
+
+                <View style={[styles.breakdownRow, styles.totalRow]}>
+                    <Text style={[styles.breakdownLabel, styles.activeText]}>Total Customer Paid</Text>
+                    <Text style={[styles.breakdownValue, styles.activeText]}>₱ {order.total_fare}</Text>
+                </View>
+            </View>
+
+            <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+              <Text style={{color: 'white', fontWeight: 'bold'}}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#141519',
-  },
+  container: { flex: 1, backgroundColor: '#141519' },
+  loadingContainer: { flex: 1, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center' },
+
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-   gap:20,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    marginTop: verticalScale(30),
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, marginTop: verticalScale(40), marginBottom: 20
   },
-  separator: {
-    height: 1,
-    backgroundColor: '#363D47',
-    width: '100%',
-    marginBottom: 1,
-  },
-   separator1: {
-    height: 1,
-    backgroundColor: '#363D47',
-    width: '100%',
-    marginBottom: 10,
-  },
-  backicon: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain',
-  },
-      mainContent: {
-        flex: 1,
-        padding: 15,
-        marginTop: verticalScale(1),
-      },
-      title: {
-        fontFamily: 'Roboto-Bold',
-        fontSize: 24,
-        color: '#0AB3FF',
-        marginBottom:9
-      },
-      placeholder: {
-    width: 24,  
-  },
-    mainprofilecontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-     height:'12%',
-  },
-  infoprofilecontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:20,
-    height:'13%',
-  },
-   sublocationcontainer:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:15,
-  },
-   sublocationtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:15,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  }, 
-  
-   sublocationtext1:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-    marginTop:2,
-   
-  },
-  sublocationcontainer2:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-   sublocationtext2:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:16,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  geopickicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  licenseicon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-    licenseprofilecontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:16,
-    height:'8%',
-   
-  },
-   vehicleprofilecontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:18,
-    height:'35%',
-  },
-   modalView: {
-    margin: 20,
-    width: '95%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-   modalView1: {
-    margin: 20,
-    width: '95%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-  filterbtn1:{
-    flex: 1,
-    paddingHorizontal: 5,
-    paddingVertical: 5,
-  },
-  dropdown1: {
-    backgroundColor: '#22262F',
-    borderColor: '#22262F',
-    borderWidth: 0,
-    borderRadius: 8,
-    minHeight: 40,
-  },
-  dropdownText1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  placeholderText1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  dropdownContainer1: {
-    backgroundColor: '#22262F',
-    borderColor: '#22262F',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginTop: 5,
-  },
-  selectedItemContainer1: {
-    backgroundColor: '#4B5563',
-  },
-  selectedItemLabel1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Medium',
-  },
-  columnprofile:{
-    flexDirection:'column',
-   
-    
-  },
-  rowprofile:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    
+  backButton: { padding: 8, backgroundColor: '#22262F', borderRadius: 10 },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  headerTitle: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+
+  scrollContent: { padding: 15, paddingBottom: 50 },
+
+  card: {
+    backgroundColor: '#22262F', borderRadius: 16, padding: 20,
+    marginBottom: 15, borderWidth: 1, borderColor: '#363D47'
   },
 
+  sectionTitle: { color: '#8796AA', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15 },
+  divider: { height: 1, backgroundColor: '#363D47', marginVertical: 15 },
+
+  row: { flexDirection: 'row', alignItems: 'flex-start' },
+  icon: { width: 24, height: 24, resizeMode: 'contain', marginRight: 15, marginTop: 2 },
+  infoBlock: { flex: 1 },
+
+  label: { color: '#8796AA', fontSize: 12, marginBottom: 2 },
+  value: { color: 'white', fontSize: 16, fontWeight: '500' },
+  subValue: { color: '#555', fontSize: 14, marginTop: 2 },
+
+  statusText: { fontSize: 24, fontWeight: 'bold', marginTop: 5 },
+  dateText: { color: '#555', fontSize: 12, marginTop: 5 },
+
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#363D47' },
+  metaText: { color: '#0AB3FF', fontSize: 14, fontWeight: 'bold' },
+
+  proofImage: { width: '100%', height: 200, borderRadius: 12, marginTop: 10 },
+
+  // Breakdown Button
+  breakdownButton: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#192028',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#363D47'
+  },
+  smallIcon: { width: 16, height: 16, marginRight: 5, tintColor: '#87AFB9' },
+  breakdownText: { color: '#87AFB9', fontSize: 12, fontWeight: 'bold' },
+
+  // Modal Styles
+  centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' },
+  modalView: { margin: 20, width: '85%', backgroundColor: '#363D47', borderRadius: 20, padding: 25, alignItems: 'center', shadowColor: '#000', elevation: 5 },
+  modalTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 20 },
+  breakdownContainer: { width: '100%' },
+  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  breakdownLabel: { color: '#ccc', fontSize: 14 },
+  breakdownValue: { color: 'white', fontSize: 14, fontWeight: 'bold' },
+  totalRow: { borderTopWidth: 1, borderColor: '#444', paddingTop: 10, marginTop: 5 },
+  activeText: { color: '#0AB3FF', fontSize: 16 },
+  closeBtn: { marginTop: 20, backgroundColor: '#22262F', paddingVertical: 10, paddingHorizontal: 30, borderRadius: 8 },
 });
-

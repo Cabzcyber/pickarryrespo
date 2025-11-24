@@ -1,298 +1,129 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
-import { Searchbar } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+
+// Hooks
+import { useCourierDispatch } from '../../../hooks/useCourierDispatch';
+
 export default function CourierHome() {
-   const router = useRouter();
-    const backimg = require("@/assets/images/back.png");
-    const headerlogo = require("@/assets/images/headerlogo.png");
-    const headerheart = require("@/assets/images/heart.png");
-    const heart = require("@/assets/images/heart.png");
-    const money = require("@/assets/images/money.png");
-    const time = require("@/assets/images/time.png");
-    const delete1 = require("@/assets/images/delete.png");
-    const geopick = require("@/assets/images/geopick.png");
-    const geodrop = require("@/assets/images/geodrop.png");
-    const goods = require("@/assets/images/goods.png");
-    const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(null);
-    const [items, setItems] = useState([
-      {label: 'Pasundo', value: 'Pasundo'},
-      {label: 'Pasugo', value: 'Pasugo'},
-      {label: 'Food & Beverages', value: 'Food & Beverages'},
-      {label: 'Documents & Papers', value: 'Documents & Papers'},
-      {label: 'School & Office Supplies', value: 'School & Office Supplies'},
-      {label: 'Clothing & Apparel', value: 'Clothing & Apparel'},
-      {label: 'Electronics & Gadgets', value: 'Electronics & Gadgets'},
-      {label: 'Household & Hardware', value: 'Household & Hardware'},
-      {label: 'Medicines & Health Products', value: 'Medicines & Health Products'},
-      {label: 'Others / Miscellaneous', value: 'Others / Miscellaneous'},
-    ]);
-    const [searchQuery, setSearchQuery] = useState('');
-  
+  const router = useRouter();
+
+  // 1. Use the Dispatch Hook to get real-time open orders
+  const { openOrders, loading, refreshOrders } = useCourierDispatch();
+
+  // State for Pull-to-Refresh
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshOrders();
+    setRefreshing(false);
+  };
+
+  // Assets
+  const headerlogo = require("@/assets/images/headerlogo.png");
+  const money = require("@/assets/images/money.png");
+  const geopick = require("@/assets/images/geopick.png");
+  const geodrop = require("@/assets/images/geodrop.png");
+
+  // 2. Render Single Order Item
+  const renderItem = ({ item }) => (
+    <View style={styles.orderCard}>
+      {/* Header: Order ID & Fare */}
+      <View style={styles.cardHeader}>
+        <Text style={styles.orderId}>Order #{item.order_id}</Text>
+        <View style={styles.fareBadge}>
+          <Image source={money} style={styles.moneyIcon} />
+          <Text style={styles.fareText}>₱{item.total_fare}</Text>
+        </View>
+      </View>
+
+      {/* Locations */}
+      <View style={styles.locationContainer}>
+        <View style={styles.locationRow}>
+          <Image source={geopick} style={styles.iconSmall} />
+          <Text style={styles.locationText} numberOfLines={1}>{item.pickup_address}</Text>
+        </View>
+        <View style={styles.locationRow}>
+          <Image source={geodrop} style={styles.iconSmall} />
+          <Text style={styles.locationText} numberOfLines={1}>{item.dropoff_address}</Text>
+        </View>
+      </View>
+
+      {/* 3. ACTION BUTTON: Navigate to Order View instead of direct accept */}
+      <Pressable
+        style={styles.viewButton}
+        onPress={() => router.push({
+          pathname: '/(courier)/home/orderview',
+          params: { orderId: item.order_id }
+        })}
+      >
+        <Text style={styles.viewButtonText}>View Details & Accept</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-    <View style={styles.header}>     
-      <Image  source={headerlogo} style={styles.logo}/>
-    </View> 
-    <View style={styles.mainContent}>
-      <View style={styles.filtercontainer}>
-        <View style={styles.searchcontainer}>
-          <Searchbar
-            placeholder="Search orders..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchbar}
-            iconColor="#0AB3FF"
-            inputStyle={styles.searchInput}
-            placeholderTextColor="#0AB3FF"
-          />
-        </View>
-
-        <View style={styles.filterbtn}>
-          <DropDownPicker
-            open={open}
-            value={value}
-            items={items}
-            setOpen={setOpen}
-            setValue={setValue}
-            setItems={setItems}
-            placeholder="Category"
-            style={styles.dropdown}
-            textStyle={styles.dropdownText}
-            placeholderStyle={styles.placeholderText}
-            dropDownContainerStyle={styles.dropdownContainer}
-            selectedItemContainerStyle={styles.selectedItemContainer}
-            selectedItemLabelStyle={styles.selectedItemLabel}
-          />
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <Image source={headerlogo} style={styles.logo} />
       </View>
 
-      <View style={styles.ordercontent}>
-        <View style={styles.ordercard}>
-          <View style={styles.orderinfo}>
-            {/* Product info at the top with action buttons */}
-            <View style={styles.productRow}>
-              <View style={styles.productInfo}>
-                <Image source={goods} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>  Iced Coffee Macha 2 Cups</Text>
-                  
-                </View>
-                <View style={styles.actionButtons}>
-                  
-                  
-                </View>
-              </View>
-              <View style={styles.ordertext}>
-                <Image source={geopick} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>Brewbox Jasaan Plaza</Text>
-              </View>
-              <View style={styles.ordertext}>
-                <Image source={geodrop} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>Bobuntugan Zone 4</Text>
-              </View>
-              <View style={styles.ordertext}>
-                <Image source={money} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>200.00 Cash on Delivery</Text>
-              </View>
-              <View style={styles.ordertext}>
-                <Image source={time} style={styles.ordericon}/>
-                <Text style={styles.ordersubtext}>Aug 10,2025 1:00 PM</Text>
-              </View>
-              <View style={styles.orderbtn}>
-                <Pressable style={styles.mainbutton}
-                                        onPress={()=>router.push('/(courier)/home/orderview')}
-                                        > 
-                                           <Text style={styles.maintextbutton}>View</Text>
-                                              </Pressable>  
-              </View>
-            </View>
-        </View>
+      <View style={styles.content}>
+        <Text style={styles.title}>Available Orders</Text>
+
+        {loading && !refreshing ? (
+          <ActivityIndicator size="large" color="#3BF579" style={{marginTop: 50}} />
+        ) : (
+          <FlatList
+            data={openOrders}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.order_id.toString()}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3BF579" />
+            }
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No active orders in your area.</Text>
+            }
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        )}
       </View>
     </View>
-  </View>
-
   );
 }
 
 const styles = StyleSheet.create({
-  container:{
-    flex: 1,
-      backgroundColor: '#141519',
-
-  },
-  header:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    marginTop: verticalScale(30),
-  },
-  header1:{
-  },
-  logo:{
-    width:120,
-    height:28,
-    resizeMode:'contain',
-  },
-  mainContent:{
-    flex: 1,
+  container: { flex: 1, backgroundColor: '#141519' },
+  header: { alignItems: 'center', marginTop: verticalScale(40), marginBottom: 20 },
+  logo: { width: 120, height: 28, resizeMode: 'contain' },
+  content: { flex: 1, paddingHorizontal: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 15 },
+  orderCard: {
+    backgroundColor: '#22262F',
+    borderRadius: 12,
     padding: 15,
-  },
-  filtercontainer:{
-    backgroundColor:'#363D47',
-    borderColor:'#363D47',
-    borderWidth:1,
-    borderRadius:11,
-    width:'100%',
-    height:'auto',
-    marginTop: verticalScale(20),
-    padding: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  searchcontainer:{
-    flex: 2,
-    paddingHorizontal: 5,
-  },
-  searchbar:{
-    backgroundColor: '#22262F',
-    borderRadius: 8,
-    height: 40,
-  },
-  searchInput:{
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-    minHeight: 0,
-  },
-  filterbtn:{
-    flex: 1,
-    paddingHorizontal: 5,
-    paddingVertical: 5,
-  },
-  dropdown: {
-    backgroundColor: '#22262F',
-    borderColor: '#22262F',
-    borderWidth: 0,
-    borderRadius: 8,
-    minHeight: 40,
-  },
-  dropdownText: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  placeholderText: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  dropdownContainer: {
-    backgroundColor: '#22262F',
-    borderColor: '#4B5563',
+    marginBottom: 15,
     borderWidth: 1,
+    borderColor: '#363D47'
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  orderId: { color: '#8796AA', fontWeight: 'bold', fontSize: 16 },
+  fareBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#192028', padding: 5, borderRadius: 8 },
+  moneyIcon: { width: 16, height: 16, marginRight: 5 },
+  fareText: { color: '#3BF579', fontWeight: 'bold' },
+  locationContainer: { gap: 8, marginBottom: 15 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconSmall: { width: 18, height: 18, resizeMode: 'contain' },
+  locationText: { color: 'white', fontSize: 14, flex: 1 },
+  viewButton: {
+    backgroundColor: '#0AB3FF',
+    padding: 12,
     borderRadius: 8,
-    marginTop: 5,
+    alignItems: 'center'
   },
-  selectedItemContainer: {
-    backgroundColor: '#4B5563',
-  },
-  selectedItemLabel: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Medium',
-  },
-  ordercontent:{
-    flexDirection:'column',
-    justifyContent:'center',
-    alignItems:'center',
-    padding:1,
-    marginTop: verticalScale(-50),
-  },
-  ordercard:{
-    width:'100%',
-    height:'52%',
-    backgroundColor:'#363D47',
-    borderColor:'#363D47',
-    borderRadius:14,
-  },
-orderinfo:{
-flexDirection:'column',
-padding:20
-
-},
-productRow:{
-  flexDirection:'row',
-  justifyContent:'space-between',
-  alignItems:'center',
-  marginBottom:15,
-},
-productInfo:{
-  flexDirection:'row',
-  alignItems:'center',
-  flex:1,
-},
-actionButtons:{
-  flexDirection:'row',
-  gap:10,
-},
-actionButton:{
-  padding:5,
-},
-actionIcon:{
-  width:20,
-  height:20,
-  resizeMode:'contain',
-},
-orderbtn:{
-flexDirection:'row',
-justifyContent:'flex-end',
-marginTop:-45,
-},
-ordertext:{
-  flexDirection:'row',
-  alignItems:'flex-start',
-  gap:10,
-  marginBottom:12,
-},
-ordersubtext:{
-fontFamily:'Roboto-Light',
-fontSize:17,
-fontWeight:'300',
-color:'#87AFB9',
-},
-ordericon:{
-  width:22,
-  height:22,
-  resizeMode:'contain',
-  marginRight:10,
-},
-ordersubbtn:{
-flexDirection:'row'
-
-
-},
-mainbutton:{
-  flexDirection:'column',
-  width:100,
-  paddingVertical:8,
-  paddingHorizontal:16,
-  justifyContent:'center',
-  alignItems:'center',
-  backgroundColor:'#3BF579',
-  borderRadius: 8,
-  },
-  maintextbutton:{
-  fontSize:18,
-  color:'#000000',
-  fontFamily: 'Roboto-Bold', 
-  },
-
-
+  viewButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  emptyText: { color: '#8796AA', textAlign: 'center', marginTop: 50 }
 });
-

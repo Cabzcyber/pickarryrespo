@@ -1,761 +1,261 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as Location from 'expo-location';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
-const deliverongoing = () => {
-   const router = useRouter(); 
-    const backimg =require("@/assets/images/back.png")
-  const headerlogo =require("@/assets/images/headerlogo.png")
-  const headerheart =require("@/assets/images/heart.png")
-  const geopick =require("@/assets/images/geopick.png")
-  const geodrop =require("@/assets/images/geodrop.png")
-  const feature =require("@/assets/images/feature.png")
-  const goodimg =require("@/assets/images/goodimg.png")
-  const urgent =require("@/assets/images/urgent.png")
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalVisible1, setModalVisible1] = useState(false); 
-  const [reportVisible, setReportVisible] = useState(false);
+import { decode } from 'base64-arraybuffer';
+
+import { useOrderDetails } from '../../../hooks/useOrderDetails';
+import { broadcastLocation } from '../../../services/LocationService';
+import { supabase } from '../../../lib/supabase';
+
+// Components
+import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
+
+// Assets
+const headerlogo = require("@/assets/images/headerlogo.png");
+const viewIcon = require("@/assets/images/eye.png");
+const geopick = require("@/assets/images/geopick.png");
+const geodrop = require("@/assets/images/geodrop.png");
+const goodimg = require("@/assets/images/goodimg.png");
+const urgent = require("@/assets/images/urgent.png");
+
+const DeliverOngoing = () => {
+  const router = useRouter();
+  const { orderId } = useLocalSearchParams();
+
+  // DESTUCTURE 'refetch' HERE
+  const { order, loading, refetch } = useOrderDetails(orderId);
+
   const [assets, setAssets] = useState([]);
-    const [previewImage, setPreviewImage] = useState(null);
-   
-const report =require("@/assets/images/report.png")
-const calculator =require("@/assets/images/calculator.png")
-const call =require("@/assets/images/call.png")
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
-  const sampleImages = [
-    { uri: Image.resolveAssetSource(require('@/assets/images/react-logo.png')).uri },
-    { uri: Image.resolveAssetSource(require('@/assets/images/onfoot.png')).uri },
-    { uri: Image.resolveAssetSource(require('@/assets/images/motorcycle.png')).uri },
-  ];
-  
-  const renderItem = item => {
-    return (
-      <View style={styles.item}>
-        <Text style={styles.textItem}>{item.label}</Text>
-        {item.value === value && (
-          <AntDesign
-            style={styles.icon}
-            color="black"
-            name="Safety"
-            size={20}
-          />
-        )}
-      </View>
-    );
-  };
+  const [showDetails, setShowDetails] = useState(true);
 
+  // 1. LOCATION TRACKING
+  useEffect(() => {
+    let sub;
+    const startTracking = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      sub = await Location.watchPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeInterval: 10000, distanceInterval: 20
+      }, (loc) => {
+        if (orderId) broadcastLocation(orderId, loc.coords.latitude, loc.coords.longitude);
+      });
+    };
+    startTracking();
+    return () => sub?.remove();
+  }, [orderId]);
+
+  // 2. PICK IMAGE
   const pickImage = async () => {
-    // Request permission
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to make this work!');
-      return;
-    }
-
-    // Launch image picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      selectionLimit: 3,
-      quality: 1,
+      quality: 0.5, base64: true,
     });
+    if (!result.canceled) setAssets(result.assets);
+  };
 
-    if (!result.canceled) {
-      setAssets(result.assets);
+  // --- 3. ACTION HANDLER (WITH FORCED REFRESH) ---
+  const handleAction = async () => {
+    if (!order) return;
+
+    // CASE A: Pickup -> Ongoing
+    if (order.deliverystatus_id === 2) {
+        try {
+            setIsSubmitting(true);
+            const { error } = await supabase
+                .from('order')
+                .update({ deliverystatus_id: 3 })
+                .eq('order_id', orderId);
+
+            if (error) throw error;
+
+            Alert.alert("Picked Up", "Proceed to dropoff location.");
+
+            // 🔥 CRITICAL FIX: Force UI update immediately
+            await refetch();
+
+        } catch (e) {
+            Alert.alert("Error", e.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    // CASE B: Dropoff -> Complete
+    else if (order.deliverystatus_id === 3) {
+        if (assets.length === 0) {
+            Alert.alert("Proof Required", "Please upload a photo.");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            const imageFile = assets[0];
+            const fileName = `${user.id}/proof_${orderId}_${Date.now()}.jpg`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('licenses')
+                .upload(fileName, decode(imageFile.base64), { contentType: 'image/jpeg' });
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(fileName);
+
+            const { error: updateError } = await supabase
+                .from('order')
+                .update({
+                    deliverystatus_id: 4,
+                    goods_receivedimg: publicUrl
+                })
+                .eq('order_id', orderId);
+
+            if (updateError) throw updateError;
+
+            router.replace({ pathname: '/(courier)/home/delivercomplete', params: { orderId } });
+
+        } catch (err) {
+            Alert.alert("Error", err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
   };
 
-  const deleteImage = (index) => {
-    Alert.alert(
-      'Delete Image',
-      'Are you sure you want to delete this image?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            const newAssets = assets.filter((_, i) => i !== index);
-            setAssets(newAssets);
-            setModalVisible1(false);
-            setPreviewImage(null);
-          }
-        }
-      ]
-    );
-  };
+  if (loading || !order) return <ActivityIndicator size="large" color="#3BF579" style={{marginTop:50}} />;
 
-  const previewImageHandler = (item) => {
-    setPreviewImage(item);
-    setModalVisible1(true);
-  };
+  const goodsImages = order.goods_image1 ? [{ uri: order.goods_image1 }] : [];
+
+  // Status Logic
+  const isPickupPhase = order.deliverystatus_id === 2;
+  const isDropoffPhase = order.deliverystatus_id === 3;
+
+  // Map Coords
+  const pickupCoords = { latitude: order.pickup_latitude, longitude: order.pickup_longitude };
+  const dropoffCoords = { latitude: order.dropoff_latitude, longitude: order.dropoff_longitude };
 
   return (
-     <>
-              <Stack.Screen 
-                options={{
-                  title: '',
-                  headerShown: false,  
-                }}
-              />
-            
-              <ScrollView
-              contentContainerStyle={{ flexGrow: 1 }}
-  showsVerticalScrollIndicator={true}
-              > 
-           <View  style={styles.container}>
-            <View style={styles.header}>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.mapContainer}>
+           <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} interactive={true} />
+           {showDetails && <View style={styles.dimOverlay} />}
+        </View>
 
-                                      <Image  source={headerlogo} style={styles.logo}/>
-            
-                                      <Pressable style={styles.headerbutton}
-                                      onPress={()=>{}}
-                                      >
-                                          <Image  source={headerheart} style={styles.heartIcon}/>  
-                                      </Pressable>
-                              </View> 
+        <View style={styles.header}>
+           <Image source={headerlogo} style={styles.logo}/>
+           <Pressable
+             style={[styles.headerbutton, !showDetails && styles.headerButtonActive]}
+             onPress={() => setShowDetails(!showDetails)}
+           >
+             <Image source={viewIcon} style={[styles.iconSmall, !showDetails && { tintColor: '#3BF579' }]} />
+             <Text style={styles.viewText}>{showDetails ? "Hide" : "View"}</Text>
+           </Pressable>
+        </View>
 
-
+        {showDetails && (
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.scrollView}>
             <View style={styles.mainContent}>
-               <View style={styles.orderinfo}>
-                          <View style={styles.info}>
-                            <Text style={styles.infotext}>
-                                Book Ongoing August 20,2025 1:00 PM -5:00 pm
-                            </Text> 
-                            <Text style={styles.infosubtext}>
-                              Pasundo
-                            </Text>
-                          </View>
-                          <View style={styles.farecontainer}>
-                            <Text style={styles.totalfare}>₱ 20.00 
-                              in Cash
-                               </Text>
-                          </View>
-                        </View>
-               <View style={styles.locationcontainer1}>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={geopick} style={styles.geopickicon}/>
-                        <Text  style={styles.sublocationtext}>Zone 2 Upper Jasaan Misamis Oriental  </Text>
-                        </View>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={geodrop} style={styles.geodropicon}/>
-                        <Text style={styles.sublocationtext}>Zone 2 Jampason Jasaan Misamis Oriental  </Text>
-                        </View>
-                        </View>
-              <View style={styles.locationcontainer1}>
-                        <View style={styles.sublocationcontainer}>
-                        <Image  source={goodimg} style={styles.geopickicon}/>
-                        </View>
-                         <View style={styles.viewimgcontainer}>
-                                    <Pressable style={styles.viewPhotos} onPress={()=> setViewerVisible(true)}>
-                                      <Text style={styles.viewPhotosText}>Goods To Deliver Photos</Text>
-                                    </Pressable>
-                        
-                        
-                                    </View>
-                        </View>
-                        <View style={styles.locationcontainer2}>
-                        <View style={styles.sublocationcontainer2}>
-                        <Image  source={feature} style={styles.geopickicon}/>
-                        <Text style={styles.sublocationtext2} >
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque in lacus quis lectus consequat dapibus ut ac nisi. Maecenas ultricies sit a
+               <View style={styles.cardContainer}>
+                 <View style={styles.orderinfo}>
+                    <View style={styles.info}>
+                      <Text style={styles.infotext}>Delivery #{order.order_id}</Text>
+                      <Text style={styles.infosubtext}>
+                        {isPickupPhase ? 'Heading to Pickup' : 'Heading to Dropoff'}
+                      </Text>
+                    </View>
+                    <View style={styles.farecontainer}>
+                      <Text style={styles.totalfare}>₱ {order.total_fare}</Text>
+                    </View>
+                  </View>
 
-                        </Text>
-                        </View>
-                         <View style={styles.sublocationcontainer2}>
-                        <Image  source={urgent} style={styles.geopickicon}/>
-                        <Text style={styles.sublocationtext2} >
-                         Ipa-Dali Deliver Bonus ₱ 20.00
+                  <View style={styles.locationcontainer1}>
+                    <View style={[styles.sublocationcontainer, {opacity: isPickupPhase ? 1 : 0.5}]}>
+                      <Image source={geopick} style={styles.geopickicon}/>
+                      <Text style={styles.sublocationtext}>{order.pickup_address}</Text>
+                    </View>
+                    <View style={[styles.sublocationcontainer, {opacity: isDropoffPhase ? 1 : 0.5}]}>
+                      <Image source={geodrop} style={styles.geodropicon}/>
+                      <Text style={styles.sublocationtext}>{order.dropoff_address}</Text>
+                    </View>
+                  </View>
 
-                        </Text>
-                        </View>
-                        </View>
+                  {/* Upload Proof Section */}
+                  {isDropoffPhase && (
+                    <View style={styles.imagePickerContainer}>
+                       <Pressable onPress={pickImage} style={styles.imgbutton}>
+                         <Text style={styles.uploadButtonText}>
+                           {assets.length > 0 ? 'Photo Selected' : 'Take Proof Photo'}
+                         </Text>
+                       </Pressable>
+                       <View style={styles.imageListContainer}>
+                         {assets.map((item, idx) => (
+                           <Image key={idx} source={{ uri: item.uri }} style={styles.selectedImage} />
+                         ))}
+                       </View>
+                    </View>
+                  )}
 
-                 {/* Image Picker Section */}
-                               <View style={styles.imagePickerContainer}>
-                                 <Pressable 
-                                   onPress={pickImage}
-                                   style={styles.imgbutton}
-                                 >
-                                   <Text style={styles.uploadButtonText}>Upload Delivered Goods (Max 3)</Text>
-                                 </Pressable>
-                                 
-                                <View style={[styles.imageListContainer, { flexDirection: 'row', flexWrap: 'wrap',  }]}>
-                                  {assets.map((item, index) => (
-                                    <TouchableOpacity key={index} onPress={() => previewImageHandler(item)}>
-                                      <Image source={{ uri: item.uri }} style={styles.selectedImage} />
-                                    </TouchableOpacity>
-                                  ))}
-                                </View>
-                                                              </View>
-              
-
-                  <View style={styles.optionbtn}>
-                                <Pressable style={styles.optionItem} onPress={()=>router.push('/(customer)/home/ordercomplete')}>
-                                  <View style={styles.optionCircle}>
-                                    <Image  source={call} style={styles.cancelicon}/> 
-                                  </View>
-                                  <Text style={styles.optionLabel}
-                                   
-                                  >Call</Text>
-                                </Pressable>
-                              <View style={styles.optionItem}>
-                                <Pressable onPress={()=>setReportVisible(true)}>
-                                  <View style={styles.optionCircle}>
-                                    <Image  source={report} style={styles.reporticon}/> 
-                                  </View>
-                                </Pressable>
-                                <Pressable onPress={()=>setReportVisible(true)}>
-                                  <Text style={styles.optionLabel}>Report</Text>
-                                </Pressable>
-                              </View>
-                              <View style={styles.optionItem}>
-                                <View style={styles.optionCircle}>
-                                  <Pressable
-                                  onPress={() => setModalVisible(true)}>
-                                  <Image  source={calculator} style={styles.calculatoricon}
-                                  /> 
-                                  </Pressable>
-                                </View>
-                                <Text style={styles.optionLabel}>Delivery Fare</Text>
-                              </View>
-                            </View>
-
-               
-
-
-              <Pressable style={styles.mainbutton}
-                          onPress={() => router.push('/(courier)/home/delivercomplete')}
-                            > 
-                            <Text style={styles.maintextbutton}>Arrived</Text>
-                            </Pressable>  
-
-
+                  {/* Actions */}
+                  {isSubmitting ? (
+                    <ActivityIndicator size="large" color="#3BF579" style={{marginTop: 20}} />
+                  ) : (
+                    <View style={{gap: 10, marginTop: 20}}>
+                        <Pressable style={styles.mainbutton} onPress={handleAction}>
+                          <Text style={styles.maintextbutton}>
+                             {isPickupPhase ? 'Confirm Pickup' : 'Confirm Delivery'}
+                          </Text>
+                        </Pressable>
+                    </View>
+                  )}
+               </View>
             </View>
-                       
-                        {/* Image Preview Modal */}
-                               <Modal
-                                 animationType="fade"
-                                 transparent={true}
-                                 visible={modalVisible1}
-                                 onRequestClose={() => setModalVisible1(false)}
-                               >
-                                 <View style={styles.modalOverlay}>
-                                   <View style={styles.modalContent}>
-                                     <Image
-                                       source={{ uri: previewImage?.uri }}
-                                       style={styles.previewImage}
-                                       resizeMode="contain"
-                                     />
-                                     <View style={styles.modalButtons}>
-                                       <Pressable
-                                         style={styles.closeButton}
-                                         onPress={() => setModalVisible1(false)}
-                                       >
-                                         <Text style={styles.buttonText}>Close</Text>
-                                       </Pressable>
-                                       <Pressable
-                                         style={styles.deleteButton}
-                                         onPress={() => {
-                                           const index = assets.findIndex(asset => asset.uri === previewImage.uri);
-                                           deleteImage(index);
-                                         }}
-                                       >
-                                         <Text style={styles.buttonText}>Delete</Text>
-                                       </Pressable>
-                                     </View>
-                                   </View>
-                                 </View>
-                               </Modal>
-            
-                        <Modal
-                        animationType="slide"
-                        transparent={true}
-                        visible={modalVisible}
-                        onRequestClose={() => {
-                          Alert.alert('Modal has been closed.');
-                          setModalVisible(!modalVisible);
-                        }}>
-                       <View style={styles.centeredView}>
-                                     <View style={styles.modalView}>
-                                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                                         <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
-                                           <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
-                                         </Pressable>
-                                         <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Fare Breakdown</Text>
-                                       </View>
-                                       <View style={{ marginBottom: 18 }}>
-                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                           <Text style={{ color: '#b0c4d4' }}>Base Fare</Text>
-                                           <Text style={{ color: '#fff' }}>₱20.00</Text>
-                                         </View>
-                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                           <Text style={{ color: '#b0c4d4' }}>Distance (1.8 km)</Text>
-                                           <Text style={{ color: '#fff' }}>₱8.00</Text>
-                                         </View>
-                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                           <Text style={{ color: '#b0c4d4' }}>Time Cost</Text>
-                                           <Text style={{ color: '#fff' }}>₱5.00</Text>
-                                         </View>
-                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                           <Text style={{ color: '#b0c4d4' }}>Goods Cost:</Text>
-                                           <Text style={{ color: '#fff' }}>₱00.0</Text>
-                                         </View>
-                                         <View style={{ borderTopWidth: 1, borderTopColor: '#2a3a4d', marginVertical: 8 }} />
-                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                           <Text style={{ color: '#b0c4d4', fontWeight: 'bold' }}>Total Payment</Text>
-                                           <Text style={{ color: '#0AB3FF', fontWeight: 'bold' }}>₱33.0</Text>
-                                         </View>
-                                       </View>
-                                       <Pressable
-                                         style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
-                                         onPress={() => setModalVisible(false)}
-                                       >
-                                         <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
-                                       </Pressable>
-                                     </View>
-                                   </View>
-                      </Modal>
-            
-                      <Modal
-                        animationType="fade"
-                        transparent={true}
-                        visible={reportVisible}
-                        onRequestClose={() => setReportVisible(false)}
-                      >
-                       <View style={styles.centeredView1}>
-                                    <View style={styles.modalView1}>
-                                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'stretch' }}>
-                                        <Pressable onPress={() => setReportVisible(false)} style={{ marginRight: 12 }}>
-                                          <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
-                                        </Pressable>
-                                        <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold' }}>Report an Issue</Text>
-                                      </View>
-                                      <View style={{ alignSelf: 'stretch' }}>
-                                        {[
-                                          'Goods Spilled,crush or damaged',
-                                          'Wrong item delivered',
-                                          'Driver got lost / could not find my exact address',
-                                          'No communication or update from driver while waiting',
-                                          'Items were stolen or missing upon arrival',
-                                          'Driver was rude or unprofessional',
-                                          'Payment dispute',
-                                          'The Vehicle Broke down & absence of Drive License',
-                                        ].map((item, idx, arr) => (
-                                          <React.Fragment key={item}>
-                                            <Text style={{ color: '#b0c4d4', fontSize: 16, paddingVertical: 10, textAlign: 'left' }}>{item}</Text>
-                                            {idx !== arr.length - 1 && <View style={{ borderBottomWidth: 1, borderBottomColor: '#2a3a4d' }} />}
-                                          </React.Fragment>
-                                        ))}
-                                      </View>
-                                      <Pressable
-                                        style={{ alignSelf: 'center', backgroundColor: '#22262F', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 18 }}
-                                        onPress={() => setReportVisible(false)}
-                                      >
-                                        <Text style={{ color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 }}>Minimize</Text>
-                                      </Pressable>
-                                    </View>
-                                  </View>
-                      </Modal>
+          </ScrollView>
+        )}
+      </View>
+    </>
+  );
+};
 
-              <ImageViewing
-            images={sampleImages}
-            imageIndex={0}
-            visible={viewerVisible}
-            onRequestClose={() => setViewerVisible(false)}
-          />
-          </View>
-      </ScrollView>
-         </>
-  )
-}
-
-export default deliverongoing
-
-
+// Use your existing Styles object here (omitted for brevity)
 const styles = StyleSheet.create({
-container: {
-    
-    backgroundColor: '#141519',
-  },
-  mainContent: {
-    flex: 1,
-    padding: 24,
-    
-  },
-  header:{
-      flexDirection:'row',
-      alignItems:'center',
-      justifyContent:'space-between',
-      paddingHorizontal: 12,
-      paddingTop: 12,
-      marginTop: verticalScale(30),
-    },
-    header1:{
-    },
-    headerbutton:{
-      width:37,
-      height:36,
-      borderRadius: 10,
-      backgroundColor:'#22262F',
-      alignItems:'center',
-      justifyContent:'center',
-    },
-    backIcon:{
-      width:30,
-      height:30,
-      resizeMode:'contain',
-    },
-    logo:{
-      width:120,
-      height:28,
-      resizeMode:'contain',
-    },
-    heartIcon:{
-      width:20,
-      height:20,
-      resizeMode:'contain',
-    },
-    orderinfo:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    alignItems:'center',
-  },
-  info:{
-    width:'60%'
+  container: { flex: 1, backgroundColor: '#141519' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  mapContainer: { ...StyleSheet.absoluteFillObject },
+  dimOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: verticalScale(30), zIndex: 100 },
+  logo: { width: 120, height: 28, resizeMode: 'contain' },
+  headerbutton: { flexDirection: 'row', alignItems: 'center', backgroundColor:'#22262F', padding: 8, borderRadius: 10, gap: 6 },
+  headerButtonActive: { borderColor: '#3BF579', borderWidth: 1 },
+  iconSmall: { width: 18, height: 18, resizeMode: 'contain', tintColor: '#8796AA' },
+  viewText: { color: '#8796AA', fontSize: 12 },
+  scrollView: { flex: 1, zIndex: 10 },
+  mainContent: { padding: 20, paddingTop: 10 },
+  cardContainer: { backgroundColor: 'rgba(20, 21, 25, 0.95)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#363D47' },
+  orderinfo: { flexDirection:'row', justifyContent:'space-between', marginBottom: 20 },
+  infotext: { color:'white', fontSize:20, fontWeight:'bold' },
+  infosubtext: { color:'#8796AA', fontSize:14 },
+  farecontainer: { backgroundColor:'#192028', padding: 10, borderRadius:10 },
+  totalfare: { color:'#87AFB9', fontSize:18 },
+  locationcontainer1: { marginTop:16, backgroundColor:'#363D47', borderRadius:14, padding:12 },
+  sublocationcontainer: { flexDirection:'row', gap:10, marginBottom:12 },
+  sublocationtext: { color:'white', flex:1 },
+  geopickicon: { width:22, height:22 },
+  geodropicon: { width:22, height:22 },
+  imagePickerContainer: { alignItems: 'center', marginTop: 20, backgroundColor: '#363D47', borderRadius: 11, padding: 10 },
+  imgbutton: { width:'100%', height: 45, backgroundColor:'#192028', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  uploadButtonText: { color: '#7398A9' },
+  imageListContainer: { flexDirection: 'row', marginTop: 10 },
+  selectedImage: { width: 60, height: 60, borderRadius: 5, margin: 5 },
+  mainbutton: { backgroundColor:'#3BF579', padding:15, borderRadius:10, alignItems:'center' },
+  maintextbutton: { color:'black', fontWeight:'bold', fontSize:16 }
+});
 
-  },
-  infotext:{
-    fontFamily:'roboto',
-    fontWeight:'bold',
-    fontSize:21,
-    color:'#ffffff',
-    overflow:'hidden'
-  },
-  infosubtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:16,
-    color:'#8796AA',
-    overflow:'hidden'
-
-  },
-  farecontainer:{
-    flexDirection:'row',
-    backgroundColor:'#192028',
-    width:'40%',
-    alignItems:'center',
-    justifyContent:'space-between',
-    borderRadius:12,
-    paddingHorizontal:12,
-    paddingVertical:10,
-  },
-  totalfare:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:20,
-    color:'#87AFB9',
-    overflow:'hidden',
-    marginRight:8,
-
-  },
-  locationcontainer1:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer1:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-  locationcontainer2:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer2:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-   sublocationtext2:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  locationcontainer:{
-    flexDirection:'column',
-    marginTop:16,
-    backgroundColor:'#363D47',
-    borderRadius:14,
-    padding:12,
-  },
-  sublocationcontainer:{
-    flexDirection:'row',
-    alignItems:'flex-start',
-    gap:10,
-    marginBottom:12,
-    
-  },
-  sublocationtext:{
-    fontFamily:'roboto',
-    fontWeight:'regular',
-    fontSize:17,
-    color:'#ffffff',
-    flexShrink: 1,
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  geopickicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  geodropicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-  goodsicon:{
-    width:22,
-    height:22,
-    resizeMode:'contain',
-    marginRight:10,
-  },
-   viewPhotos:{
-    marginTop:16,
-    paddingVertical:10,
-    paddingHorizontal:14,
-    backgroundColor:'#22262F',
-    borderRadius:10,
-    
-  },
-  viewPhotosText:{
-    color:'#87AFB9',
-    fontFamily:'Roboto-Bold',
-    fontSize:14,
-    textAlign:'center',
-  },
-mainbutton:{
-    flexDirection:'column',
-    width:'100%',
-    maxWidth:1024,
-    padding:10,
-    justifyContent:"center",
-    alignItems:'center',
-    marginHorizontal:'auto',
-    pointerEvents:'auto',
-    backgroundColor:'#3BF579',
-    borderRadius: 10,
-     marginTop: verticalScale(40),
-    },
-    maintextbutton:{
-    fontSize:18,
-    color:'black',
-    fontFamily: 'Roboto-Bold', 
-    },
-optionbtn:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    gap:48,
-    marginTop:16,
-  },
-  optionItem:{
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  optionCircle:{
-    width:72,
-    height:72,
-    borderRadius:36,
-    backgroundColor:'#22262F',
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  cancelicon:{
-    width:34,
-    height:34,
-    resizeMode:'contain',
-  },
-  reporticon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  calculatoricon:{
-    width:30,
-    height:30,
-    resizeMode:'contain',
-  },
-  optionLabel:{
-    marginTop:6,
-    color:'#8796AA',
-    textAlign:'center',
-    fontSize:12,
-  },
-  
-   modalView: {
-    margin: 20,
-    width: '80%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  button: {
-  
-  },
-  buttonOpen: {
-    
- 
-  },
-  buttonClose: {
-    backgroundColor: '#2196F3',
-  },
-  textStyle: {
-    color: '#7398A9',
-    fontFamily: 'Roboto-regular',
-
-    textAlign: 'center',
-    fontSize: 15,
-    flex: 1,
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-   centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-  imagePickerContainer: {
-    justifyContent: "center",
-    alignItems: 'center',
-    marginTop: verticalScale(20),
-    marginBottom: verticalScale(20),
-    width: '100%',
-    height: verticalScale(148),
-    backgroundColor: '#363D47',
-    borderRadius: 11,
-    padding: 10,
-  },
-  imageListContainer: {
-    marginTop: 20,
-  },
-  selectedImage: {
-    width: 100,
-    height: 100,
-    margin: 5,
-    borderRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#363D47',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    maxWidth: '90%',
-    maxHeight: '80%',
-  },
-  previewImage: {
-    width: 300,
-    height: 300,
-    borderRadius: 8,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-    gap: 15,
-  },
-  closeButton: {
-    backgroundColor: '#7398A9',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  deleteButton: {
-    backgroundColor: '#FF4444',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto-Bold',
-    fontSize: 16,
-  },
-  uploadButtonText: {
-    color: '#7398A9',
-    fontFamily: 'Roboto-Bold',
-    fontSize: 16,
-  },
-  imgbutton:{
-      width:'90%',
-      height: 45,
-      backgroundColor:'#192028',
-      borderColor:'#192028',
-      borderRadius: 11,
-      padding: 12,
-      marginBottom: 6,
-    },
-    modalView1: {
-    margin: 20,
-    width: '80%',
-    height: '70%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-    centeredView1: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-})
+export default DeliverOngoing;
