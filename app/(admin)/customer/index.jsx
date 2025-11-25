@@ -111,10 +111,11 @@ export default function AdminCustomer() {
 
     try {
         setActionLoading(true);
-        // Update SERVICE_USER table
+        // Security: Update SERVICE_USER table
+        // We set userstatus_id to 4 (Suspended)
         const { data, error } = await supabase.from('service_user')
             .update({
-                userstatus_id: 4, // 4 = Suspended
+                userstatus_id: 4,
                 suspension_reason: finalReason
             })
             .eq('user_id', selectedId)
@@ -128,7 +129,7 @@ export default function AdminCustomer() {
         setValue1(null);
 
         setTimeout(() => Alert.alert("Success", "Customer suspended."), 300);
-        fetchCustomers(value, searchQuery);
+        fetchCustomers(value, searchQuery); // Refresh table to show new status
 
     } catch (error) {
         Alert.alert("Error", error.message);
@@ -143,10 +144,11 @@ export default function AdminCustomer() {
 
     try {
         setActionLoading(true);
-        // Update SERVICE_USER table
+        // Security: Reset SERVICE_USER table
+        // We set userstatus_id back to 1 (Active)
         const { data, error } = await supabase.from('service_user')
             .update({
-                userstatus_id: 1, // 1 = Active
+                userstatus_id: 1,
                 suspension_reason: null
             })
             .eq('user_id', selectedId)

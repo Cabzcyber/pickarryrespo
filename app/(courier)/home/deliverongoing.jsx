@@ -79,7 +79,7 @@ const DeliverOngoing = () => {
 
             Alert.alert("Picked Up", "Proceed to dropoff location.");
 
-            // 🔥 CRITICAL FIX: Force UI update immediately
+
             await refetch();
 
         } catch (e) {

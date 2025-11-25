@@ -13,6 +13,8 @@ const time = require("@/assets/images/time.png");
 const geopick = require("@/assets/images/geopick.png");
 const geodrop = require("@/assets/images/geodrop.png");
 const goods = require("@/assets/images/goods.png");
+// Reusing time icon for the badge, or use specific clock icon if available
+const clockIcon = require("@/assets/images/time.png");
 
 // Status Map for Display
 const STATUS_MAP = {
@@ -34,8 +36,11 @@ export default function CourierHistory() {
   // Filter State
   const [open, setOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
+
+  // 1. UPDATED FILTER ITEMS
   const [items, setItems] = useState([
     { label: 'All Orders', value: 'All' },
+    { label: 'Scheduled', value: 'Scheduled' }, // New Filter
     { label: 'Accepted', value: 'Accepted' },
     { label: 'Ongoing', value: 'Ongoing' },
     { label: 'Completed', value: 'Completed' },
@@ -55,10 +60,13 @@ export default function CourierHistory() {
         .eq('courier_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Apply Status Filter
+      // Apply Status/Type Filter
       if (statusFilter !== 'All') {
-        // Map string filter to ID(s)
-        if (statusFilter === 'Accepted') query = query.eq('deliverystatus_id', 2);
+        if (statusFilter === 'Scheduled') {
+            // New Logic: Filter by boolean flag
+            query = query.eq('is_scheduled', true);
+        }
+        else if (statusFilter === 'Accepted') query = query.eq('deliverystatus_id', 2);
         else if (statusFilter === 'Ongoing') query = query.eq('deliverystatus_id', 3);
         else if (statusFilter === 'Completed') query = query.eq('deliverystatus_id', 4);
         else if (statusFilter === 'Cancelled') query = query.eq('deliverystatus_id', 5);
@@ -71,7 +79,7 @@ export default function CourierHistory() {
 
       if (error) throw error;
 
-      // Client-side search filtering (simple implementation)
+      // Client-side search filtering
       let filteredData = data || [];
       if (searchQuery) {
         const lowerQuery = searchQuery.toLowerCase();
@@ -95,10 +103,9 @@ export default function CourierHistory() {
   useFocusEffect(
     useCallback(() => {
       fetchOrders();
-    }, [statusFilter]) // Refetch when filter changes
+    }, [statusFilter])
   );
 
-  // Handle Refresh
   const onRefresh = () => {
     setRefreshing(true);
     fetchOrders();
@@ -110,22 +117,17 @@ export default function CourierHistory() {
     const params = { orderId: item.order_id };
 
     if (statusId === 2 || statusId === 3) {
-      // Accepted or Ongoing -> Go to Delivery Ongoing Screen
       router.push({ pathname: '/(courier)/home/deliverongoing', params });
     } else if (statusId === 4) {
-      // Completed -> Go to Delivery Complete Summary
       router.push({ pathname: '/(courier)/home/delivercomplete', params });
     } else {
-      // Fallback (e.g. Cancelled) - Just stay or show alert
-      // For now, maybe just show details? Or do nothing.
-      // Let's allow viewing completed screen for cancelled if we had one, but we don't.
-      // So we'll just do nothing for cancelled for now as per plan "Alert or No Action"
-      // actually, let's just alert.
       if (statusId === 5) alert("This order was cancelled.");
     }
   };
 
-  const getStatusColor = (statusId) => {
+  // Helper for Colors
+  const getStatusColor = (statusId, isScheduled) => {
+    if (isScheduled) return '#0AB3FF'; // Blue for Scheduled
     if (statusId === 4) return '#3BF579'; // Completed
     if (statusId === 5) return '#FF4444'; // Cancelled
     if (statusId === 2) return '#FFA500'; // Accepted
@@ -134,19 +136,39 @@ export default function CourierHistory() {
   };
 
   const renderItem = ({ item }) => {
-    const statusColor = getStatusColor(item.deliverystatus_id);
+    // 2. TIME & VISUAL LOGIC
+    const isScheduled = item.is_scheduled === true;
     const statusName = STATUS_MAP[item.deliverystatus_id] || 'Unknown';
+    const statusColor = getStatusColor(item.deliverystatus_id, isScheduled);
 
-    const dateObj = new Date(item.created_at);
+    // Prioritize Scheduled Time over Created Time
+    const rawDate = isScheduled
+        ? (item.scheduled_pickup_time || item.created_at)
+        : item.created_at;
+
+    const dateObj = new Date(rawDate);
     const dateStr = !isNaN(dateObj.getTime())
       ? dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       : "Date N/A";
 
     return (
-      <View style={styles.ordercard}>
+      <View style={[
+          styles.ordercard,
+          // Optional: Blue border for scheduled items to make them pop
+          isScheduled && { borderColor: '#0AB3FF' }
+      ]}>
+
+        {/* 3. SCHEDULED BADGE */}
+        {isScheduled && (
+            <View style={styles.scheduledBadge}>
+                <Image source={clockIcon} style={styles.badgeIcon} />
+                <Text style={styles.badgeText}>RESERVED</Text>
+            </View>
+        )}
+
         <View style={styles.orderinfo}>
 
-          {/* Header: Goods & Status */}
+          {/* Header */}
           <View style={styles.productRow}>
             <View style={styles.productInfo}>
               <Image source={goods} style={styles.ordericon} />
@@ -154,8 +176,12 @@ export default function CourierHistory() {
                 {item.goods_details || item.other_details || "Delivery"}
               </Text>
             </View>
+
             <View style={[styles.statusBadge, { borderColor: statusColor }]}>
-              <Text style={[styles.statusText, { color: statusColor }]}>{statusName}</Text>
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                  {/* If scheduled but still status 2, you might prefer seeing 'RESERVED' or 'ACCEPTED' */}
+                  {statusName}
+              </Text>
             </View>
           </View>
 
@@ -171,7 +197,7 @@ export default function CourierHistory() {
 
           <View style={styles.separator} />
 
-          {/* Footer: Meta & Action */}
+          {/* Footer */}
           <View style={styles.footerRow}>
             <View style={styles.metaContainer}>
               <View style={styles.metaRow}>
@@ -179,13 +205,21 @@ export default function CourierHistory() {
                 <Text style={styles.metaText}>₱ {item.total_fare}</Text>
               </View>
               <View style={styles.metaRow}>
-                <Image source={time} style={styles.metaIcon} />
-                <Text style={styles.metaText}>{dateStr}</Text>
+                <Image
+                    source={time}
+                    style={[styles.metaIcon, isScheduled && { tintColor: '#0AB3FF' }]}
+                />
+                <Text style={[
+                    styles.metaText,
+                    isScheduled && { color: '#0AB3FF', fontWeight: 'bold' }
+                ]}>
+                    {dateStr}
+                </Text>
               </View>
             </View>
 
             <Pressable
-              style={styles.viewButton}
+              style={[styles.viewButton, isScheduled && { backgroundColor: '#0AB3FF' }]}
               onPress={() => handleViewOrder(item)}
             >
               <Text style={styles.viewButtonText}>View</Text>
@@ -235,6 +269,7 @@ export default function CourierHistory() {
               selectedItemContainerStyle={styles.selectedItemContainer}
               selectedItemLabelStyle={styles.selectedItemLabel}
               listMode="SCROLLVIEW"
+              scrollViewProps={{ nestedScrollEnabled: true }}
             />
           </View>
         </View>
@@ -303,11 +338,29 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#4B5563'
+    borderColor: '#4B5563',
+    position: 'relative' // Needed for Badge
   },
+
+  // --- New Badge Styles ---
+  scheduledBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#0AB3FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    zIndex: 10
+  },
+  badgeIcon: { width: 10, height: 10, tintColor: 'black', marginRight: 4 },
+  badgeText: { fontSize: 10, fontWeight: 'bold', color: 'black' },
+
   orderinfo: { flexDirection: 'column' },
 
-  productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingRight: 60 }, // Padding for badge
   productInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },
   ordericon: { width: 20, height: 20, resizeMode: 'contain', marginRight: 8 },
   productText: { fontFamily: 'Roboto-Bold', fontSize: 16, color: '#FFFFFF', flexShrink: 1 },

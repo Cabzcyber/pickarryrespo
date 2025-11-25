@@ -29,17 +29,19 @@ const OrderView = () => {
       try {
         setLoading(true);
 
-        // A. Fetch Order Details
+        // Fetch Order Details
         const { data: orderData, error: orderError } = await supabase
           .from('order')
-          .select('*')
+          .select(`
+            *,
+            type_vehicle ( vehicle_name )
+          `)
           .eq('order_id', orderId)
           .single();
 
         if (orderError) throw orderError;
 
-        // B. Fetch Fare Config (As requested)
-        // We usually fetch the active config or the one linked to the order if stored
+        // Fetch Fare Config
         const { data: configData, error: configError } = await supabase
           .from('fare_configuration')
           .select('*')
@@ -52,6 +54,7 @@ const OrderView = () => {
         setFareConfig(configData);
 
       } catch (err) {
+        console.error("Fetch Error:", err);
         Alert.alert("Error", "Order no longer available.");
         router.back();
       } finally {
@@ -62,26 +65,38 @@ const OrderView = () => {
     if (orderId) fetchData();
   }, [orderId]);
 
-  // 2. Handle Accept Logic (Race-Condition Safe)
+  // --- 2. UPDATED HANDLER (CONDITIONAL ROUTING) ---
   const handleAccept = async () => {
     if (!order) return;
     setProcessing(true);
 
     try {
-      // Get Current Courier ID
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Call the Service to Attempt Accept
+      // Attempt to accept via Backend Service
       const result = await OrderDispatch.attemptAcceptOrder(order.order_id, user.id);
 
       if (result.success) {
-        Alert.alert("Success", "You have accepted the order!");
-        // Navigate to Delivery Tracking Screen
-        router.replace({
-          pathname: '/(courier)/home/deliverongoing',
-          params: { orderId: order.order_id }
-        });
+
+        // --- LOGIC SPLIT START ---
+        if (order.is_scheduled) {
+            // CASE A: Scheduled Order -> Go to Dashboard (Wait List)
+            Alert.alert(
+                "Job Reserved",
+                "This order has been added to your schedule. Please wait for the pickup time."
+            );
+            router.replace('/(courier)/home/index');
+        } else {
+            // CASE B: Immediate Order -> Go to Active Delivery (Start Now)
+            Alert.alert("Success", "You have accepted the order!");
+            router.replace({
+                pathname: '/(courier)/home/deliverongoing',
+                params: { orderId: order.order_id }
+            });
+        }
+        // --- LOGIC SPLIT END ---
+
       } else {
         Alert.alert("Too Late", result.message || "Order was taken by another driver.");
         router.replace('/(courier)/home/index');
@@ -102,13 +117,32 @@ const OrderView = () => {
     );
   }
 
+  // Helper to safely get vehicle name
+  const getVehicleDisplay = () => {
+    if (order.type_vehicle && order.type_vehicle.vehicle_name) {
+        return order.type_vehicle.vehicle_name;
+    }
+    return order.vehicle_id ? `Vehicle #${order.vehicle_id}` : 'Any Vehicle';
+  };
+
+  const renderGoodsImage = (uri, index) => {
+    if (!uri) return null;
+    return (
+        <Image
+            key={index}
+            source={{ uri: uri }}
+            style={styles.goodsImage}
+            onError={(e) => console.log(`Failed to load image ${index}`, e.nativeEvent.error)}
+        />
+    );
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.container}>
 
-          {/* Navbar */}
           <View style={styles.header}>
             <Pressable onPress={() => router.back()} style={styles.backButton}>
               <Image source={backimg} style={styles.backIcon} />
@@ -118,7 +152,6 @@ const OrderView = () => {
           </View>
 
           <View style={styles.content}>
-
             {/* Fare Card */}
             <View style={styles.fareCard}>
               <Text style={styles.fareTitle}>Estimated Earnings</Text>
@@ -154,26 +187,39 @@ const OrderView = () => {
               <View style={styles.divider} />
 
               <View style={styles.locationRow}>
+                <Image source={urgent} style={[styles.icon, { tintColor: '#8796AA' }]} />
+                <View style={styles.textBlock}>
+                   <Text style={styles.label}>Required Vehicle</Text>
+                   <Text style={styles.address}>{getVehicleDisplay()}</Text>
+                </View>
+              </View>
+
+              <View style={styles.locationRow}>
                 <Image source={goods} style={styles.icon} />
                 <View style={styles.textBlock}>
                    <Text style={styles.label}>Items</Text>
                    <Text style={styles.address}>{order.other_details || 'No item description provided.'}</Text>
+
+                   {(order.goods_image1 || order.goods_image2 || order.goods_image3) && (
+                     <View style={styles.imageContainer}>
+                        {renderGoodsImage(order.goods_image1, 1)}
+                        {renderGoodsImage(order.goods_image2, 2)}
+                        {renderGoodsImage(order.goods_image3, 3)}
+                     </View>
+                   )}
                 </View>
               </View>
 
-              {/* Show Rate Config info if available (as requested) */}
               {fareConfig && (
                 <Text style={styles.rateInfo}>
                    Rate applied: ₱{fareConfig.time_rate_per_minute}/min • Comm: {fareConfig.platform_commission_percentage * 100}%
                 </Text>
               )}
             </View>
-
           </View>
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Button */}
       <View style={styles.footer}>
         {processing ? (
           <ActivityIndicator color="black" />
@@ -195,14 +241,12 @@ const styles = StyleSheet.create({
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
   headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
   content: { paddingHorizontal: 20, paddingBottom: 100 },
-
   fareCard: { backgroundColor: '#22262F', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#3BF579' },
   fareTitle: { color: '#8796AA', fontSize: 14, textTransform: 'uppercase' },
   fareAmount: { color: '#3BF579', fontSize: 36, fontWeight: 'bold', marginVertical: 5 },
   bonusTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(59, 245, 121, 0.1)', padding: 5, borderRadius: 5 },
   bonusText: { color: '#3BF579', fontSize: 12, marginLeft: 5, fontWeight: 'bold' },
   iconTiny: { width: 12, height: 12 },
-
   detailsContainer: { backgroundColor: '#22262F', borderRadius: 16, padding: 20 },
   sectionHeader: { color: '#87AFB9', fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
   locationRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
@@ -212,7 +256,8 @@ const styles = StyleSheet.create({
   address: { color: 'white', fontSize: 16 },
   divider: { height: 1, backgroundColor: '#363D47', marginVertical: 10 },
   rateInfo: { color: '#555', fontSize: 10, textAlign: 'center', marginTop: 10 },
-
+  imageContainer: { flexDirection: 'row', marginTop: 12, gap: 10, flexWrap: 'wrap' },
+  goodsImage: { width: 70, height: 70, borderRadius: 8, borderWidth: 1, borderColor: '#4B5563', backgroundColor: '#192028' },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#141519' },
   acceptButton: { backgroundColor: '#3BF579', padding: 16, borderRadius: 12, alignItems: 'center' },
   acceptButtonText: { color: '#141519', fontSize: 18, fontWeight: 'bold' }

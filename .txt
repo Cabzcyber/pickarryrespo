@@ -1,10 +1,10 @@
 order table
-order_id
-service_id
-payment_id
-deliverystatus_id
-vehicle_id
-category_id
+order_id   PK
+service_id   FK
+payment_id    FK
+deliverystatus_id        FK
+vehicle_id   FK
+category_id    FK
 pickup_address
 dropoff_address
 goods_image1
@@ -12,9 +12,9 @@ goods_image2
 goods_image3
 other_details
 rush_fee
-is_scheduled
+is_scheduled -- checkbutton for  reserved schedule  to trigger  scheduled_pickup_time
 created_at
-scheduled_pickup_time
+scheduled_pickup_time -- trigger from  is_scheduled
 distance
 estimated_duration
 base_fare_component

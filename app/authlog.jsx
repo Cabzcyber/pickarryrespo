@@ -7,16 +7,18 @@ import {
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 // Make sure this path is correct
-import supabase from '../lib/supabase'; 
+import supabase from '../lib/supabase';
 import { verticalScale } from 'react-native-size-matters';
 
 const logoimg = require("@/assets/images/logologin.png");
+const eyeIcon = require("@/assets/images/eye.png");
 
 const auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
   const [isSelected, setSelected] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const router = useRouter();
 
   async function signlogauth() {
@@ -37,28 +39,45 @@ const auth = () => {
       if (data.user) {
         const userId = data.user.id;
 
-        // 2. Check the 'service_user' table for the user's role or type
-        // We select the 'user_type' column. Ensure this column exists in your DB.
+        // 2. Fetch User Profile AND Status
+        // Added: userstatus_id and suspension_reason to the select query
         const { data: userProfile, error: profileError } = await supabase
           .from('service_user')
-          .select('user_type') 
+          .select('user_type, userstatus_id, suspension_reason')
           .eq('user_id', userId)
           .single();
 
         if (profileError) {
           console.log("Error fetching user profile:", profileError.message);
-          // Fallback: If we can't verify role, default to customer or show error
-          router.replace('/(customer)/home'); 
+          setLoading(false);
           return;
         }
 
-        // 3. ROUTING LOGIC based on User Type
-        // Change 'admin' to whatever string you stored in your database for admins
+        // --- SECURITY CHECK: SUSPENSION CONDITION ---
+        // Based on your Admin Table: 4 = Suspended
+        if (userProfile?.userstatus_id === 4) {
+
+           // A. Construct the Rejection Message
+           const reason = userProfile.suspension_reason || "Violation of policies";
+           const message = `Your account is currently suspended for 1 day.\n\nReason: ${reason}`;
+
+           // B. Alert the User
+           Alert.alert("Access Denied", message);
+
+           // C. Force Sign Out (Crucial Security Step)
+           // This ensures the session is killed and they cannot bypass this screen
+           await supabase.auth.signOut();
+
+           setLoading(false);
+           return; // STOP execution here
+        }
+
+        // 3. ROUTING LOGIC based on User Type (Only runs if NOT suspended)
         if (userProfile?.user_type === 'admin') {
-          console.log("Admin Logged In");
           router.replace('/(admin)/home');
+        } else if (userProfile?.user_type === 'courier') {
+          router.replace('/(courier)/home');
         } else {
-          console.log("Customer/Courier Logged In");
           router.replace('/(customer)/home');
         }
       }
@@ -66,6 +85,8 @@ const auth = () => {
       Alert.alert('Login Error', error.message);
       console.error(error);
     } finally {
+      // Only stop loading if we haven't redirected yet
+      // (though usually router.replace unmounts this component)
       setLoading(false);
     }
   }
@@ -78,6 +99,7 @@ const auth = () => {
         </View>
 
         <View style={styles.form}>
+          {/* Navigation Bar */}
           <View style={styles.authbarcontainer}>
             <View style={styles.logincontainer}>
               <Pressable style={styles.authbutton}>
@@ -85,8 +107,8 @@ const auth = () => {
               </Pressable>
             </View>
             <View style={styles.logincontainer}>
-              <Pressable 
-                style={styles.authbutton} 
+              <Pressable
+                style={styles.authbutton}
                 onPress={() => router.push('/authsign')}
               >
                 <Text style={styles.authtext1}>Sign Up</Text>
@@ -94,8 +116,10 @@ const auth = () => {
             </View>
           </View>
           <View style={styles.separator} />
-          
+
           <View style={styles.maininputcontainer}>
+
+            {/* Email Input */}
             <View style={styles.inputcontainer}>
               <Text style={styles.title}>Email</Text>
               <TextInput
@@ -108,52 +132,65 @@ const auth = () => {
                 keyboardType="email-address"
               />
             </View>
+
+            {/* Password Input with Hide/Show Toggle */}
             <View style={styles.inputcontainer}>
               <Text style={styles.title}>Password</Text>
-              <TextInput
-                style={styles.textinput}
-                placeholder='Enter Your Password'
-                placeholderTextColor='#7398A9'
-                onChangeText={(text) => setPassword(text)}
-                value={password}
-                autoCapitalize='none'
-                secureTextEntry={true}
-              />
+              <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder='Enter Your Password'
+                    placeholderTextColor='#7398A9'
+                    onChangeText={(text) => setPassword(text)}
+                    value={password}
+                    autoCapitalize='none'
+                    secureTextEntry={!isPasswordVisible}
+                  />
+                  <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIconContainer}>
+                      <Image
+                          source={eyeIcon}
+                          style={[
+                              styles.eyeIcon,
+                              { tintColor: isPasswordVisible ? '#0AB3FF' : '#7398A9' }
+                          ]}
+                      />
+                  </Pressable>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.remembercontainer}>
-            <View style={styles.recover}>
-              <CheckBox
-                checked={isSelected}
-                onPress={() => setSelected(!isSelected)}
-                checkedColor='#1976d2'
-                uncheckedColor='#aaa'
-                containerStyle={{ padding: 0, margin: 0, marginRight: 5 }}
-              />
-              <Text style={{ color: '#FFFFFF', marginLeft: 0 }}>Remember Me</Text>
+            <View style={styles.remembercontainer}>
+              <View style={styles.recover}>
+                <CheckBox
+                  checked={isSelected}
+                  onPress={() => setSelected(!isSelected)}
+                  checkedColor='#0AB3FF'
+                  uncheckedColor='#aaa'
+                  containerStyle={{ padding: 0, margin: 0, marginRight: 5 }}
+                />
+                <Text style={{ color: '#FFFFFF', marginLeft: 0 }}>Remember Me</Text>
+              </View>
+              <View style={styles.recover}>
+                <Text
+                  style={{ color: '#0AB3FF', textDecorationLine: 'underline' }}
+                  onPress={() => router.push('terms')}
+                >
+                  Forgot Password?
+                </Text>
+              </View>
             </View>
-            <View style={styles.recover}>
-              <Text
-                style={{ color: '#1976d2', textDecorationLine: 'underline' }}
-                onPress={() => router.push('terms')}
-              >
-                Forgot Password?
-              </Text>
-            </View>
-          </View>
 
-          <Pressable
-            style={styles.mainbutton}
-            onPress={() => signlogauth()}
-            disabled={loading}
-          >
-            {loading ? (
-               <ActivityIndicator color="black" />
-            ) : (
-               <Text style={styles.maintextbutton}>Log In</Text>
-            )}
-          </Pressable>
+            <Pressable
+              style={styles.mainbutton}
+              onPress={() => signlogauth()}
+              disabled={loading}
+            >
+              {loading ? (
+                 <ActivityIndicator color="black" />
+              ) : (
+                 <Text style={styles.maintextbutton}>Log In</Text>
+              )}
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
@@ -170,7 +207,6 @@ const styles = StyleSheet.create({
   TopImage: {
     alignSelf: 'center',
     top: hp('17.3%'),
-    alignSelf: 'center',
     width: wp('80%'),
     height: hp('14.54%'),
     resizeMode: 'contain',
@@ -195,7 +231,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: 'row',
     alignItems: 'center',
-    PointerEvents: 'auto',
     gap: 90,
     marginTop: verticalScale(36.82),
   },
@@ -226,38 +261,58 @@ const styles = StyleSheet.create({
   maininputcontainer: {
     justifyContent: "center",
     alignItems: 'center',
-    PointerEvents: 'auto',
-    marginTop: verticalScale(-60),
+    marginTop: verticalScale(8),
     rowGap: 10,
   },
   inputcontainer: {
     flexDirection: 'column',
     width: '90%',
-    height: '28%',
     maxWidth: 1024,
     padding: 10,
     marginHorizontal: 'auto',
-    pointerEvents: 'auto',
   },
   textinput: {
+    height: 50,
+    fontFamily: 'Roboto-Light',
+    color: '#7398A9',
+    fontSize: 16,
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    backgroundColor: 'transparent',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    backgroundColor: 'transparent',
+  },
+  passwordInput: {
     flex: 1,
     fontFamily: 'Roboto-Light',
     color: '#7398A9',
     fontSize: 16,
-    lineHeight: 18,
-    letterSpacing: 0.12,
-    borderColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 10,
-    marginRight: 10,
-    borderWidth: 1,
+    height: '100%',
+  },
+  eyeIconContainer: {
+    padding: 5,
+  },
+  eyeIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain'
   },
   remembercontainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '89%',
     alignSelf: 'center',
-    marginTop: verticalScale(-60),
+    marginTop: verticalScale(8),
   },
   recover: {
     flexDirection: 'row',
@@ -269,16 +324,15 @@ const styles = StyleSheet.create({
     maxWidth: 1024,
     padding: 10,
     marginHorizontal: 'auto',
-    pointerEvents: 'auto',
     backgroundColor: '#3BF579',
     borderRadius: 10,
     justifyContent: "center",
     alignItems: 'center',
-    marginTop: verticalScale(40),
+    marginTop: verticalScale(15),
   },
   maintextbutton: {
     fontSize: 18,
     color: 'black',
     fontFamily: 'Roboto-Bold',
-  }
+  },
 });

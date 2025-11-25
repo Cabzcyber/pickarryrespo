@@ -12,6 +12,7 @@ import {
   Modal
 } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import ImageViewing from 'react-native-image-viewing';
 import supabase from '../../../lib/supabase';
 
 // Assets
@@ -22,7 +23,7 @@ const goods = require("@/assets/images/goods.png");
 const person = require("@/assets/images/person.png");
 const vehicle = require("@/assets/images/vehicle.png");
 const money = require("@/assets/images/money.png");
-const calculator = require("@/assets/images/calculator.png"); // New Asset
+const calculator = require("@/assets/images/calculator.png");
 
 export default function OrderDetails() {
   const router = useRouter();
@@ -30,7 +31,12 @@ export default function OrderDetails() {
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false); // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Image Viewer State
+  const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+  const [currentImages, setCurrentImages] = useState([]);
+  const [imageIndex, setImageIndex] = useState(0);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -39,7 +45,6 @@ export default function OrderDetails() {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      // Calling the updated RPC
       const { data, error } = await supabase.rpc('get_admin_order_details', {
         target_order_id: id
       });
@@ -57,6 +62,18 @@ export default function OrderDetails() {
       Alert.alert("Error", "Could not load order details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Logic to open viewer with specific images
+  const handleViewImage = (index, imagesSource) => {
+    // Filter out null/undefined images and format for ImageViewing
+    const validImages = imagesSource.filter(Boolean).map(uri => ({ uri }));
+
+    if (validImages.length > 0) {
+      setCurrentImages(validImages);
+      setImageIndex(index);
+      setIsImageViewVisible(true);
     }
   };
 
@@ -80,10 +97,15 @@ export default function OrderDetails() {
     }
   };
 
+  // Collect all pickup images into an array
+  const pickupImages = [order.goods_image1, order.goods_image2, order.goods_image3].filter(Boolean);
+
+  // Proof image (Dropoff)
+  const proofImageArray = order.goods_receivedimg ? [order.goods_receivedimg] : [];
+
   return (
     <View style={styles.container}>
 
-      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Image source={backimg} style={styles.backIcon} />
@@ -131,10 +153,9 @@ export default function OrderDetails() {
           </View>
         </View>
 
-        {/* People Involved */}
+        {/* Parties */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Parties</Text>
-
           <View style={styles.row}>
             <Image source={person} style={styles.icon} />
             <View style={styles.infoBlock}>
@@ -143,9 +164,7 @@ export default function OrderDetails() {
                <Text style={styles.subValue}>{order.customer_phone}</Text>
             </View>
           </View>
-
           <View style={styles.divider} />
-
           <View style={styles.row}>
             <Image source={vehicle} style={styles.icon} />
             <View style={styles.infoBlock}>
@@ -158,10 +177,9 @@ export default function OrderDetails() {
           </View>
         </View>
 
-        {/* Goods & Financials (With Modal Trigger) */}
+        {/* Details & Financials */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Details</Text>
-
           <View style={styles.row}>
             <Image source={goods} style={styles.icon} />
             <View style={styles.infoBlock}>
@@ -169,9 +187,7 @@ export default function OrderDetails() {
                <Text style={styles.value}>{order.goods_details || 'No description'}</Text>
             </View>
           </View>
-
           <View style={styles.divider} />
-
           <View style={[styles.row, {alignItems: 'center', justifyContent: 'space-between'}]}>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
                 <Image source={money} style={styles.icon} />
@@ -182,8 +198,6 @@ export default function OrderDetails() {
                     </Text>
                 </View>
             </View>
-
-            {/* Breakdown Button */}
             <Pressable onPress={() => setModalVisible(true)} style={styles.breakdownButton}>
                <Image source={calculator} style={styles.smallIcon} />
                <Text style={styles.breakdownText}>Breakdown</Text>
@@ -191,19 +205,47 @@ export default function OrderDetails() {
           </View>
         </View>
 
-        {/* Proof Image */}
+        {/* --- PICKUP PHOTOS (Multiple) --- */}
+        {pickupImages.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Pickup Photos (Goods)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 10}}>
+              {pickupImages.map((uri, index) => (
+                <Pressable key={index} onPress={() => handleViewImage(index, pickupImages)}>
+                  <Image
+                    source={{ uri }}
+                    style={styles.thumbnailImage}
+                    resizeMode="cover"
+                  />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* --- DROPOFF PHOTO (Single) --- */}
         {order.goods_receivedimg && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Proof of Delivery</Text>
-            <Image
-              source={{ uri: order.goods_receivedimg }}
-              style={styles.proofImage}
-              resizeMode="cover"
-            />
+            <Pressable onPress={() => handleViewImage(0, proofImageArray)}>
+              <Image
+                source={{ uri: order.goods_receivedimg }}
+                style={styles.proofImage}
+                resizeMode="cover"
+              />
+            </Pressable>
           </View>
         )}
 
       </ScrollView>
+
+      {/* FULL SCREEN IMAGE VIEWER */}
+      <ImageViewing
+        images={currentImages}
+        imageIndex={imageIndex}
+        visible={isImageViewVisible}
+        onRequestClose={() => setIsImageViewVisible(false)}
+      />
 
       {/* FARE BREAKDOWN MODAL */}
       <Modal
@@ -215,7 +257,6 @@ export default function OrderDetails() {
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text style={styles.modalTitle}>Fare Breakdown</Text>
-
             <View style={styles.breakdownContainer}>
                 <View style={styles.breakdownRow}>
                     <Text style={styles.breakdownLabel}>Base Fare</Text>
@@ -237,19 +278,16 @@ export default function OrderDetails() {
                         <Text style={[styles.breakdownValue, {color: '#2ECC71'}]}>+ ₱ {order.bonus}</Text>
                     </View>
                 )}
-                 {/* Admin Only View: Commission/Penalty */}
                 <View style={styles.divider} />
                 <View style={styles.breakdownRow}>
                     <Text style={[styles.breakdownLabel, {fontSize: 12}]}>Platform Commission</Text>
                     <Text style={[styles.breakdownValue, {fontSize: 12, color: '#E74C3C'}]}>- ₱ {order.commission}</Text>
                 </View>
-
                 <View style={[styles.breakdownRow, styles.totalRow]}>
                     <Text style={[styles.breakdownLabel, styles.activeText]}>Total Customer Paid</Text>
                     <Text style={[styles.breakdownValue, styles.activeText]}>₱ {order.total_fare}</Text>
                 </View>
             </View>
-
             <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
               <Text style={{color: 'white', fontWeight: 'bold'}}>Close</Text>
             </Pressable>
@@ -297,9 +335,10 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#363D47' },
   metaText: { color: '#0AB3FF', fontSize: 14, fontWeight: 'bold' },
 
+  // Image Styles
+  thumbnailImage: { width: 100, height: 100, borderRadius: 8, marginRight: 10, borderWidth: 1, borderColor: '#444' },
   proofImage: { width: '100%', height: 200, borderRadius: 12, marginTop: 10 },
 
-  // Breakdown Button
   breakdownButton: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#192028',
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#363D47'
@@ -307,7 +346,6 @@ const styles = StyleSheet.create({
   smallIcon: { width: 16, height: 16, marginRight: 5, tintColor: '#87AFB9' },
   breakdownText: { color: '#87AFB9', fontSize: 12, fontWeight: 'bold' },
 
-  // Modal Styles
   centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' },
   modalView: { margin: 20, width: '85%', backgroundColor: '#363D47', borderRadius: 20, padding: 25, alignItems: 'center', shadowColor: '#000', elevation: 5 },
   modalTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 20 },

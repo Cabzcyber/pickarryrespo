@@ -53,7 +53,8 @@ export default function SetGoodsScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       selectionLimit: 3 - assets.length,
-      quality: 1,
+      quality: 0.5, // Reduced quality for better performance
+      base64: true, // CRITICAL: Request base64 string directly
     });
 
     if (!result.canceled) {
@@ -106,7 +107,7 @@ export default function SetGoodsScreen() {
     };
 
     // 3. Save to Context
-    console.log("Saving Full Payload:", JSON.stringify(detailsPayload)); // Debug 2
+    // Note: images now contains 'base64' property
     setGoodsDetails(detailsPayload);
 
     router.back();

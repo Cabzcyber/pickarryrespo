@@ -21,6 +21,8 @@ import { CheckBox } from 'react-native-elements';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { verticalScale } from 'react-native-size-matters';
 import Swiper from 'react-native-swiper';
+import { decode } from 'base64-arraybuffer'; // Only this is needed now
+
 import { useOrder } from '../../../context/OrderContext';
 import supabase from '../../../lib/supabase';
 import { calculateAndPrepareOrder } from '../../../services/FareCalculator';
@@ -142,6 +144,33 @@ export default function index() {
     setUiVisible(!uiVisible);
   };
 
+  // --- FIX: Direct Base64 Upload (Consistent with working reference) ---
+  const uploadImageToSupabase = async (base64, fileExt = 'jpg') => {
+    try {
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+
+      // Directly upload the decoded base64 data
+      const { error } = await supabase.storage
+        .from('goods_images')
+        .upload(filePath, decode(base64), {
+          contentType: `image/${fileExt}`,
+        });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from('goods_images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+
+    } catch (error) {
+      console.error("Image Upload Failed:", error);
+      return null;
+    }
+  };
+
   const handleOrderPress = async () => {
     if (!userId) return;
 
@@ -166,8 +195,24 @@ export default function index() {
     try {
       setIsSubmitting(true);
 
+      // --- UPLOAD IMAGES SEQUENTIALLY ---
+      const uploadedImageUrls = [];
+      if (goodsDetails.images && goodsDetails.images.length > 0) {
+        console.log("Uploading images...");
+        for (const asset of goodsDetails.images) {
+          // Check for base64 property directly
+          if (asset.base64) {
+            const publicUrl = await uploadImageToSupabase(asset.base64);
+            if (publicUrl) {
+              uploadedImageUrls.push(publicUrl);
+            } else {
+              throw new Error("Failed to upload one of the images. Please try again.");
+            }
+          }
+        }
+      }
+
       const cleanGoods = sanitizeGoodsDetails(goodsDetails);
-      console.log("Sanitized Goods:", JSON.stringify(cleanGoods));
 
       const orderInputs = {
         pickupLocation,
@@ -184,11 +229,15 @@ export default function index() {
 
       const payload = await calculateAndPrepareOrder(orderInputs);
 
-      // --- CRITICAL FIX: Get the new Order ID ---
+      // --- INJECT URLs ---
+      payload.goods_image1 = uploadedImageUrls[0] || null;
+      payload.goods_image2 = uploadedImageUrls[1] || null;
+      payload.goods_image3 = uploadedImageUrls[2] || null;
+
       const { data, error } = await supabase
         .from('order')
         .insert([payload])
-        .select() // Need this to get the ID back
+        .select()
         .single();
 
       if (error) throw error;
@@ -201,20 +250,19 @@ export default function index() {
       setSelected(false);
       setScheduledDate(null);
 
-      // --- CRITICAL FIX: Pass the new Order ID to the search screen ---
       Alert.alert("Order Submitted!", `Total: ₱${payload.total_fare}`, [
           {
             text: "OK",
             onPress: () => router.push({
               pathname: '/(customer)/home/ordersearch',
-              params: { orderId: data.order_id } // Pass explicit ID
+              params: { orderId: data.order_id }
             })
           }
       ]);
 
     } catch (error) {
       console.error("Order Error:", error);
-      Alert.alert("Error", "Failed to submit order.");
+      Alert.alert("Error", "Failed to submit order. " + (error.message || ""));
     } finally {
       setIsSubmitting(false);
     }
