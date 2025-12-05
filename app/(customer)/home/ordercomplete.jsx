@@ -11,7 +11,7 @@ import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
 
 // Assets
 const headerlogo = require("@/assets/images/headerlogo.png");
-const cameraIcon = require("@/assets/images/feature.png");
+const cameraIcon = require("@/assets/images/done3.png");
 
 const OrderComplete = () => {
   const router = useRouter();

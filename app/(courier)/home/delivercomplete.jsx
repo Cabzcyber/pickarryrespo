@@ -9,7 +9,7 @@ import { useOrderDetails } from '../../../hooks/useOrderDetails';
 
 // Assets
 const headerlogo = require("@/assets/images/headerlogo.png");
-const checkmark = require("@/assets/images/feature.png"); // Assuming you have a checkmark or similar
+const checkmark = require("@/assets/images/done2.png"); // Assuming you have a checkmark or similar
 
 const DeliverComplete = () => {
   const router = useRouter();

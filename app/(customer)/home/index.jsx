@@ -21,7 +21,7 @@ import { CheckBox } from 'react-native-elements';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { verticalScale } from 'react-native-size-matters';
 import Swiper from 'react-native-swiper';
-import { decode } from 'base64-arraybuffer'; // Only this is needed now
+import { decode } from 'base64-arraybuffer';
 
 import { useOrder } from '../../../context/OrderContext';
 import supabase from '../../../lib/supabase';
@@ -101,9 +101,10 @@ export default function index() {
     const fetchVehicles = async () => {
       try {
         setLoadingVehicles(true);
+        // UPDATED: Added 'distance_rate_per_km' to selection for breakdown calculation
         const { data, error } = await supabase
           .from('type_vehicle')
-          .select('vehicle_id, vehicle_name, slug, base_fare')
+          .select('vehicle_id, vehicle_name, slug, base_fare, distance_rate_per_km')
           .order('vehicle_id', { ascending: true });
 
         if (error) throw error;
@@ -144,13 +145,11 @@ export default function index() {
     setUiVisible(!uiVisible);
   };
 
-  // --- FIX: Direct Base64 Upload (Consistent with working reference) ---
   const uploadImageToSupabase = async (base64, fileExt = 'jpg') => {
     try {
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
 
-      // Directly upload the decoded base64 data
       const { error } = await supabase.storage
         .from('goods_images')
         .upload(filePath, decode(base64), {
@@ -195,12 +194,10 @@ export default function index() {
     try {
       setIsSubmitting(true);
 
-      // --- UPLOAD IMAGES SEQUENTIALLY ---
       const uploadedImageUrls = [];
       if (goodsDetails.images && goodsDetails.images.length > 0) {
         console.log("Uploading images...");
         for (const asset of goodsDetails.images) {
-          // Check for base64 property directly
           if (asset.base64) {
             const publicUrl = await uploadImageToSupabase(asset.base64);
             if (publicUrl) {
@@ -229,7 +226,6 @@ export default function index() {
 
       const payload = await calculateAndPrepareOrder(orderInputs);
 
-      // --- INJECT URLs ---
       payload.goods_image1 = uploadedImageUrls[0] || null;
       payload.goods_image2 = uploadedImageUrls[1] || null;
       payload.goods_image3 = uploadedImageUrls[2] || null;
@@ -242,7 +238,6 @@ export default function index() {
 
       if (error) throw error;
 
-      // Reset Form
       setPickupLocation(null);
       setDropoffLocation(null);
       setGoodsDetails(null);
@@ -272,6 +267,24 @@ export default function index() {
   const hidePicker = () => setPickerVisible(false);
   const handleConfirm = (date) => { setScheduledDate(date); hidePicker(); };
 
+  // --- HELPER: Calculate Display Estimates ---
+  const getFareEstimate = () => {
+    if (!selectedVehicle || !orderMetrics.distanceKm) return null;
+
+    const base = Number(selectedVehicle.base_fare);
+    const distRate = Number(selectedVehicle.distance_rate_per_km || 0);
+    const distCost = (Number(orderMetrics.distanceKm) * distRate);
+    const total = base + distCost; // Simplified Estimate (excluding time/commission for UI speed)
+
+    return {
+      base: base.toFixed(2),
+      distCost: distCost.toFixed(2),
+      total: total.toFixed(2)
+    };
+  };
+
+  const fareEst = getFareEstimate();
+
   return (
     <View style={styles.container}>
       <View style={styles.mainContent}>
@@ -285,11 +298,24 @@ export default function index() {
              <AntDesign name={uiVisible ? "eye" : "eyeo"} size={24} color="#0AB3FF" />
           </Pressable>
 
+          {/* --- UPDATED STATS OVERLAY --- */}
           {orderMetrics.distanceKm > 0 && uiVisible && (
             <View style={styles.statsOverlay}>
+              {/* Distance & Time */}
               <Text style={styles.statsText}>
                 {orderMetrics.distanceKm} km • {orderMetrics.durationMin} min
               </Text>
+
+              {/* Fare Breakdown (Shows only when vehicle selected) */}
+              {fareEst && (
+                <View style={styles.fareBreakdown}>
+                   <View style={styles.divider} />
+                   <Text style={styles.fareTitle}>Est. Total: ₱ {fareEst.total}</Text>
+                   <Text style={styles.fareSub}>
+                     Base: ₱{fareEst.base} + Dist: ₱{fareEst.distCost}
+                   </Text>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -457,8 +483,34 @@ const styles = StyleSheet.create({
   mainContent: { flex: 1, padding: 0, alignItems: 'center', justifyContent: 'flex-start' },
   mapWrapper: { flex: 1, width: '100%', marginBottom: 0 },
   viewModeButton: { position: 'absolute', top: 340, right: 20, backgroundColor: 'rgba(30, 30, 30, 0.9)', padding: 12, borderRadius: 30, zIndex: 100, borderWidth: 1, borderColor: '#363D47' },
-  statsOverlay: { position: 'absolute', top: 340, alignSelf: 'center', backgroundColor: 'rgba(20, 21, 25, 0.9)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, zIndex: 10, borderWidth: 1, borderColor: '#363D47' },
-  statsText: { color: '#0AB3FF', fontFamily: 'Roboto-Bold', fontSize: 14 },
+
+  // UPDATED OVERLAY STYLES
+  statsOverlay: {
+    position: 'absolute',
+    top: 330,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(20, 21, 25, 0.95)',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 16,
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#363D47',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 8
+  },
+  statsText: { color: '#FFFFFF', fontFamily: 'Roboto-Bold', fontSize: 16, marginBottom: 2 },
+
+  // NEW STYLES FOR BREAKDOWN
+  fareBreakdown: { alignItems: 'center', width: '100%' },
+  divider: { height: 1, width: '80%', backgroundColor: '#444', marginVertical: 8 },
+  fareTitle: { color: '#0AB3FF', fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 2 },
+  fareSub: { color: '#8796AA', fontFamily: 'Roboto-Regular', fontSize: 12 },
+
   inputlocationcontainer: { position: 'absolute', width: '90%', maxWidth: 381, alignSelf: 'center', top: 70, backgroundColor: '#363D47', borderRadius: 28, paddingVertical: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8 },
   inputcontainer: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 9, marginHorizontal: 'auto', pointerEvents: 'auto' },
   textinputloc: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#192028', borderColor: '#192028', borderWidth: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 8 },

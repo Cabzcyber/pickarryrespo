@@ -2,14 +2,10 @@ import { Tabs } from "expo-router";
 import { Image } from "react-native";
 
 // Import your icon assets
-// These paths assume your images are in assets/images/
-// We use .png here to avoid the SVG configuration issues you were seeing
 const homeIcon = require("../../assets/images/house.png");
 const homeIconActive = require("../../assets/images/house1.png");
-const cartIcon = require("../../assets/images/cart.png");      // Used for 'Orders'
+const cartIcon = require("../../assets/images/cart.png");
 const cartIconActive = require("../../assets/images/cart1.png");
-const bookIcon = require("../../assets/images/book.png");      // Used for 'Book'
-const bookIconActive = require("../../assets/images/book1.png");
 const menuIcon = require("../../assets/images/menus.png");
 
 export default function CourierTabs() {
@@ -20,12 +16,12 @@ export default function CourierTabs() {
         tabBarStyle: {
           backgroundColor: '#1f2937', // Dark background
           borderTopColor: '#374151',
-          height: 60, // Adjust height to fit icons comfortably
+          height: 60,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: '#3b82f6', // Blue for active tab
-        tabBarInactiveTintColor: '#9ca3af', // Gray for inactive tabs
+        tabBarActiveTintColor: '#3b82f6',
+        tabBarInactiveTintColor: '#9ca3af',
       }}
     >
       {/* 1. Home Tab */}
@@ -42,7 +38,7 @@ export default function CourierTabs() {
         }}
       />
 
-      {/* 2. Orders Tab (History) - Uses Cart Icons */}
+      {/* 2. Orders Tab (History) */}
       <Tabs.Screen
         name="history/index"
         options={{
@@ -56,21 +52,7 @@ export default function CourierTabs() {
         }}
       />
 
-      {/* 3. Book Tab - Uses Book Icons */}
-      <Tabs.Screen
-        name="book/index"
-        options={{
-          title: "Book",
-          tabBarIcon: ({ focused }) => (
-            <Image
-              source={focused ? bookIconActive : bookIcon}
-              style={{ width: 24, height: 24, resizeMode: 'contain' }}
-            />
-          )
-        }}
-      />
-
-      {/* 4. Menu Tab */}
+      {/* 3. Menu Tab */}
       <Tabs.Screen
         name="menu/index"
         options={{
@@ -85,7 +67,6 @@ export default function CourierTabs() {
                 width: 24,
                 height: 24,
                 resizeMode: 'contain',
-                // Tint color handles the blue/gray state for the single menu icon
                 tintColor: focused ? '#3b82f6' : '#9ca3af'
               }}
             />
@@ -94,87 +75,55 @@ export default function CourierTabs() {
       />
 
       {/* --- Hidden Screens (Not shown in Tab Bar) --- */}
+      {/* Explicitly hiding these keeps the navigation clean */}
 
       <Tabs.Screen
         name="home/orderview"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="home/deliverongoing"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="home/delivercomplete"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="delivercomplete/index"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
 
       {/* Menu Inner Pages */}
       <Tabs.Screen
         name="menu/courierprofile"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="menu/couriersettings"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="menu/couriernotification"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="menu/courierabout"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
 
       {/* Registration/Auth Pages */}
       <Tabs.Screen
         name="registration/courierauthsign"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="registration/otp"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
         name="registration/terms"
-        options={{
-          href: null,
-          tabBarStyle: { display: 'none' },
-        }}
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
     </Tabs>
   );
