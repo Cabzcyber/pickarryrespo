@@ -29,7 +29,9 @@ export default function CustomerMenu() {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
+    let subscription;
+
+    const fetchDataAndSubscribe = async () => {
       try {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
@@ -37,18 +39,10 @@ export default function CustomerMenu() {
         if (user) {
           setUserId(user.id);
 
+          // 1. Initial Fetch
           const [profileResult, courierResult] = await Promise.all([
-             supabase
-              .from('service_user')
-              .select('full_name, phone_number')
-              .eq('user_id', user.id)
-              .single(),
-
-             supabase
-              .from('courier')
-              .select('user_id, user_status, rejection_reason, suspension_reason')
-              .eq('user_id', user.id)
-              .maybeSingle()
+             supabase.from('service_user').select('full_name, phone_number').eq('user_id', user.id).single(),
+             supabase.from('courier').select('user_id, user_status, rejection_reason, suspension_reason').eq('user_id', user.id).maybeSingle()
           ]);
 
           if (profileResult.data) {
@@ -65,6 +59,33 @@ export default function CustomerMenu() {
           } else {
             setCourierStatus('not_registered');
           }
+
+          // 2. Real-Time Listener (Syncs Status Instantly)
+          subscription = supabase
+            .channel(`courier_status_${user.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'courier',
+                filter: `user_id=eq.${user.id}` // Listen ONLY for this user
+              },
+              (payload) => {
+                console.log("Realtime Status Update:", payload.new);
+                // Update local state immediately
+                setCourierStatus(payload.new.user_status);
+                setRejectionReason(payload.new.rejection_reason);
+                setSuspensionReason(payload.new.suspension_reason);
+
+                // Optional: Reset alert flags if unsuspended
+                if (payload.new.user_status === 1) {
+                   AsyncStorage.removeItem(`hasSeenUnsuspendedAlert_${user.id}`);
+                }
+              }
+            )
+            .subscribe();
+
         } else {
           setCourierStatus('not_registered');
         }
@@ -76,7 +97,12 @@ export default function CustomerMenu() {
       }
     };
 
-    fetchData();
+    fetchDataAndSubscribe();
+
+    // Cleanup subscription
+    return () => {
+      if (subscription) supabase.removeChannel(subscription);
+    };
   }, []);
 
   const handleSwitchToCourier = async () => {
@@ -100,7 +126,7 @@ export default function CustomerMenu() {
     } else if (courierStatus === 1) { // Active
       try {
         const approvedKey = `hasSeenApprovedAlert_${userId}`;
-        const unsuspendedKey = `hasSeenUnsuspendedAlert_${userId}`; // New Key
+        const unsuspendedKey = `hasSeenUnsuspendedAlert_${userId}`;
 
         const hasSeenApproved = await AsyncStorage.getItem(approvedKey);
         const hasSeenUnsuspended = await AsyncStorage.getItem(unsuspendedKey);
@@ -114,7 +140,6 @@ export default function CustomerMenu() {
                     text: "Go to Dashboard",
                     onPress: async () => {
                         await AsyncStorage.setItem(approvedKey, 'true');
-                        // Also mark unsuspend as seen to prevent double alerts if they were never suspended
                         await AsyncStorage.setItem(unsuspendedKey, 'true');
                         router.push('/(courier)/home');
                     }
@@ -124,8 +149,7 @@ export default function CustomerMenu() {
         }
 
         // Scenario 2: User was Suspended and is now Active (Unsuspended)
-        // We detect this because hasSeenUnsuspended will be null/false (we clear it on suspension)
-        if (hasSeenUnsuspended !== 'true' && hasSeenApproved === 'true') {
+        if (hasSeenUnsuspended !== 'true') {
              Alert.alert(
                 "Account Reactivated",
                 "Your account has been unsuspended and is now Active. You may proceed to the dashboard.",
@@ -149,12 +173,11 @@ export default function CustomerMenu() {
       }
 
     } else if (courierStatus === 4) { // Suspended
-       // IMPORTANT: Reset the 'Unsuspended' flag so they see the alert when they get active again
        try {
+           // Reset flag so they see the "Reactivated" message later
            await AsyncStorage.removeItem(`hasSeenUnsuspendedAlert_${userId}`);
        } catch(e) {}
 
-       // Display Suspension Reason
        const reasonText = suspensionReason ? suspensionReason : "Violation of policies.";
        Alert.alert(
          "Account Suspended",
@@ -166,10 +189,34 @@ export default function CustomerMenu() {
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error('Error logging out:', error.message);
-    router.replace('/authlog');
+  // --- CHANGED: Improved Logout Function ---
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Log Out",
+          style: "destructive", // Shows red on iOS
+          onPress: async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) throw error;
+
+              // Redirect to your auth/login page
+              router.replace('/authlog');
+            } catch (error) {
+              Alert.alert("Error", "Failed to log out. Please try again.");
+              console.error("Logout Error:", error.message);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (

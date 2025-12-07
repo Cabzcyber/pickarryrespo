@@ -2,11 +2,11 @@ import { Tabs } from "expo-router";
 import { Image } from "react-native";
 
 // Import your icon assets here. Make sure these files exist in your assets folder.
-const homeIcon = require("../../assets/images/house.png"); // Inactive Home
-const homeIconActive = require("../../assets/images/house1.png"); // Active Home - You need to add this image
-const cartIcon = require("../../assets/images/cart.png"); // Inactive Cart - You need to add this image (previously 'list.png'?)
-const cartIconActive = require("../../assets/images//cart1.png"); // Active Cart - You need to add this image
-const menuIcon = require("../../assets/images/menus.png"); // Menu Icon - You need to add this image
+const homeIcon = require("../../assets/images/house.png");
+const homeIconActive = require("../../assets/images/house1.png");
+const cartIcon = require("../../assets/images/cart.png");
+const cartIconActive = require("../../assets/images/cart1.png");
+const menuIcon = require("../../assets/images/menus.png");
 
 export default function CustomerTabs() {
   return (
@@ -16,7 +16,7 @@ export default function CustomerTabs() {
         tabBarStyle: {
           backgroundColor: '#1f2937', // Dark background
           borderTopColor: '#374151',
-          height: 60, // Adjust height if needed for icons
+          height: 60, // Adjust height to fit icons comfortably
           paddingBottom: 8,
           paddingTop: 8,
         },
@@ -24,6 +24,7 @@ export default function CustomerTabs() {
         tabBarInactiveTintColor: '#9ca3af', // Gray for inactive tabs
       }}
     >
+      {/* 1. Home Tab */}
       <Tabs.Screen
         name="home/index"
         options={{
@@ -36,6 +37,8 @@ export default function CustomerTabs() {
           )
         }}
       />
+
+      {/* 2. Orders Tab (History) */}
       <Tabs.Screen
         name="orders/index"
         options={{
@@ -48,15 +51,15 @@ export default function CustomerTabs() {
           )
         }}
       />
+
+      {/* 3. Menu Tab */}
       <Tabs.Screen
         name="menu/index"
         options={{
           title: "Menu",
-          // This ensures the label color changes based on focus state, which is handled by tabBarActiveTintColor
+          // This ensures the label color changes based on focus state
           tabBarLabelStyle: {
             fontSize: 12,
-            // You can force specific colors here if the default behavior isn't enough
-            // color: focused ? '#3b82f6' : '#9ca3af',
           },
           tabBarIcon: ({ focused }) => (
             <Image
@@ -65,13 +68,16 @@ export default function CustomerTabs() {
                 width: 24,
                 height: 24,
                 resizeMode: 'contain',
-                tintColor: focused ? '#3b82f6' : '#9ca3af' // Apply tint color for single-icon tabs like Menu
+                tintColor: focused ? '#3b82f6' : '#9ca3af' // Tint applied for single-icon tabs
               }}
             />
           )
         }}
       />
-      {/* Hidden screens - these won't show in tab bar */}
+
+      {/* --- Hidden Screens (Not shown in Tab Bar) --- */}
+
+      {/* Order Creation Flow */}
       <Tabs.Screen
         name="home/pickup"
         options={{
@@ -93,7 +99,8 @@ export default function CustomerTabs() {
           tabBarStyle: { display: 'none' },
         }}
       />
-      {/* Order flow inner pages - hide tab bar */}
+
+      {/* Order Status Flow */}
       <Tabs.Screen
         name="home/ordersearch"
         options={{
@@ -123,7 +130,7 @@ export default function CustomerTabs() {
         }}
       />
 
-      {/* Menu inner pages - hide tab bar */}
+      {/* Menu Inner Pages */}
       <Tabs.Screen
         name="menu/profile"
         options={{
@@ -152,8 +159,13 @@ export default function CustomerTabs() {
           tabBarStyle: { display: 'none' },
         }}
       />
-
+      <Tabs.Screen
+        name="menu/term"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
-
   );
 }

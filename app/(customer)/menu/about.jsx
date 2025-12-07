@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-// --- CHANGED: Removed TextInput ---
 import { Pressable, ScrollView, StyleSheet, Text, View, Alert, ActivityIndicator, Image } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
@@ -10,10 +9,7 @@ export default function About() {
   const backimg = require("@/assets/images/back.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
 
-  // --- STATE (Simplified) ---
   const [isLoading, setIsLoading] = useState(true);
-
-  // --- Kept your state initialization as requested ---
   const [contentMap, setContentMap] = useState({
     'about': '',
     'terms': '',
@@ -24,13 +20,36 @@ export default function About() {
     'fare-policies': ''
   });
 
-  // --- FETCH (Simplified) ---
   useEffect(() => {
-    const fetchOverviewContent = async () => {
+    // We declare the channel outside the async function to ensure cleanup works reliably
+    const channel = supabase
+      .channel('overview-global-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // CHANGED: Listen to INSERT, UPDATE, and DELETE
+          schema: 'public',
+          table: 'overview'
+        },
+        (payload) => {
+          console.log("Realtime Update Received:", payload); // Debug log
+
+          // Check if there is new data (payload.new exists on INSERT and UPDATE)
+          if (payload.new && payload.new.slug) {
+            setContentMap((prev) => ({
+              ...prev,
+              [payload.new.slug]: payload.new.content,
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    const fetchInitialData = async () => {
       try {
         setIsLoading(true);
 
-        // --- Removed user fetch, as it's not needed for public content ---
+        // 1. Initial Fetch
         const { data, error } = await supabase
           .from('overview')
           .select('slug, content');
@@ -44,6 +63,7 @@ export default function About() {
           }, {});
           setContentMap(map);
         }
+
       } catch (error) {
         console.error("Fetch Overview Error:", error.message);
         Alert.alert('Error', 'Could not load page content.');
@@ -52,11 +72,14 @@ export default function About() {
       }
     };
 
-    fetchOverviewContent();
+    fetchInitialData();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // --- LOADING SPINNER (NEW) ---
-  // Added this for a better user experience
   if (isLoading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -65,7 +88,6 @@ export default function About() {
     );
   }
 
-  // --- RENDER (Simplified) ---
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -73,7 +95,6 @@ export default function About() {
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
-        {/* Removed Edit button container */}
       </View>
       <View style={styles.separator} />
 
@@ -86,40 +107,37 @@ export default function About() {
           <Image source={aboutlogo} style={styles.aboutlogo}/>
         </View>
 
-        {/* --- Section 1: about --- */}
+        {/* Section 1: About */}
         <Text style={styles.descriptionText}>{contentMap['about']}</Text>
 
-        {/* --- Section 2: terms --- */}
+        {/* Section 2: Terms */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
           <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
         </View>
 
-        {/* --- Section 3: contact --- */}
+        {/* Section 3: Contact */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Contact Us</Text>
           <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
         </View>
 
-        {/* --- Section 4: terms and policies --- */}
+        {/* Additional Sections */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Terms of Use</Text>
           <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
         </View>
 
-        {/* --- Section 5: customer policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Customer Policies</Text>
           <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
         </View>
 
-        {/* --- Section 6: courier policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Courier Policies</Text>
           <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
         </View>
 
-        {/* --- Section 7: fare policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Fare Policies</Text>
           <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
@@ -129,95 +147,18 @@ export default function About() {
   );
 }
 
-// --- STYLES (Unchanged, but added loading) ---
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#141519',
-  },
-  // --- NEW ---
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    marginTop: verticalScale(31),
-  },
-  backicon: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain',
-  },
-  logo: {
-    width: 120,
-    height: 28,
-    resizeMode: 'contain',
-  },
-  editicon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#363D47',
-    width: '100%',
-    marginBottom: 1,
-    marginTop: verticalScale(6),
-  },
-  mainContent: {
-    flex: 1,
-    paddingHorizontal: 15,
-    marginTop: verticalScale(8),
-  },
-  scrollContent: {
-    paddingBottom: 30,
-  },
-  title: {
-    fontFamily: 'Roboto-Bold',
-    fontSize: 24,
-    color: '#0AB3FF',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  aboutlogo: {
-    width: 200,
-    height: 60,
-    resizeMode: 'contain',
-  },
-  descriptionText: {
-    fontFamily: 'Roboto-Light',
-    fontSize: 13,
-    color: '#d1d5db',
-    lineHeight: 20,
-    textAlign: 'justify',
-    marginBottom: 20,
-  },
-  sectionCard: {
-    backgroundColor: '#1f2937',
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontFamily: 'Roboto-Bold',
-    fontSize: 18,
-    color: '#ffffff',
-    marginBottom: 10,
-  },
-  sectionText: {
-    fontFamily: 'Roboto-Light',
-    fontSize: 13,
-    color: '#d1d5db',
-    lineHeight: 20,
-    textAlign: 'justify',
-  },
+  container: { flex: 1, backgroundColor: '#141519' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 20, paddingHorizontal: 12, paddingTop: 12, marginTop: verticalScale(31) },
+  backicon: { width: 35, height: 35, resizeMode: 'contain' },
+  separator: { height: 1, backgroundColor: '#363D47', width: '100%', marginBottom: 1, marginTop: verticalScale(6) },
+  mainContent: { flex: 1, paddingHorizontal: 15, marginTop: verticalScale(8) },
+  scrollContent: { paddingBottom: 30 },
+  title: { fontFamily: 'Roboto-Bold', fontSize: 24, color: '#0AB3FF' },
+  logoContainer: { alignItems: 'center', marginVertical: 20 },
+  aboutlogo: { width: 200, height: 60, resizeMode: 'contain' },
+  descriptionText: { fontFamily: 'Roboto-Light', fontSize: 13, color: '#d1d5db', lineHeight: 20, textAlign: 'justify', marginBottom: 20 },
+  sectionCard: { backgroundColor: '#1f2937', borderRadius: 20, padding: 15, marginBottom: 15 },
+  sectionTitle: { fontFamily: 'Roboto-Bold', fontSize: 18, color: '#ffffff', marginBottom: 10 },
 });

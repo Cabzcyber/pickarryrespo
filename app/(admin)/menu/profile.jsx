@@ -1,386 +1,406 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, Alert, TextInput } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { IconButton, Menu } from 'react-native-paper';
 import { verticalScale } from 'react-native-size-matters';
+import { supabase } from '../../../lib/supabase';
+
 export default function Profile() {
   const router = useRouter();
+
+  // Assets
   const backimg = require("@/assets/images/back.png");
+  const reportImg = require("@/assets/images/report.png");
+  const urgentIcon = require("@/assets/images/urgent.png");
 
- const report = require("@/assets/images/report.png");
-const{id} = useLocalSearchParams();
- const [visibleMenuId, setVisibleMenuId] = useState(null);
-     const openMenu = (id) => {
-       setVisibleMenuId(prev => prev === id ? null : id);
-     };
-     const closeMenu = () => setVisibleMenuId(null);
-     const handleSuspend = (id) => {
-       console.log('Suspend couriesr:', id);
-       setModalVisible(true);
-       closeMenu();
-     };
+  // Data State
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-      const [modalVisible, setModalVisible] = useState(false);
+  // Modal & Tracking State
+  const [visibleMenuId, setVisibleMenuId] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
+  // Tracking Target
+  const [targetUserId, setTargetUserId] = useState(null);
+  const [targetReportId, setTargetReportId] = useState(null);
+  const [suspendReason, setSuspendReason] = useState('');
 
-         const [open, setOpen] = useState(false);
-              const [value, setValue] = useState(null);
-              const [items, setItems] = useState([
-                {label: 'Fraudulent Activity', value: '1'},
-                {label: 'Customer Complaints', value: '2'},
-                {label: 'Violation of Policies', value: '3'},
-                {label: 'Unprofessional Behavior', value: '4'},
-                {label: 'Fake/Invalid Documents', value: '5'},
-                {label: 'Unprofessional Behavior', value: '6'},
-                {label: 'Repeated Late Deliveries', value: '7'},
-                 {label: 'Tampering with Orders', value: '8'},
-              ]);
-      
+  // Dropdown State
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [items, setItems] = useState([
+    {label: 'Fraudulent Activity', value: 'Fraudulent Activity'},
+    {label: 'Customer Complaints', value: 'Customer Complaints'},
+    {label: 'Violation of Policies', value: 'Violation of Policies'},
+    {label: 'Unprofessional Behavior', value: 'Unprofessional Behavior'},
+    {label: 'Fake/Invalid Documents', value: 'Fake/Invalid Documents'},
+    {label: 'Repeated Late Deliveries', value: 'Repeated Late Deliveries'},
+    {label: 'Tampering with Orders', value: 'Tampering with Orders'},
+  ]);
+
+  // --- 1. FETCH REPORTS ---
+  const fetchReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users_reporting')
+        .select(`
+          userreporting_id,
+          report_date,
+
+          appeal_reason,
+          reported_id,
+          reporter:service_user!fk_reporter ( full_name ),
+          reported:service_user!fk_reported ( full_name ),
+          reason:report_set!fk_reportset ( report_type ),
+          status:report_status!fk_reportstatus ( status_name )
+        `)
+        .order('report_date', { ascending: false });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (err) {
+      console.error("Error fetching reports:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  // --- 2. SUSPEND LOGIC ---
+  const handleSuspendConfirm = async () => {
+    if (!targetUserId) return;
+
+    const finalReason = value ? value : suspendReason;
+
+    if (!finalReason) {
+        Alert.alert("Required", "Please select or enter a reason.");
+        return;
+    }
+
+    try {
+        setActionLoading(true);
+
+        // 1. Suspend User
+        const { error: userError } = await supabase
+            .from('service_user')
+            .update({
+                userstatus_id: 4, // 4 = Suspended
+                suspension_reason: finalReason
+            })
+            .eq('user_id', targetUserId);
+
+        if (userError) throw userError;
+
+        // 2. Resolve Report
+        if (targetReportId) {
+            const { error: reportError } = await supabase
+                .from('users_reporting')
+                .update({
+                    reportstatus_id: 3 // 3 = Resolved
+                })
+                .eq('userreporting_id', targetReportId);
+
+            if (reportError) console.warn("Report update failed:", reportError.message);
+        }
+
+        Alert.alert("Success", "User suspended and report resolved.");
+        setModalVisible(false);
+        setSuspendReason('');
+        setValue(null);
+
+        fetchReports();
+
+    } catch (error) {
+        Alert.alert("Error", error.message);
+    } finally {
+        setActionLoading(false);
+    }
+  };
+
+  // --- 3. DISMISS LOGIC (New) ---
+  const handleDismiss = async (reportId) => {
+    closeMenu();
+
+    // Quick confirmation alert before action
+    Alert.alert(
+      "Dismiss Report?",
+      "This will mark the report as invalid/dismissed. No action will be taken against the user.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Dismiss",
+          onPress: async () => {
+            try {
+              setLoading(true); // Show global spinner briefly
+
+              const { error } = await supabase
+                .from('users_reporting')
+                .update({
+                    reportstatus_id: 4 // 4 = Dismissed
+                })
+                .eq('userreporting_id', reportId);
+
+              if (error) throw error;
+
+              Alert.alert("Dismissed", "Report has been closed.");
+              fetchReports(); // Refresh list
+
+            } catch (err) {
+              Alert.alert("Error", err.message);
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Handlers
+  const openMenu = (id) => setVisibleMenuId(prev => prev === id ? null : id);
+  const closeMenu = () => setVisibleMenuId(null);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString([], {
+      hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
+    });
+  };
+
+  const getStatusStyle = (statusName) => {
+      const status = statusName?.toLowerCase() || '';
+      if (status === 'resolved') return { color: '#2ECC71', fontWeight: 'bold' };
+      if (status === 'pending review') return { color: '#F1C40F', fontWeight: 'bold' };
+      if (status === 'under investigation') return { color: '#0AB3FF', fontWeight: 'bold' };
+      if (status === 'dismissed') return { color: '#95A5A6', fontWeight: 'bold' };
+      return { color: '#FFFFFF' };
+  };
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerTitle: `Profile: ${id}`,
-        }}
-      />
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.replace('/(admin)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
-        </Pressable>
-      
-        <Text style={styles.title}>Complaint</Text>
-        <View style={styles.placeholder}/>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()}>
+            <Image source={backimg} style={styles.backicon}/>
+          </Pressable>
+          <Text style={styles.title}>Complaints Feed</Text>
+          <View style={styles.placeholder}/>
+        </View>
+
+        <View style={styles.separator} />
+
+        <ScrollView style={styles.mainContent} contentContainerStyle={{paddingBottom: 50}}>
+          {loading ? (
+             <ActivityIndicator size="large" color="#0AB3FF" style={{marginTop: 50}} />
+          ) : reports.length === 0 ? (
+             <Text style={{color: '#8796AA', textAlign: 'center', marginTop: 50}}>No new notifications.</Text>
+          ) : (
+             reports.map((item) => (
+                <View key={item.userreporting_id} style={styles.notifcontainer}>
+
+                  {/* HEADER ROW: Icon | Names | Menu */}
+                  <View style={styles.notifheader}>
+                    <Image source={reportImg} style={styles.notificon}/>
+
+                    {/* Text Container */}
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={styles.notifheaderText}>
+                        {item.reporter?.full_name || "Unknown"} ➔ {item.reported?.full_name || "Unknown"}
+                      </Text>
+                    </View>
+
+                    {/* Menu Button */}
+                    <View style={{marginTop: -8}}>
+                        <Menu
+                        visible={visibleMenuId === item.userreporting_id}
+                        onDismiss={closeMenu}
+                        anchor={
+                            <IconButton
+                            icon="dots-vertical"
+                            iconColor="#0AB3FF"
+                            size={24}
+                            onPress={() => openMenu(item.userreporting_id)}
+                            />
+                        }
+                        >
+                        {/* Option 1: Suspend */}
+                        <Menu.Item
+                            onPress={() => {
+                                setTargetUserId(item.reported_id);
+                                setTargetReportId(item.userreporting_id);
+                                setModalVisible(true);
+                                closeMenu();
+                            }}
+                            title="Suspend User"
+                        />
+                        {/* Option 2: Dismiss */}
+                        <Menu.Item
+                            onPress={() => handleDismiss(item.userreporting_id)}
+                            title="Dismiss Report"
+                        />
+                        </Menu>
+                    </View>
+                  </View>
+
+                  {/* REASON */}
+                  <View style={styles.notifdescription}>
+                    <Text style={styles.notifdescriptiontext}>
+                      Reason: <Text style={{color: '#FF4E4E', fontWeight:'bold'}}>{item.reason?.report_type || "Unspecified"}</Text>
+                    </Text>
+                  </View>
+
+                  {/* APPEAL BOX (Admin View) */}
+                  {item.appeal_reason && (
+                    <View style={styles.adminAppealBox}>
+                       <View style={{flexDirection:'row', alignItems:'center', marginBottom:4}}>
+                          <Image source={urgentIcon} style={{width:14, height:14, tintColor:'#0AB3FF', marginRight:5}}/>
+                          <Text style={styles.appealTitle}>COURIER APPEAL</Text>
+                       </View>
+                       <Text style={styles.appealText}>"{item.appeal_reason}"</Text>
+                    </View>
+                  )}
+
+                  {/* STATUS & DATE */}
+                  <View style={styles.notifdescription}>
+                    <Text style={styles.notifdescriptiontext}>
+                      Time: {formatDate(item.report_date)}
+                    </Text>
+                    <Text style={styles.notifdescriptiontext}>
+                      Status: <Text style={getStatusStyle(item.status?.status_name)}>
+                        {item.status?.status_name || "Pending"}
+                      </Text>
+                    </Text>
+                  </View>
+
+                </View>
+             ))
+          )}
+        </ScrollView>
+
+        {/* SUSPEND MODAL */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(!modalVisible)}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView1}>
+              <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
+                  <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
+                </Pressable>
+                <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold', flexShrink: 1 }}>
+                  Confirm Suspension
+                </Text>
+              </View>
+
+              <View style={{ width: '100%', marginBottom: 15, zIndex: 2000 }}>
+                <Text style={{color:'#ccc', marginBottom: 5, fontSize: 12}}>Select Reason:</Text>
+                <DropDownPicker
+                  open={open}
+                  value={value}
+                  items={items}
+                  setOpen={setOpen}
+                  setValue={setValue}
+                  setItems={setItems}
+                  placeholder="Select Reason..."
+                  style={styles.dropdown1}
+                  textStyle={styles.dropdownText1}
+                  placeholderStyle={styles.placeholderText1}
+                  dropDownContainerStyle={styles.dropdownContainer1}
+                  selectedItemContainerStyle={styles.selectedItemContainer1}
+                  selectedItemLabelStyle={styles.selectedItemLabel1}
+                  listMode="SCROLLVIEW"
+                  maxHeight={150}
+                />
+              </View>
+
+              <View style={{ width: '100%', marginBottom: 20 }}>
+                <Text style={{color:'#ccc', marginBottom: 5, fontSize: 12}}>Or type specific details:</Text>
+                <TextInput
+                    style={styles.reasonInput}
+                    placeholder="Enter details (optional)..."
+                    placeholderTextColor="#7398A9"
+                    value={suspendReason}
+                    onChangeText={setSuspendReason}
+                    multiline
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 20, marginTop: 10 }}>
+                <Pressable
+                  style={styles.cancelBtn}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.btnTextWhite}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.suspendBtn}
+                  onPress={handleSuspendConfirm}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? <ActivityIndicator color="white" /> : <Text style={styles.btnTextWhite}>Suspend</Text>}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
-      <View style={styles.separator} />
-          <ScrollView style={styles.mainContent}>
-              <View style={styles.notifcontainer}>
-                <View style={styles.notifheader}>
-                  <Image source={report} style={styles.notificon}/>
-                  <View style={{ flex: 1, marginRight: 10 }}>
-                    <Text style={styles.notifheaderText}>Kent Dominic ➔ James Juntilla</Text>
-                  </View>
-                  <Menu
-                  visible={visibleMenuId === id}
-                  onDismiss={closeMenu}
-                  anchor={
-                    <IconButton
-                      icon="dots-vertical"
-                      iconColor="#0AB3FF"
-                      size={20}
-                      style={{marginTop: 1}}
-                      onPress={() => openMenu(id)}
-                    />
-                  }>
-                  <Menu.Item onPress={() => handleSuspend(id)} title="Suspend" />
-                </Menu>
-                </View>
-                <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                   Report ➔ Courier
-                  </Text>
-                </View>
-                 <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                   Time Reported: 12:00 PM 
-                  </Text>
-                </View>
-                <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                   Driver got lost / could not find my exact address 
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.notifcontainer}>
-                <View style={styles.notifheader}>
-                  <Image source={report} style={styles.notificon}/>
-                  <View style={{ flex: 1, marginRight: 10 }}>
-                    <Text style={styles.notifheaderText}>James Juntilla ➔ Kent Dominic</Text>
-                  </View>
-                  <Menu
-                  visible={visibleMenuId === id}
-                  onDismiss={closeMenu}
-                  anchor={
-                    <IconButton
-                      icon="dots-vertical"
-                      iconColor="#0AB3FF"
-                      size={20}
-                      style={{marginTop: 1}}
-                      onPress={() => openMenu(id)}
-                    />
-                  }>
-                  <Menu.Item onPress={() => handleSuspend(id)} title="Suspend" />
-                </Menu>
-                </View>
-                <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                   Report ➔ Customer
-                  </Text>
-                </View>
-                 <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                   Time Reported: 1:00 PM 
-                  </Text>
-                </View>
-                <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                  Violation of Customer Policies
-                  </Text>
-                </View>
-              </View>
-      
-              
-            </ScrollView>
-
-                                           <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() => {
-                      Alert.alert('Modal has been closed.');
-                      setModalVisible(!modalVisible);
-                    }}>
-                    <View style={styles.centeredView}>
-                                  <View style={styles.modalView1}>
-                                    <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                                      <Pressable onPress={() => setModalVisible(false)} style={{ marginRight: 12 }}>
-                                        <Text style={{ fontSize: 22, color: '#0AB3FF' }}>{'\u25C0'}</Text>
-                                      </Pressable>
-                                      <Text style={{ fontSize: 18, color: '#fff', fontWeight: 'bold', alignItems: 'center', }}>Are you sure you want to suspend this User? The user will not be able to log in or use the services until reactivated.</Text>
-                                    </View>
-                                    <View style={{ marginBottom: 1 }}>
-                                               <View style={styles.filterbtn1}>
-                                              <DropDownPicker
-                                                open={open}
-                                                value={value}
-                                                items={items}
-                                                setOpen={setOpen}
-                                                setValue={setValue}
-                                                setItems={setItems}
-                                               
-                                                placeholder="Select Reason of Suspension"
-                                               
-                                                style={styles.dropdown1}
-                                                textStyle={styles.dropdownText1}
-                                                placeholderStyle={styles.placeholderText1}
-                                                dropDownContainerStyle={styles.dropdownContainer1}
-                                                selectedItemContainerStyle={styles.selectedItemContainer1}
-                                                selectedItemLabelStyle={styles.selectedItemLabel1}
-                                              />
-                                            </View>
-                                    </View>
-
-                                    <View style={{ flexDirection: 'row', gap: 40 ,marginTop: -140}}>
-                                        <Pressable
-                                      style={{ alignSelf: 'center', borderColor: '#ffffff', borderWidth: 1,borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
-                                      onPress={() => setModalVisible(false)}
-                                    >
-                                      <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 16 }}>Cancel</Text>
-                                    </Pressable>
-                                    <Pressable
-                                      style={{ alignSelf: 'center', backgroundColor: '#FF4E4E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 8 }}
-                                      onPress={() => setModalVisible(false)}
-                                    >
-                                      <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 16 }}>Suspend</Text>
-                                    </Pressable>
-                                    </View>
-                                    
-                                  </View>
-                                </View>
-                  </Modal>
-              
-    </View>
     </>
   );
-  
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#141519',
+  container: { flex: 1, backgroundColor: '#141519' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 12, marginTop: verticalScale(30) },
+  separator: { height: 1, backgroundColor: '#363D47', width: '100%', marginBottom: 10, marginTop: 10 },
+  backicon: { width: 28, height: 28, resizeMode: 'contain' },
+  placeholder: { width: 28 },
+  mainContent: { flex: 1, padding: 15 },
+  title: { fontFamily: 'Roboto-Bold', fontSize: 20, color: '#0AB3FF' },
+
+  notifcontainer: { backgroundColor: '#1f2937', borderRadius: 20, padding: 15, marginBottom: 15 },
+  notifheader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5, justifyContent: 'space-between' },
+  notificon: { width: 32, height: 32, resizeMode: 'contain', marginRight: 10, marginTop: 2 },
+  notifheaderText: { fontFamily: 'Roboto-Bold', fontSize: 16, color: '#ffffff', flexWrap: 'wrap' },
+  notifdescription: { paddingLeft: 44, marginBottom: 4 },
+  notifdescriptiontext: { fontFamily: 'Roboto-Light', fontSize: 13, color: '#d1d5db' },
+
+  // Appeal Box
+  adminAppealBox: {
+    backgroundColor: 'rgba(10, 179, 255, 0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#0AB3FF',
+    padding: 10,
+    marginVertical: 8,
+    marginLeft: 44,
+    borderRadius: 6,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-   gap:20,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    marginTop: verticalScale(30),
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#363D47',
-    width: '100%',
-    marginBottom: 10,
-  },
-  backicon: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain',
-  },
-  logo: {
-    width: 120,
-    height: 28,
-    resizeMode: 'contain',
-  },
-  placeholder: {
-    width: 24,
-  },
-  mainContent: {
-    flex: 1,
-    padding: 15,
-    marginTop: verticalScale(1),
-  },
-  title: {
-    fontFamily: 'Roboto-Bold',
-    fontSize: 24,
-    color: '#0AB3FF',
-  },
-  settingcontent: {
-    flexDirection: 'column',
-    width: '100%',
-    marginTop: verticalScale(1),
-  },
-  settingsubcontent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  textContainer: {
-    flexDirection: 'column',
-    flex: 1,
-  },
-  settingsubtext: {
-    fontFamily: 'Roboto-Medium',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  settingsubinnertext: {
-    fontFamily: 'Roboto-Light',
-    fontSize: 14,
-    fontWeight: '300',
-    color: '#9ca3af',
-  },
-  ordericon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-    marginRight: 15,
-  },
-  notifcontainer: {
-    backgroundColor: '#1f2937',
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 15,
-  },
-  notifheader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: -5,
-  },
-  notificon: {
-    width: 32,
-    height: 32,
-    resizeMode: 'contain',
-    marginRight: 12,
-  },
-  notifheaderText: {
-    fontFamily: 'Roboto-Bold',
-    fontSize: 16,
-    color: '#ffffff',
-  },
-  notifdescription: {
-    paddingLeft: 44,
-  },
-  notifdescriptiontext: {
-    fontFamily: 'Roboto-Light',
-    fontSize: 13,
-    color: '#d1d5db',
-    lineHeight: 20,
-    textAlign: 'justify',
-  },
-  modalView: {
-    margin: 20,
-    width: '95%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-   modalView1: {
-    margin: 20,
-    width: '95%',
-    height: '40%',
-    backgroundColor: '#363D47',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'Roboto-regular',
-  },
-  filterbtn1:{
-    flex: 1,
-    paddingHorizontal: 5,
-    paddingVertical: 5,
-  },
-  dropdown1: {
-    backgroundColor: '#22262F',
-    borderColor: '#22262F',
-    borderWidth: 0,
-    borderRadius: 8,
-    minHeight: 40,
-  },
-  dropdownText1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  placeholderText1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Regular',
-  },
-  dropdownContainer1: {
-    backgroundColor: '#22262F',
-    borderColor: '#22262F',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginTop: 5,
-  },
-  selectedItemContainer1: {
-    backgroundColor: '#4B5563',
-  },
-  selectedItemLabel1: {
-    color: '#0AB3FF',
-    fontSize: 14,
-    fontFamily: 'Roboto-Medium',
-  },
+  appealTitle: { color: '#0AB3FF', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.5 },
+  appealText: { color: '#FFFFFF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
+
+  // Modal Styles
+  centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalView1: { width: '90%', backgroundColor: '#363D47', borderRadius: 20, padding: 25, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+
+  dropdown1: { backgroundColor: '#22262F', borderColor: '#4B5563', borderWidth: 1 },
+  dropdownText1: { color: '#0AB3FF' },
+  placeholderText1: { color: '#8796AA' },
+  dropdownContainer1: { backgroundColor: '#22262F', borderColor: '#4B5563' },
+  selectedItemContainer1: { backgroundColor: '#4B5563' },
+  selectedItemLabel1: { color: '#0AB3FF' },
+
+  reasonInput: { backgroundColor: '#22262F', color: '#fff', padding: 12, borderRadius: 8, width: '100%', height: 80, textAlignVertical: 'top', borderColor: '#4B5563', borderWidth: 1 },
+
+  cancelBtn: { flex: 1, borderColor: '#ffffff', borderWidth: 1, borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  suspendBtn: { flex: 1, backgroundColor: '#FF4E4E', borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  btnTextWhite: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
 });

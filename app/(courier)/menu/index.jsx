@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
 
@@ -56,9 +56,34 @@ export default function CourierMenu() {
     fetchProfile();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/authlog');
+  // --- IMPROVED LOGOUT FUNCTION ---
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Log Out",
+          style: "destructive", // Shows red on iOS
+          onPress: async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) throw error;
+
+              // Redirect to your auth/login page
+              router.replace('/authlog');
+            } catch (error) {
+              Alert.alert("Error", "Failed to log out. Please try again.");
+              console.error("Logout Error:", error.message);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -144,7 +169,7 @@ const styles = StyleSheet.create({
     marginTop:'5'
   },
   subtext: {
-    fontFamily: 'Roboto-Bold', // Adjusted font family if Roboto Flex isn't loaded
+    fontFamily: 'Roboto-Bold',
     fontWeight: 'bold',
     fontSize: 20,
     color: '#0AB3FF',

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, Alert, ActivityIndicator } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -7,92 +7,96 @@ import { supabase } from '../../../lib/supabase';
 export default function About() {
   const router = useRouter();
   const backimg = require("@/assets/images/back.png");
-  const headerlogo = require("@/assets/images/headerlogo.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
-  const edit = require("@/assets/images/edit.png");
 
-
-  // --- STATE ---
-  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [contentMap, setContentMap] = useState({
+    'about': '',
+    'terms': '',
+    'contact': '',
+    'terms-and-policies': '',
+    'courier-policies': '',
+    'customer-policies': '',
+    'fare-policies': ''
+  });
 
- // --- AFTER (Safer) ---
- const [contentMap, setContentMap] = useState({
-   'about': '',
-   'terms': '',
-   'contact': '',
-   'terms-and-policies': '',
-   'courier-policies': '',
-   'customer-policies': '',
-   'fare-policies': ''
- });
- const [originalContentMap, setOriginalContentMap] = useState({
-   'about': '',
-   'terms': '',
-   'contact': '',
-   'terms-and-policies': '',
-   'customer-policies': '',
-   'customer-policies': '',
-   'fare-policies':''
-});
+  useEffect(() => {
+    // 1. Setup Real-Time Subscription (Global Listener)
+    const channel = supabase
+      .channel('overview-courier-global')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // CHANGED: Listen to ALL events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'overview'
+        },
+        (payload) => {
+          // Check if there is new data to update
+          if (payload.new && payload.new.slug) {
+            setContentMap((prev) => ({
+              ...prev,
+              [payload.new.slug]: payload.new.content,
+            }));
+          }
+        }
+      )
+      .subscribe();
 
+    // 2. Initial Data Fetch
+    const fetchInitialData = async () => {
+      try {
+        setIsLoading(true);
 
- // --- FETCH ---
-   useEffect(() => {
-     const fetchOverviewContent = async () => {
-       try {
-         setIsLoading(true);
+        const { data, error } = await supabase
+          .from('overview')
+          .select('slug, content');
 
-         // --- NEW: Get the current user's ID ---
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) {
-           throw new Error("User not authenticated.");
-         }
-         setCurrentUserId(user.id);
-         // --- End of new code ---
+        if (error) throw error;
 
-         const { data, error } = await supabase
-           .from('overview')
-           .select('slug, content');
+        if (data) {
+          const map = data.reduce((acc, row) => {
+            acc[row.slug] = row.content || '';
+            return acc;
+          }, {});
+          setContentMap(map);
+        }
 
-         if (error) throw error;
+      } catch (error) {
+        console.error("Fetch Overview Error:", error.message);
+        Alert.alert('Error', 'Could not load page content.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-         if (data) {
-           const map = data.reduce((acc, row) => {
-             acc[row.slug] = row.content || '';
-             return acc;
-           }, {});
-           setContentMap(map);
-           setOriginalContentMap(map);
-         }
-       } catch (error) {
-         console.error("Fetch Overview Error:", error.message);
-         Alert.alert('Error', 'Could not load page content.');
-       } finally {
-         setIsLoading(false);
-       }
-     };
+    fetchInitialData();
 
-     fetchOverviewContent();
-   }, []);
+    // 3. Cleanup on Unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
-
-
-
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#0AB3FF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back('/(courier)/menu/index')}>
+        <Pressable onPress={() => router.back()}>
           <Image source={backimg} style={styles.backicon}/>
         </Pressable>
         <Text style={styles.title}>About</Text>
-        
       </View>
       <View style={styles.separator} />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.mainContent}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -100,121 +104,44 @@ export default function About() {
         <View style={styles.logoContainer}>
           <Image source={aboutlogo} style={styles.aboutlogo}/>
         </View>
-        
-        {/* --- Section 1: about --- */}
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={contentMap['about']}
-            onChangeText={(text) => handleInputChange('about', text)}
-            placeholder="Enter about"
-            placeholderTextColor="#9ca3af"
-            multiline
-          />
-        ) : (
-          <Text style={styles.descriptionText}>{contentMap['about']}</Text>
-        )}
 
-        {/* --- Section 2: terms --- */}
+        {/* --- Section 1: About --- */}
+        <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+
+        {/* --- Section 2: General Terms --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['terms']}
-              onChangeText={(text) => handleInputChange('terms', text)}
-              placeholder="Enter general terms"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
         </View>
 
-        {/* --- Section 3: contact --- */}
+        {/* --- Section 3: Contact --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Contact Us</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['contact']}
-              onChangeText={(text) => handleInputChange('contact', text)}
-              placeholder="Enter Contact"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
         </View>
 
-        {/* --- Section 4: terms and policies --- */}
+        {/* --- Section 4: Terms of Use --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Terms of Use</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['terms-and-policies']}
-              onChangeText={(text) => handleInputChange('terms-and-policies', text)}
-              placeholder="Enter Terms of Use"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
         </View>
 
-        {/* --- Section 5: customer policies --- */}
+        {/* --- Section 5: Customer Policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Customer Policies</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['customer-policies']}
-              onChangeText={(text) => handleInputChange('customer-policies', text)}
-              placeholder="Enter Customer Policies"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
         </View>
 
-        {/* --- Section 6: courier policies --- */}
+        {/* --- Section 6: Courier Policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Courier Policies</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['courier-policies']}
-              onChangeText={(text) => handleInputChange('courier-policies', text)}
-              placeholder="Enter Courier Policies"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
         </View>
 
-        {/* --- Section 7: fare policies --- */}
+        {/* --- Section 7: Fare Policies --- */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Fare Policies</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={contentMap['fare-policies']}
-              onChangeText={(text) => handleInputChange('fare-policies', text)}
-              placeholder="Enter Fare Policies"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
-          ) : (
-            <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
-          )}
+          <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
         </View>
       </ScrollView>
     </View>
@@ -226,10 +153,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#141519',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-   gap:20,
+    gap: 20,
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(31),
@@ -238,18 +170,6 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     resizeMode: 'contain',
-  },
-  logo: {
-    width: 120,
-    height: 28,
-    resizeMode: 'contain',
-  },
-  editicon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-    marginLeft:''
-    
   },
   separator: {
     height: 1,
@@ -300,11 +220,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 10,
   },
-  sectionText: {
-    fontFamily: 'Roboto-Light',
-    fontSize: 13,
-    color: '#d1d5db',
-    lineHeight: 20,
-    textAlign: 'justify',
-  },
+  // Input style removed as it is no longer used
 });
