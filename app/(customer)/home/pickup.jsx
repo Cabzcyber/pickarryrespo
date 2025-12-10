@@ -21,7 +21,7 @@ export default function PickupScreen() {
 
       if (isSameLat && isSameLon) {
         Alert.alert(
-          "Invalid Location", 
+          "Invalid Location",
           "Pickup location cannot be the same as Drop-off location. Please choose a different point."
         );
         return; // Stop execution

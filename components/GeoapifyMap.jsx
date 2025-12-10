@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   webview: { flex: 1, backgroundColor: '#141519' },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center', zIndex: 2 },
 
-  searchContainer: { position: 'absolute', top: verticalScale(50), left: 20, right: 20, zIndex: 100 },
+  searchContainer: { position: 'absolute', top: verticalScale(75), left: 20, right: 20, zIndex: 100 },
   searchInput: { backgroundColor: '#363D47', color: '#FFFFFF', borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1, borderColor: '#22262F', elevation: 5 },
   suggestionsList: { marginTop: 5, backgroundColor: '#363D47', borderRadius: 10, maxHeight: 200, borderWidth: 1, borderColor: '#22262F' },
   suggestionItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#22262F' },

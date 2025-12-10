@@ -350,7 +350,7 @@ export default function OrderHistory() {
               setValue={setStatusFilter}
               setItems={setItems}
               placeholder="Status"
-              maxHeight={300}
+              maxHeight={400}
               autoScroll={true}
               dropDownDirection="BOTTOM"
               style={styles.dropdown}

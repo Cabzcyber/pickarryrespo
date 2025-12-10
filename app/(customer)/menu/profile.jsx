@@ -319,6 +319,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
     color: '#0AB3FF',
+    marginLeft: 150,
   },
   input: {
     fontFamily: 'Roboto-Light',

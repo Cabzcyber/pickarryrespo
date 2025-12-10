@@ -11,9 +11,10 @@ import {
 import RadioForm from "react-native-simple-radio-button";
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../lib/supabase';
+import { AntDesign } from '@expo/vector-icons';
 
 const logoimg = require("@/assets/images/logologin.png");
-const eyeIcon = require("@/assets/images/eye.png"); // Assuming this is the eye icon based on your file list
+const eyeIcon = require("@/assets/images/eye.png");
 
 const radio_props = [
   { label: "Male", value: "male" },
@@ -26,19 +27,18 @@ const auth = () => {
   const [loading, setLoading] = useState(false);
 
   const [fullname, setFullName] = useState('');
-  const [gender, setgender] = useState(null); // Default null (no selection)
+  const [gender, setgender] = useState(null);
   const [email, setEmailAddress] = useState('');
   const [phonenumber, setphonenumber] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
   const [address, setaddress] = useState('');
   const [password, setpassword] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State for password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [inputDate, setInputDate] = useState(undefined);
 
   const today = new Date();
 
   async function signupauth() {
-    // 1. Check Terms Checkbox FIRST
     if (!isSelected) {
         Alert.alert("Terms Required", "You must agree to the Terms of Service and Privacy Policy to continue.");
         return;
@@ -46,7 +46,6 @@ const auth = () => {
 
     setLoading(true);
     try {
-      // 2. Validation Checks
       if (!fullname) {
         Alert.alert('Missing Information', 'Please enter your full name.');
         setLoading(false);
@@ -71,7 +70,6 @@ const auth = () => {
       const normalizedPhone = formattedPhone ? formattedPhone.replace('+', '') : phonenumber;
       const birthDateString = new Date(inputDate).toISOString();
 
-      // 3. Attempt Sign Up
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password: password,
@@ -83,7 +81,6 @@ const auth = () => {
         return;
       }
 
-      // 4. Navigate to OTP
       router.push({
         pathname: '/otp',
         params: {
@@ -145,15 +142,27 @@ const auth = () => {
                   <View style={styles.datePickerContainer}>
                     <DatePickerInput
                       locale="en"
-                      label="" // Empty label to hide internal label
+                      label=""
                       value={inputDate}
                       onChange={(date) => setInputDate(date)}
                       endDate={today}
                       inputMode="start"
                       mode="flat"
-                      style={styles.datePickerInput} // Custom style for inner input
+                      style={styles.datePickerInput}
                       placeholderTextColor="#7398A9"
                       textColor="#7398A9"
+                      theme={{
+                        colors: {
+                          onSurface: '#FFFFFF',
+                          onSurfaceVariant: '#7398A9',
+                          placeholder: '#7398A9',
+                          background: 'transparent',
+                        },
+                        // CHANGED: Force Regular font for Date Picker text
+                        fonts: {
+                          bodyLarge: { fontFamily: 'Roboto-Regular' }
+                        }
+                      }}
                     />
                   </View>
                 </View>
@@ -162,13 +171,13 @@ const auth = () => {
                   <Text style={styles.title}>Gender</Text>
                   <RadioForm
                     radio_props={radio_props}
-                    initial={-1} // No selection initially
+                    initial={-1}
                     onPress={(value) => setgender(String(value))}
                     buttonSize={10}
                     buttonOuterSize={20}
                     selectedButtonColor="#2196F3"
                     buttonColor='#7398A9'
-                    labelStyle={{ color: '#FFFFFF', fontSize: 14, marginRight: 10 }}
+                    labelStyle={{ color: '#FFFFFF', fontSize: 14, marginRight: 10, fontFamily: 'Roboto-Regular' }} // CHANGED
                     formHorizontal={false}
                   />
                 </View>
@@ -197,12 +206,14 @@ const auth = () => {
                   layout="first"
                   onChangeText={(text) => setphonenumber(text)}
                   onChangeFormattedText={(text) => setFormattedPhone(text)}
-                  containerStyle={styles.phoneInputContainer} // Outer box style
-                  textContainerStyle={styles.phoneTextContainer} // Inner text box style
-                  textInputStyle={styles.phoneTextInput} // Font style
-                  codeTextStyle={styles.phoneCodeText} // Country code style
-                  flagButtonStyle={styles.phoneFlagButton} // Flag button
+                  containerStyle={styles.phoneInputContainer}
+                  textContainerStyle={styles.phoneTextContainer}
+                  textInputStyle={styles.phoneTextInput}
+                  codeTextStyle={styles.phoneCodeText}
+                  flagButtonStyle={styles.phoneFlagButton}
                   placeholder="912 345 6789"
+                  textInputProps={{ placeholderTextColor: '#7398A9' }}
+                  renderDropdownImage={<AntDesign name="down" size={16} color="#7398A9" />}
                 />
               </View>
 
@@ -219,7 +230,7 @@ const auth = () => {
                 />
               </View>
 
-              {/* Password with Hide/Show Toggle */}
+              {/* Password */}
               <View style={styles.inputcontainer}>
                 <Text style={styles.title}>Password</Text>
                 <View style={styles.passwordContainer}>
@@ -237,14 +248,14 @@ const auth = () => {
                             source={eyeIcon}
                             style={[
                                 styles.eyeIcon,
-                                { tintColor: isPasswordVisible ? '#2196F3' : '#7398A9' } // Change color based on state
+                                { tintColor: isPasswordVisible ? '#2196F3' : '#7398A9' }
                             ]}
                         />
                     </Pressable>
                 </View>
               </View>
 
-              {/* Terms & Checkbox */}
+              {/* Terms */}
               <View style={styles.remembercontainer}>
                 <View style={styles.recover}>
                   <CheckBox
@@ -254,16 +265,16 @@ const auth = () => {
                     uncheckedColor='#aaa'
                     containerStyle={{ padding: 0, margin: 0, marginRight: 5 }}
                   />
-                  <Text style={{ color: '#FFFFFF', flexShrink: 1 }}>
+                  <Text style={{ color: '#FFFFFF', flexShrink: 1, fontFamily: 'Roboto-Regular' }}> {/* CHANGED */}
                     I Agree to
                     <Text
-                      style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                      style={{ color: '#1976d2', textDecorationLine: 'underline', fontFamily: 'Roboto-Regular' }}
                       onPress={() => router.push('terms')}
                     >
                       {"  "}Terms of Service{"  "}
                     </Text>&
                     <Text
-                      style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+                      style={{ color: '#1976d2', textDecorationLine: 'underline', fontFamily: 'Roboto-Regular' }}
                       onPress={() => router.push('terms')}
                     >
                       {"  "}Privacy Policy
@@ -274,7 +285,7 @@ const auth = () => {
 
               {/* Continue Button */}
               <Pressable
-                style={[styles.mainbutton, { opacity: isSelected ? 1 : 0.6 }]} // Visual feedback
+                style={[styles.mainbutton, { opacity: isSelected ? 1 : 0.6 }]}
                 onPress={signupauth}
                 disabled={loading}
               >
@@ -332,7 +343,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginHorizontal: 'auto',
-    width: '90%', // Match other inputs width
+    width: '90%',
     justifyContent: 'space-between'
   },
   maininputcontainer: {
@@ -358,28 +369,26 @@ const styles = StyleSheet.create({
   },
   inputcontainerr: {
     flexDirection: 'column',
-    width: '48%', // split half
+    width: '48%',
   },
   title: {
-    fontFamily: 'Roboto-Bold', // Ensure font loaded or use system font
+    fontFamily: 'Roboto-Bold', // Title stays Bold
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 15,
     marginBottom: 8,
   },
-  // --- UNIFIED INPUT STYLE ---
   commonInput: {
     height: 50,
-    fontFamily: 'Roboto-Bold',
+    fontFamily: 'Roboto-Regular', // CHANGED FROM BOLD
     color: '#7398A9',
     fontSize: 15,
     borderColor: '#FFFFFF',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 15,
-    backgroundColor: 'transparent', // Ensure transparent bg
+    backgroundColor: 'transparent',
   },
-  // --- PASSWORD INPUT STYLES ---
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,8 +400,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   passwordInput: {
-    flex: 1, // Take up remaining space
-    fontFamily: 'Roboto-Bold',
+    flex: 1,
+    fontFamily: 'Roboto-Regular', // CHANGED FROM BOLD
     color: '#7398A9',
     fontSize: 15,
     height: '100%',
@@ -405,21 +414,20 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
   },
-  // --- DATE PICKER STYLES ---
   datePickerContainer: {
     height: 50,
     borderColor: '#FFFFFF',
     borderWidth: 1,
     borderRadius: 10,
-    overflow: 'hidden', // Clip inner content
+    overflow: 'hidden',
     justifyContent: 'center',
   },
   datePickerInput: {
     backgroundColor: 'transparent',
     fontSize: 14,
     height: 50,
+    fontFamily: 'Roboto-Regular', // CHANGED FROM BOLD
   },
-  // --- PHONE INPUT STYLES ---
   phoneInputContainer: {
     width: '100%',
     height: 50,
@@ -438,19 +446,18 @@ const styles = StyleSheet.create({
   phoneTextInput: {
     color: '#7398A9',
     fontSize: 15,
-    fontFamily: 'Roboto-Bold',
+    fontFamily: 'Roboto-Regular', // CHANGED FROM BOLD
     height: '100%',
-    paddingVertical: 0, // fix vertical alignment
+    paddingVertical: 0,
   },
   phoneCodeText: {
     color: '#7398A9',
     fontSize: 15,
-    fontFamily: 'Roboto-Bold',
+    fontFamily: 'Roboto-Regular', // CHANGED FROM BOLD
   },
   phoneFlagButton: {
     width: 50,
   },
-  // --- CHECKBOX & BUTTON ---
   remembercontainer: {
     flexDirection: 'row',
     width: '90%',

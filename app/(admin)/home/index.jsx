@@ -20,6 +20,7 @@ export default function AdminHome() {
     {label: 'Today', value: 'Current'},
     {label: 'This Week', value: 'Week'},
     {label: 'This Month', value: 'Month'},
+    {label: 'Last Month', value: 'LastMonth'},
   ]);
 
   // Data State
@@ -120,12 +121,11 @@ export default function AdminHome() {
               dropDownContainerStyle={styles.dropdownList}
               placeholder="Select Period"
               zIndex={3000}
-              // --- FIX STARTS HERE ---
               listMode="SCROLLVIEW"
               scrollViewProps={{
                 nestedScrollEnabled: true,
               }}
-              // --- FIX ENDS HERE ---
+
             />
           </View>
         </View>

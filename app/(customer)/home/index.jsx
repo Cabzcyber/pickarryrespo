@@ -61,8 +61,9 @@ export default function index() {
     isLoading: isOrderLoading
   } = useOrder();
 
-  const [deliveryType, setDeliveryType] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState(1);
+  const [deliveryType, setDeliveryType] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState(null);
+
   const [isSelected, setSelected] = useState(false);
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(null);
@@ -101,7 +102,6 @@ export default function index() {
     const fetchVehicles = async () => {
       try {
         setLoadingVehicles(true);
-        // UPDATED: Added 'distance_rate_per_km' to selection for breakdown calculation
         const { data, error } = await supabase
           .from('type_vehicle')
           .select('vehicle_id, vehicle_name, slug, base_fare, distance_rate_per_km')
@@ -186,6 +186,16 @@ export default function index() {
       Alert.alert("Missing Details", "Please specify 'What To Deliver?'.");
       return;
     }
+
+    if (!deliveryType) {
+      Alert.alert("Missing Detail", "Please select a Delivery Type.");
+      return;
+    }
+    if (!paymentMethod) {
+      Alert.alert("Missing Detail", "Please select a Payment Method.");
+      return;
+    }
+
     if (!selectedVehicle) {
       Alert.alert("Vehicle Required", "Please select a vehicle type.");
       return;
@@ -244,6 +254,8 @@ export default function index() {
       setSelectedVehicle(null);
       setSelected(false);
       setScheduledDate(null);
+      setDeliveryType(null);
+      setPaymentMethod(null);
 
       Alert.alert("Order Submitted!", `Total: ₱${payload.total_fare}`, [
           {
@@ -267,14 +279,13 @@ export default function index() {
   const hidePicker = () => setPickerVisible(false);
   const handleConfirm = (date) => { setScheduledDate(date); hidePicker(); };
 
-  // --- HELPER: Calculate Display Estimates ---
   const getFareEstimate = () => {
     if (!selectedVehicle || !orderMetrics.distanceKm) return null;
 
     const base = Number(selectedVehicle.base_fare);
     const distRate = Number(selectedVehicle.distance_rate_per_km || 0);
     const distCost = (Number(orderMetrics.distanceKm) * distRate);
-    const total = base + distCost; // Simplified Estimate (excluding time/commission for UI speed)
+    const total = base + distCost;
 
     return {
       base: base.toFixed(2),
@@ -295,18 +306,15 @@ export default function index() {
           />
 
           <Pressable style={styles.viewModeButton} onPress={toggleUiVisibility}>
-             <AntDesign name={uiVisible ? "eye" : "eyeo"} size={24} color="#0AB3FF" />
+             <AntDesign name={uiVisible ? "eye" : "eye-invisible"} size={24} color="#0AB3FF" />
           </Pressable>
 
-          {/* --- UPDATED STATS OVERLAY --- */}
           {orderMetrics.distanceKm > 0 && uiVisible && (
             <View style={styles.statsOverlay}>
-              {/* Distance & Time */}
               <Text style={styles.statsText}>
                 {orderMetrics.distanceKm} km • {orderMetrics.durationMin} min
               </Text>
 
-              {/* Fare Breakdown (Shows only when vehicle selected) */}
               {fareEst && (
                 <View style={styles.fareBreakdown}>
                    <View style={styles.divider} />
@@ -438,8 +446,10 @@ export default function index() {
                 loop={false}
                 removeClippedSubviews={false}
                 containerStyle={{ overflow: 'visible' }}
-                nextButton={<Text style={{ fontSize: 40, color: '#0AB3FF' }}>›</Text>}
-                prevButton={<Text style={{ fontSize: 40, color: '#0AB3FF' }}>‹</Text>}
+                // --- FIX: Add padding to button wrapper to bring arrows inside screen ---
+                buttonWrapperStyle={{ paddingHorizontal: 20 }}
+                nextButton={<Text style={{ fontSize: 50, color: '#0AB3FF', fontWeight: 'bold' }}>›</Text>}
+                prevButton={<Text style={{ fontSize: 50, color: '#0AB3FF', fontWeight: 'bold' }}>‹</Text>}
               >
                 {vehicleList.map((item) => {
                   const isSelected = selectedVehicle?.vehicle_id === item.vehicle_id;
@@ -484,7 +494,6 @@ const styles = StyleSheet.create({
   mapWrapper: { flex: 1, width: '100%', marginBottom: 0 },
   viewModeButton: { position: 'absolute', top: 340, right: 20, backgroundColor: 'rgba(30, 30, 30, 0.9)', padding: 12, borderRadius: 30, zIndex: 100, borderWidth: 1, borderColor: '#363D47' },
 
-  // UPDATED OVERLAY STYLES
   statsOverlay: {
     position: 'absolute',
     top: 330,
@@ -505,7 +514,6 @@ const styles = StyleSheet.create({
   },
   statsText: { color: '#FFFFFF', fontFamily: 'Roboto-Bold', fontSize: 16, marginBottom: 2 },
 
-  // NEW STYLES FOR BREAKDOWN
   fareBreakdown: { alignItems: 'center', width: '100%' },
   divider: { height: 1, width: '80%', backgroundColor: '#444', marginVertical: 8 },
   fareTitle: { color: '#0AB3FF', fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 2 },
