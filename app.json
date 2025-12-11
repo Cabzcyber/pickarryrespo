@@ -4,12 +4,12 @@
     "slug": "Pickarry",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/smallapp.png",
-    "scheme": "dark",
-    "userInterfaceStyle": "automatic",
+    "scheme": "pickarry",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/custom_icon.png",
     "splash": {
-      "image": "./assets/images/splash-screen.png",
-      "resizeMode": "contain",
+      "image": "./assets/custom_splash.png",
+      "resizeMode": "cover",
       "backgroundColor": "#141519"
     },
     "ios": {
@@ -21,15 +21,25 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/smallapp.png",
+        "foregroundImage": "./assets/custom_icon.png",
         "backgroundColor": "#141519"
       },
-      "splash": {
-        "backgroundColor": "#141519",
-        "resizeMode": "contain",
-        "image": "./assets/images/splash-screen.png"
-      },
       "package": "com.cabzcyber.pickarrymb",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "pickarry"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDUMMY_KEY_FOR_ANDROID_TO_PREVENT_CRASH"

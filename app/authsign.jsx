@@ -40,8 +40,8 @@ const auth = () => {
 
   async function signupauth() {
     if (!isSelected) {
-        Alert.alert("Terms Required", "You must agree to the Terms of Service and Privacy Policy to continue.");
-        return;
+      Alert.alert("Terms Required", "You must agree to the Terms of Service and Privacy Policy to continue.");
+      return;
     }
 
     setLoading(true);
@@ -234,7 +234,7 @@ const auth = () => {
               <View style={styles.inputcontainer}>
                 <Text style={styles.title}>Password</Text>
                 <View style={styles.passwordContainer}>
-                    <TextInput
+                  <TextInput
                     style={styles.passwordInput}
                     placeholder='Enter Your Password'
                     placeholderTextColor='#7398A9'
@@ -242,16 +242,16 @@ const auth = () => {
                     value={password}
                     autoCapitalize='none'
                     secureTextEntry={!isPasswordVisible}
+                  />
+                  <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIconContainer}>
+                    <Image
+                      source={eyeIcon}
+                      style={[
+                        styles.eyeIcon,
+                        { tintColor: isPasswordVisible ? '#2196F3' : '#7398A9' }
+                      ]}
                     />
-                    <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIconContainer}>
-                        <Image
-                            source={eyeIcon}
-                            style={[
-                                styles.eyeIcon,
-                                { tintColor: isPasswordVisible ? '#2196F3' : '#7398A9' }
-                            ]}
-                        />
-                    </Pressable>
+                  </Pressable>
                 </View>
               </View>
 
@@ -290,9 +290,9 @@ const auth = () => {
                 disabled={loading}
               >
                 {loading ? (
-                    <ActivityIndicator color="black" />
+                  <ActivityIndicator color="black" />
                 ) : (
-                    <Text style={styles.maintextbutton}>Continue</Text>
+                  <Text style={styles.maintextbutton}>Continue</Text>
                 )}
               </Pressable>
 
