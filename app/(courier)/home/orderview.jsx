@@ -6,6 +6,7 @@ import { verticalScale } from 'react-native-size-matters';
 // Services & Libs
 import { supabase } from '../../../lib/supabase';
 import OrderDispatch from '../../../services/OrderDispatch';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
 const backimg = require("@/assets/images/back.png");
@@ -17,6 +18,7 @@ const urgent = require("@/assets/images/urgent.png");
 const OrderView = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
+  const { colors } = useTheme();
 
   const [order, setOrder] = useState(null);
   const [fareConfig, setFareConfig] = useState(null);
@@ -81,19 +83,19 @@ const OrderView = () => {
 
         // --- LOGIC SPLIT START ---
         if (order.is_scheduled) {
-            // CASE A: Scheduled Order -> Go to Dashboard (Wait List)
-            Alert.alert(
-                "Job Reserved",
-                "This order has been added to your schedule. Please wait for the pickup time."
-            );
-            router.replace('/(courier)/home/index');
+          // CASE A: Scheduled Order -> Go to Dashboard (Wait List)
+          Alert.alert(
+            "Job Reserved",
+            "This order has been added to your schedule. Please wait for the pickup time."
+          );
+          router.replace('/(courier)/home/index');
         } else {
-            // CASE B: Immediate Order -> Go to Active Delivery (Start Now)
-            Alert.alert("Success", "You have accepted the order!");
-            router.replace({
-                pathname: '/(courier)/home/deliverongoing',
-                params: { orderId: order.order_id }
-            });
+          // CASE B: Immediate Order -> Go to Active Delivery (Start Now)
+          Alert.alert("Success", "You have accepted the order!");
+          router.replace({
+            pathname: '/(courier)/home/deliverongoing',
+            params: { orderId: order.order_id }
+          });
         }
         // --- LOGIC SPLIT END ---
 
@@ -111,7 +113,7 @@ const OrderView = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#3BF579" />
       </View>
     );
@@ -120,7 +122,7 @@ const OrderView = () => {
   // Helper to safely get vehicle name
   const getVehicleDisplay = () => {
     if (order.type_vehicle && order.type_vehicle.vehicle_name) {
-        return order.type_vehicle.vehicle_name;
+      return order.type_vehicle.vehicle_name;
     }
     return order.vehicle_id ? `Vehicle #${order.vehicle_id}` : 'Any Vehicle';
   };
@@ -128,12 +130,12 @@ const OrderView = () => {
   const renderGoodsImage = (uri, index) => {
     if (!uri) return null;
     return (
-        <Image
-            key={index}
-            source={{ uri: uri }}
-            style={styles.goodsImage}
-            onError={(e) => console.log(`Failed to load image ${index}`, e.nativeEvent.error)}
-        />
+      <Image
+        key={index}
+        source={{ uri: uri }}
+        style={[styles.goodsImage, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}
+        onError={(e) => console.log(`Failed to load image ${index}`, e.nativeEvent.error)}
+      />
     );
   };
 
@@ -141,78 +143,78 @@ const OrderView = () => {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
 
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
-              <Image source={backimg} style={styles.backIcon} />
+            <Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.card }]}>
+              <Image source={backimg} style={[styles.backIcon, { tintColor: colors.text }]} />
             </Pressable>
-            <Text style={styles.headerTitle}>Order Request</Text>
-            <View style={{width: 40}} />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Order Request</Text>
+            <View style={{ width: 40 }} />
           </View>
 
           <View style={styles.content}>
             {/* Fare Card */}
-            <View style={styles.fareCard}>
-              <Text style={styles.fareTitle}>Estimated Earnings</Text>
+            <View style={[styles.fareCard, { backgroundColor: colors.card, borderColor: '#3BF579' }]}>
+              <Text style={[styles.fareTitle, { color: colors.subText }]}>Estimated Earnings</Text>
               <Text style={styles.fareAmount}>₱ {order.total_fare}</Text>
               {order.bonus_charge_component > 0 && (
-                 <View style={styles.bonusTag}>
-                   <Image source={urgent} style={styles.iconTiny}/>
-                   <Text style={styles.bonusText}>Includes ₱{order.bonus_charge_component} Bonus</Text>
-                 </View>
+                <View style={styles.bonusTag}>
+                  <Image source={urgent} style={styles.iconTiny} />
+                  <Text style={styles.bonusText}>Includes ₱{order.bonus_charge_component} Bonus</Text>
+                </View>
               )}
             </View>
 
             {/* Details */}
-            <View style={styles.detailsContainer}>
-              <Text style={styles.sectionHeader}>Route Details</Text>
+            <View style={[styles.detailsContainer, { backgroundColor: colors.card }]}>
+              <Text style={[styles.sectionHeader, { color: colors.subText }]}>Route Details</Text>
 
               <View style={styles.locationRow}>
-                <Image source={geopick} style={styles.icon} />
+                <Image source={geopick} style={[styles.icon, { tintColor: colors.icon }]} />
                 <View style={styles.textBlock}>
-                   <Text style={styles.label}>Pickup</Text>
-                   <Text style={styles.address}>{order.pickup_address}</Text>
+                  <Text style={[styles.label, { color: colors.subText }]}>Pickup</Text>
+                  <Text style={[styles.address, { color: colors.text }]}>{order.pickup_address}</Text>
                 </View>
               </View>
 
               <View style={styles.locationRow}>
-                <Image source={geodrop} style={styles.icon} />
+                <Image source={geodrop} style={[styles.icon, { tintColor: colors.icon }]} />
                 <View style={styles.textBlock}>
-                   <Text style={styles.label}>Dropoff</Text>
-                   <Text style={styles.address}>{order.dropoff_address}</Text>
+                  <Text style={[styles.label, { color: colors.subText }]}>Dropoff</Text>
+                  <Text style={[styles.address, { color: colors.text }]}>{order.dropoff_address}</Text>
                 </View>
               </View>
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
               <View style={styles.locationRow}>
-                <Image source={urgent} style={[styles.icon, { tintColor: '#8796AA' }]} />
+                <Image source={urgent} style={[styles.icon, { tintColor: colors.subText }]} />
                 <View style={styles.textBlock}>
-                   <Text style={styles.label}>Required Vehicle</Text>
-                   <Text style={styles.address}>{getVehicleDisplay()}</Text>
+                  <Text style={[styles.label, { color: colors.subText }]}>Required Vehicle</Text>
+                  <Text style={[styles.address, { color: colors.text }]}>{getVehicleDisplay()}</Text>
                 </View>
               </View>
 
               <View style={styles.locationRow}>
-                <Image source={goods} style={styles.icon} />
+                <Image source={goods} style={[styles.icon, { tintColor: colors.icon }]} />
                 <View style={styles.textBlock}>
-                   <Text style={styles.label}>Items</Text>
-                   <Text style={styles.address}>{order.other_details || 'No item description provided.'}</Text>
+                  <Text style={[styles.label, { color: colors.subText }]}>Items</Text>
+                  <Text style={[styles.address, { color: colors.text }]}>{order.other_details || 'No item description provided.'}</Text>
 
-                   {(order.goods_image1 || order.goods_image2 || order.goods_image3) && (
-                     <View style={styles.imageContainer}>
-                        {renderGoodsImage(order.goods_image1, 1)}
-                        {renderGoodsImage(order.goods_image2, 2)}
-                        {renderGoodsImage(order.goods_image3, 3)}
-                     </View>
-                   )}
+                  {(order.goods_image1 || order.goods_image2 || order.goods_image3) && (
+                    <View style={styles.imageContainer}>
+                      {renderGoodsImage(order.goods_image1, 1)}
+                      {renderGoodsImage(order.goods_image2, 2)}
+                      {renderGoodsImage(order.goods_image3, 3)}
+                    </View>
+                  )}
                 </View>
               </View>
 
               {fareConfig && (
-                <Text style={styles.rateInfo}>
-                   Rate applied: ₱{fareConfig.time_rate_per_minute}/min • Comm: {fareConfig.platform_commission_percentage * 100}%
+                <Text style={[styles.rateInfo, { color: colors.subText }]}>
+                  Rate applied: ₱{fareConfig.time_rate_per_minute}/min • Comm: {fareConfig.platform_commission_percentage * 100}%
                 </Text>
               )}
             </View>
@@ -220,9 +222,9 @@ const OrderView = () => {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.background }]}>
         {processing ? (
-          <ActivityIndicator color="black" />
+          <ActivityIndicator color={colors.text} />
         ) : (
           <Pressable style={styles.acceptButton} onPress={handleAccept}>
             <Text style={styles.acceptButtonText}>ACCEPT ORDER</Text>
@@ -234,31 +236,31 @@ const OrderView = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
-  loadingContainer: { flex: 1, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: verticalScale(40), marginBottom: 20 },
-  backButton: { padding: 10, backgroundColor: '#22262F', borderRadius: 12 },
+  backButton: { padding: 10, borderRadius: 12 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
   content: { paddingHorizontal: 20, paddingBottom: 100 },
-  fareCard: { backgroundColor: '#22262F', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#3BF579' },
-  fareTitle: { color: '#8796AA', fontSize: 14, textTransform: 'uppercase' },
+  fareCard: { borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 20, borderWidth: 1 },
+  fareTitle: { fontSize: 14, textTransform: 'uppercase' },
   fareAmount: { color: '#3BF579', fontSize: 36, fontWeight: 'bold', marginVertical: 5 },
   bonusTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(59, 245, 121, 0.1)', padding: 5, borderRadius: 5 },
   bonusText: { color: '#3BF579', fontSize: 12, marginLeft: 5, fontWeight: 'bold' },
   iconTiny: { width: 12, height: 12 },
-  detailsContainer: { backgroundColor: '#22262F', borderRadius: 16, padding: 20 },
-  sectionHeader: { color: '#87AFB9', fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
+  detailsContainer: { borderRadius: 16, padding: 20 },
+  sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
   locationRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
   icon: { width: 24, height: 24, marginRight: 15, resizeMode: 'contain' },
   textBlock: { flex: 1 },
-  label: { color: '#8796AA', fontSize: 12, marginBottom: 2 },
-  address: { color: 'white', fontSize: 16 },
-  divider: { height: 1, backgroundColor: '#363D47', marginVertical: 10 },
-  rateInfo: { color: '#555', fontSize: 10, textAlign: 'center', marginTop: 10 },
+  label: { fontSize: 12, marginBottom: 2 },
+  address: { fontSize: 16 },
+  divider: { height: 1, marginVertical: 10 },
+  rateInfo: { fontSize: 10, textAlign: 'center', marginTop: 10 },
   imageContainer: { flexDirection: 'row', marginTop: 12, gap: 10, flexWrap: 'wrap' },
-  goodsImage: { width: 70, height: 70, borderRadius: 8, borderWidth: 1, borderColor: '#4B5563', backgroundColor: '#192028' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#141519' },
+  goodsImage: { width: 70, height: 70, borderRadius: 8, borderWidth: 1 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20 },
   acceptButton: { backgroundColor: '#3BF579', padding: 16, borderRadius: 12, alignItems: 'center' },
   acceptButtonText: { color: '#141519', fontSize: 18, fontWeight: 'bold' }
 });

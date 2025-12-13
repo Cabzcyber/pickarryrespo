@@ -11,6 +11,7 @@ import { decode } from 'base64-arraybuffer';
 import { useOrderDetails } from '../../../hooks/useOrderDetails';
 import { broadcastLocation } from '../../../services/LocationService';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Components
 import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
@@ -26,6 +27,7 @@ const urgent = require("@/assets/images/urgent.png");
 const DeliverOngoing = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
+  const { colors, isDarkMode } = useTheme();
 
   // DESTUCTURE 'refetch' HERE
   const { order, loading, refetch } = useOrderDetails(orderId);
@@ -68,67 +70,67 @@ const DeliverOngoing = () => {
 
     // CASE A: Pickup -> Ongoing
     if (order.deliverystatus_id === 2) {
-        try {
-            setIsSubmitting(true);
-            const { error } = await supabase
-                .from('order')
-                .update({ deliverystatus_id: 3 })
-                .eq('order_id', orderId);
+      try {
+        setIsSubmitting(true);
+        const { error } = await supabase
+          .from('order')
+          .update({ deliverystatus_id: 3 })
+          .eq('order_id', orderId);
 
-            if (error) throw error;
+        if (error) throw error;
 
-            Alert.alert("Picked Up", "Proceed to dropoff location.");
+        Alert.alert("Picked Up", "Proceed to dropoff location.");
 
 
-            await refetch();
+        await refetch();
 
-        } catch (e) {
-            Alert.alert("Error", e.message);
-        } finally {
-            setIsSubmitting(false);
-        }
+      } catch (e) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
     // CASE B: Dropoff -> Complete
     else if (order.deliverystatus_id === 3) {
-        if (assets.length === 0) {
-            Alert.alert("Proof Required", "Please upload a photo.");
-            return;
-        }
+      if (assets.length === 0) {
+        Alert.alert("Proof Required", "Please upload a photo.");
+        return;
+      }
 
-        try {
-            setIsSubmitting(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            const imageFile = assets[0];
-            const fileName = `${user.id}/proof_${orderId}_${Date.now()}.jpg`;
+      try {
+        setIsSubmitting(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        const imageFile = assets[0];
+        const fileName = `${user.id}/proof_${orderId}_${Date.now()}.jpg`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('licenses')
-                .upload(fileName, decode(imageFile.base64), { contentType: 'image/jpeg' });
-            if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from('licenses')
+          .upload(fileName, decode(imageFile.base64), { contentType: 'image/jpeg' });
+        if (uploadError) throw uploadError;
 
-            const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(fileName);
 
-            const { error: updateError } = await supabase
-                .from('order')
-                .update({
-                    deliverystatus_id: 4,
-                    goods_receivedimg: publicUrl
-                })
-                .eq('order_id', orderId);
+        const { error: updateError } = await supabase
+          .from('order')
+          .update({
+            deliverystatus_id: 4,
+            goods_receivedimg: publicUrl
+          })
+          .eq('order_id', orderId);
 
-            if (updateError) throw updateError;
+        if (updateError) throw updateError;
 
-            router.replace({ pathname: '/(courier)/home/delivercomplete', params: { orderId } });
+        router.replace({ pathname: '/(courier)/home/delivercomplete', params: { orderId } });
 
-        } catch (err) {
-            Alert.alert("Error", err.message);
-        } finally {
-            setIsSubmitting(false);
-        }
+      } catch (err) {
+        Alert.alert("Error", err.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  if (loading || !order) return <ActivityIndicator size="large" color="#3BF579" style={{marginTop:50}} />;
+  if (loading || !order) return <ActivityIndicator size="large" color="#3BF579" style={{ marginTop: 50 }} />;
 
   const goodsImages = order.goods_image1 ? [{ uri: order.goods_image1 }] : [];
 
@@ -143,79 +145,79 @@ const DeliverOngoing = () => {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.mapContainer}>
-           <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} interactive={true} />
-           {showDetails && <View style={styles.dimOverlay} />}
+          <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} interactive={true} />
+          {showDetails && <View style={styles.dimOverlay} />}
         </View>
 
         <View style={styles.header}>
-           <Image source={headerlogo} style={styles.logo}/>
-           <Pressable
-             style={[styles.headerbutton, !showDetails && styles.headerButtonActive]}
-             onPress={() => setShowDetails(!showDetails)}
-           >
-             <Image source={viewIcon} style={[styles.iconSmall, !showDetails && { tintColor: '#3BF579' }]} />
-             <Text style={styles.viewText}>{showDetails ? "Hide" : "View"}</Text>
-           </Pressable>
+          <Image source={headerlogo} style={[styles.logo, { tintColor: isDarkMode ? undefined : colors.text }]} />
+          <Pressable
+            style={[styles.headerbutton, { backgroundColor: colors.surface }, !showDetails && styles.headerButtonActive]}
+            onPress={() => setShowDetails(!showDetails)}
+          >
+            <Image source={viewIcon} style={[styles.iconSmall, { tintColor: colors.subText }, !showDetails && { tintColor: '#3BF579' }]} />
+            <Text style={[styles.viewText, { color: colors.subText }]}>{showDetails ? "Hide" : "View"}</Text>
+          </Pressable>
         </View>
 
         {showDetails && (
           <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.scrollView}>
             <View style={styles.mainContent}>
-               <View style={styles.cardContainer}>
-                 <View style={styles.orderinfo}>
-                    <View style={styles.info}>
-                      <Text style={styles.infotext}>Delivery #{order.order_id}</Text>
-                      <Text style={styles.infosubtext}>
-                        {isPickupPhase ? 'Heading to Pickup' : 'Heading to Dropoff'}
+              <View style={[styles.cardContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.orderinfo}>
+                  <View style={styles.info}>
+                    <Text style={[styles.infotext, { color: colors.text }]}>Delivery #{order.order_id}</Text>
+                    <Text style={[styles.infosubtext, { color: colors.subText }]}>
+                      {isPickupPhase ? 'Heading to Pickup' : 'Heading to Dropoff'}
+                    </Text>
+                  </View>
+                  <View style={[styles.farecontainer, { backgroundColor: colors.inputBackground }]}>
+                    <Text style={[styles.totalfare, { color: colors.tint }]}>₱ {order.total_fare}</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.locationcontainer1, { backgroundColor: colors.inputBackground }]}>
+                  <View style={[styles.sublocationcontainer, { opacity: isPickupPhase ? 1 : 0.5 }]}>
+                    <Image source={geopick} style={[styles.geopickicon, { tintColor: colors.icon }]} />
+                    <Text style={[styles.sublocationtext, { color: colors.text }]}>{order.pickup_address}</Text>
+                  </View>
+                  <View style={[styles.sublocationcontainer, { opacity: isDropoffPhase ? 1 : 0.5 }]}>
+                    <Image source={geodrop} style={[styles.geodropicon, { tintColor: colors.icon }]} />
+                    <Text style={[styles.sublocationtext, { color: colors.text }]}>{order.dropoff_address}</Text>
+                  </View>
+                </View>
+
+                {/* Upload Proof Section */}
+                {isDropoffPhase && (
+                  <View style={[styles.imagePickerContainer, { backgroundColor: colors.inputBackground }]}>
+                    <Pressable onPress={pickImage} style={[styles.imgbutton, { backgroundColor: colors.surface }]}>
+                      <Text style={[styles.uploadButtonText, { color: colors.subText }]}>
+                        {assets.length > 0 ? 'Photo Selected' : 'Take Proof Photo'}
                       </Text>
-                    </View>
-                    <View style={styles.farecontainer}>
-                      <Text style={styles.totalfare}>₱ {order.total_fare}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.locationcontainer1}>
-                    <View style={[styles.sublocationcontainer, {opacity: isPickupPhase ? 1 : 0.5}]}>
-                      <Image source={geopick} style={styles.geopickicon}/>
-                      <Text style={styles.sublocationtext}>{order.pickup_address}</Text>
-                    </View>
-                    <View style={[styles.sublocationcontainer, {opacity: isDropoffPhase ? 1 : 0.5}]}>
-                      <Image source={geodrop} style={styles.geodropicon}/>
-                      <Text style={styles.sublocationtext}>{order.dropoff_address}</Text>
+                    </Pressable>
+                    <View style={styles.imageListContainer}>
+                      {assets.map((item, idx) => (
+                        <Image key={idx} source={{ uri: item.uri }} style={styles.selectedImage} />
+                      ))}
                     </View>
                   </View>
+                )}
 
-                  {/* Upload Proof Section */}
-                  {isDropoffPhase && (
-                    <View style={styles.imagePickerContainer}>
-                       <Pressable onPress={pickImage} style={styles.imgbutton}>
-                         <Text style={styles.uploadButtonText}>
-                           {assets.length > 0 ? 'Photo Selected' : 'Take Proof Photo'}
-                         </Text>
-                       </Pressable>
-                       <View style={styles.imageListContainer}>
-                         {assets.map((item, idx) => (
-                           <Image key={idx} source={{ uri: item.uri }} style={styles.selectedImage} />
-                         ))}
-                       </View>
-                    </View>
-                  )}
-
-                  {/* Actions */}
-                  {isSubmitting ? (
-                    <ActivityIndicator size="large" color="#3BF579" style={{marginTop: 20}} />
-                  ) : (
-                    <View style={{gap: 10, marginTop: 20}}>
-                        <Pressable style={styles.mainbutton} onPress={handleAction}>
-                          <Text style={styles.maintextbutton}>
-                             {isPickupPhase ? 'Confirm Pickup' : 'Confirm Delivery'}
-                          </Text>
-                        </Pressable>
-                    </View>
-                  )}
-               </View>
+                {/* Actions */}
+                {isSubmitting ? (
+                  <ActivityIndicator size="large" color="#3BF579" style={{ marginTop: 20 }} />
+                ) : (
+                  <View style={{ gap: 10, marginTop: 20 }}>
+                    <Pressable style={styles.mainbutton} onPress={handleAction}>
+                      <Text style={styles.maintextbutton}>
+                        {isPickupPhase ? 'Confirm Pickup' : 'Confirm Delivery'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
             </View>
           </ScrollView>
         )}
@@ -226,36 +228,36 @@ const DeliverOngoing = () => {
 
 // Use your existing Styles object here (omitted for brevity)
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   mapContainer: { ...StyleSheet.absoluteFillObject },
   dimOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: verticalScale(30), zIndex: 100 },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
-  headerbutton: { flexDirection: 'row', alignItems: 'center', backgroundColor:'#22262F', padding: 8, borderRadius: 10, gap: 6 },
+  headerbutton: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10, gap: 6 },
   headerButtonActive: { borderColor: '#3BF579', borderWidth: 1 },
-  iconSmall: { width: 18, height: 18, resizeMode: 'contain', tintColor: '#8796AA' },
-  viewText: { color: '#8796AA', fontSize: 12 },
+  iconSmall: { width: 18, height: 18, resizeMode: 'contain' },
+  viewText: { fontSize: 12 },
   scrollView: { flex: 1, zIndex: 10 },
   mainContent: { padding: 20, paddingTop: 10 },
-  cardContainer: { backgroundColor: 'rgba(20, 21, 25, 0.95)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#363D47' },
-  orderinfo: { flexDirection:'row', justifyContent:'space-between', marginBottom: 20 },
-  infotext: { color:'white', fontSize:20, fontWeight:'bold' },
-  infosubtext: { color:'#8796AA', fontSize:14 },
-  farecontainer: { backgroundColor:'#192028', padding: 10, borderRadius:10 },
-  totalfare: { color:'#87AFB9', fontSize:18 },
-  locationcontainer1: { marginTop:16, backgroundColor:'#363D47', borderRadius:14, padding:12 },
-  sublocationcontainer: { flexDirection:'row', gap:10, marginBottom:12 },
-  sublocationtext: { color:'white', flex:1 },
-  geopickicon: { width:22, height:22 },
-  geodropicon: { width:22, height:22 },
-  imagePickerContainer: { alignItems: 'center', marginTop: 20, backgroundColor: '#363D47', borderRadius: 11, padding: 10 },
-  imgbutton: { width:'100%', height: 45, backgroundColor:'#192028', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  uploadButtonText: { color: '#7398A9' },
+  cardContainer: { borderRadius: 20, padding: 20, borderWidth: 1 },
+  orderinfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  infotext: { fontSize: 20, fontWeight: 'bold' },
+  infosubtext: { fontSize: 14 },
+  farecontainer: { padding: 10, borderRadius: 10 },
+  totalfare: { fontSize: 18 },
+  locationcontainer1: { marginTop: 16, borderRadius: 14, padding: 12 },
+  sublocationcontainer: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  sublocationtext: { flex: 1 },
+  geopickicon: { width: 22, height: 22 },
+  geodropicon: { width: 22, height: 22 },
+  imagePickerContainer: { alignItems: 'center', marginTop: 20, borderRadius: 11, padding: 10 },
+  imgbutton: { width: '100%', height: 45, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  uploadButtonText: {},
   imageListContainer: { flexDirection: 'row', marginTop: 10 },
   selectedImage: { width: 60, height: 60, borderRadius: 5, margin: 5 },
-  mainbutton: { backgroundColor:'#3BF579', padding:15, borderRadius:10, alignItems:'center' },
-  maintextbutton: { color:'black', fontWeight:'bold', fontSize:16 }
+  mainbutton: { backgroundColor: '#3BF579', padding: 15, borderRadius: 10, alignItems: 'center' },
+  maintextbutton: { color: 'black', fontWeight: 'bold', fontSize: 16 }
 });
 
 export default DeliverOngoing;

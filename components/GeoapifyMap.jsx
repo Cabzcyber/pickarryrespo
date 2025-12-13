@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,11 +14,13 @@ import { WebView } from 'react-native-webview';
 import { verticalScale } from 'react-native-size-matters';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { useTheme } from '../context/ThemeContext';
 
 // SECURITY: Ensure EXPO_PUBLIC_GEOAPIFY_API_KEY is in your .env file
 const API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
 
 export default function GeoapifyMap({ initialLocation, onConfirm, placeholder }) {
+  const { colors, isDarkMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [currentAddress, setCurrentAddress] = useState(initialLocation?.address || "Pan map to select...");
   const [currentCoords, setCurrentCoords] = useState(initialLocation || null);
@@ -34,7 +36,7 @@ export default function GeoapifyMap({ initialLocation, onConfirm, placeholder })
   const startLat = initialLocation?.latitude || 8.651770;
   const startLon = initialLocation?.longitude || 124.751999;
 
-  // --- HTML Content ---
+  // --- HTML Content (STATIC DARK THEME) ---
   const mapHtml = `
     <!DOCTYPE html>
     <html>
@@ -182,9 +184,9 @@ export default function GeoapifyMap({ initialLocation, onConfirm, placeholder })
       // 4. Validate if User is inside Jasaan Bounds
       // Simple Check: Lat must be between 8.58 and 8.72, Lon between 124.70 and 124.82
       if (latitude < 8.58 || latitude > 8.72 || longitude < 124.70 || longitude > 124.82) {
-         Alert.alert("Out of Service Area", "Your GPS location is outside our service area (Jasaan).");
-         setLoading(false);
-         return;
+        Alert.alert("Out of Service Area", "Your GPS location is outside our service area (Jasaan).");
+        setLoading(false);
+        return;
       }
 
       const injectScript = `
@@ -206,28 +208,38 @@ export default function GeoapifyMap({ initialLocation, onConfirm, placeholder })
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'moveEnd') fetchAddress(data.latitude, data.longitude);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
 
       <View style={styles.searchContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, {
+            backgroundColor: colors.surface,
+            color: colors.text,
+            borderColor: colors.border
+          }]}
           placeholder="Search address..."
-          placeholderTextColor="#87AFB9"
+          placeholderTextColor={colors.subText}
           value={searchQuery}
           onChangeText={handleSearch}
         />
         {isSearching && suggestions.length > 0 && (
-          <View style={styles.suggestionsList}>
+          <View style={[styles.suggestionsList, {
+            backgroundColor: colors.surface,
+            borderColor: colors.border
+          }]}>
             <FlatList
               data={suggestions}
               keyExtractor={(item, index) => index.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.suggestionItem} onPress={() => handleSelectSuggestion(item)}>
-                  <Text style={styles.suggestionText}>{item.properties.formatted}</Text>
+                <TouchableOpacity
+                  style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                  onPress={() => handleSelectSuggestion(item)}
+                >
+                  <Text style={[styles.suggestionText, { color: colors.text }]}>{item.properties.formatted}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -239,26 +251,32 @@ export default function GeoapifyMap({ initialLocation, onConfirm, placeholder })
         ref={webViewRef}
         originWhitelist={['*']}
         source={{ html: mapHtml }}
-        style={styles.webview}
+        style={[styles.webview, { backgroundColor: '#141519' }]} // Static Dark Background for WebView
         onMessage={handleMessage}
         onLoadEnd={() => setLoading(false)}
         javaScriptEnabled={true}
         allowFileAccess={false}
       />
 
-      <TouchableOpacity style={styles.myLocationButton} onPress={handleMyLocation}>
-        <MaterialIcons name="my-location" size={24} color="#0AB3FF" />
+      <TouchableOpacity
+        style={[styles.myLocationButton, {
+          backgroundColor: colors.surface,
+          borderColor: colors.border
+        }]}
+        onPress={handleMyLocation}
+      >
+        <MaterialIcons name="my-location" size={24} color={colors.tint} />
       </TouchableOpacity>
 
       {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#3BF579" />
+        <View style={[styles.loadingOverlay, { backgroundColor: '#141519' }]}>
+          <ActivityIndicator size="large" color={colors.tint} />
         </View>
       )}
 
-      <View style={styles.bottomCard}>
-        <Text style={styles.label}>{placeholder || "Selected Location"}</Text>
-        <Text style={styles.address} numberOfLines={2}>{currentAddress}</Text>
+      <View style={[styles.bottomCard, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.label, { color: colors.subText }]}>{placeholder || "Selected Location"}</Text>
+        <Text style={[styles.address, { color: colors.text }]} numberOfLines={2}>{currentAddress}</Text>
         <TouchableOpacity style={styles.confirmButton} onPress={() => currentCoords && onConfirm && onConfirm(currentCoords)}>
           <Text style={styles.confirmText}>Confirm Location</Text>
         </TouchableOpacity>
@@ -268,33 +286,31 @@ export default function GeoapifyMap({ initialLocation, onConfirm, placeholder })
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
-  webview: { flex: 1, backgroundColor: '#141519' },
-  loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center', zIndex: 2 },
+  container: { flex: 1 },
+  webview: { flex: 1 },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 2 },
 
   searchContainer: { position: 'absolute', top: verticalScale(75), left: 20, right: 20, zIndex: 100 },
-  searchInput: { backgroundColor: '#363D47', color: '#FFFFFF', borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1, borderColor: '#22262F', elevation: 5 },
-  suggestionsList: { marginTop: 5, backgroundColor: '#363D47', borderRadius: 10, maxHeight: 200, borderWidth: 1, borderColor: '#22262F' },
-  suggestionItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#22262F' },
-  suggestionText: { color: '#B0C4D4', fontSize: 14 },
+  searchInput: { borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1, elevation: 5 },
+  suggestionsList: { marginTop: 5, borderRadius: 10, maxHeight: 200, borderWidth: 1 },
+  suggestionItem: { padding: 15, borderBottomWidth: 1 },
+  suggestionText: { fontSize: 14 },
 
   myLocationButton: {
     position: 'absolute',
     bottom: verticalScale(180),
     right: 20,
-    backgroundColor: '#363D47',
     padding: 12,
     borderRadius: 30,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#22262F',
     justifyContent: 'center',
     alignItems: 'center'
   },
 
-  bottomCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#363D47', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: verticalScale(30), elevation: 10 },
-  label: { color: '#87AFB9', fontSize: 12, fontFamily: 'Roboto-Regular', marginBottom: 5 },
-  address: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Roboto-Bold', marginBottom: 20 },
+  bottomCard: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: verticalScale(30), elevation: 10 },
+  label: { fontSize: 12, fontFamily: 'Roboto-Regular', marginBottom: 5 },
+  address: { fontSize: 16, fontFamily: 'Roboto-Bold', marginBottom: 20 },
   confirmButton: { backgroundColor: '#3BF579', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   confirmText: { color: '#000000', fontSize: 16, fontFamily: 'Roboto-Bold' }
 });

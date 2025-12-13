@@ -1,19 +1,19 @@
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, Pressable, StyleSheet, View, Alert } from 'react-native'; // Added Alert
+import { Image, Pressable, StyleSheet, View, Alert } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import GeoapifyMap from '../../../components/GeoapifyMap';
 import { useOrder } from '../../../context/OrderContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const backimg = require("../../../assets/images/back.png");
 
 export default function DropoffScreen() {
   const router = useRouter();
-  // Destructure pickupLocation to check against
   const { setDropoffLocation, dropoffLocation, pickupLocation } = useOrder();
+  const { colors } = useTheme();
 
   const handleLocationSelect = (locationData) => {
-    // --- CONSTRAINT CHECK ---
     if (pickupLocation) {
       const isSameLat = Math.abs(locationData.latitude - pickupLocation.latitude) < 0.0001;
       const isSameLon = Math.abs(locationData.longitude - pickupLocation.longitude) < 0.0001;
@@ -23,7 +23,7 @@ export default function DropoffScreen() {
           "Invalid Location",
           "Drop-off location cannot be the same as Pickup location. Please choose a different point."
         );
-        return; // Stop execution
+        return;
       }
     }
 
@@ -35,7 +35,7 @@ export default function DropoffScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Drop Off Service', headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
             <Image source={backimg} style={styles.backimg} />
@@ -57,7 +57,6 @@ export default function DropoffScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519'
   },
   header: {
     position: 'absolute',

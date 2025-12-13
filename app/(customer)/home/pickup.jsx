@@ -1,21 +1,20 @@
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, Pressable, StyleSheet, View, Alert } from 'react-native'; // Added Alert
+import { Image, Pressable, StyleSheet, View, Alert } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import GeoapifyMap from '../../../components/GeoapifyMap';
 import { useOrder } from '../../../context/OrderContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const backimg = require("../../../assets/images/back.png");
 
 export default function PickupScreen() {
   const router = useRouter();
-  // Destructure dropoffLocation to check against
   const { setPickupLocation, pickupLocation, dropoffLocation } = useOrder();
+  const { colors } = useTheme();
 
   const handleLocationSelect = (locationData) => {
-    // --- CONSTRAINT CHECK ---
     if (dropoffLocation) {
-      // Simple check: Are coordinates nearly identical? (to 4 decimal places is roughly 11 meters)
       const isSameLat = Math.abs(locationData.latitude - dropoffLocation.latitude) < 0.0001;
       const isSameLon = Math.abs(locationData.longitude - dropoffLocation.longitude) < 0.0001;
 
@@ -24,7 +23,7 @@ export default function PickupScreen() {
           "Invalid Location",
           "Pickup location cannot be the same as Drop-off location. Please choose a different point."
         );
-        return; // Stop execution
+        return;
       }
     }
 
@@ -36,7 +35,7 @@ export default function PickupScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Pick Up Service', headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
             <Image source={backimg} style={styles.backimg} />
@@ -58,7 +57,6 @@ export default function PickupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519'
   },
   header: {
     position: 'absolute',

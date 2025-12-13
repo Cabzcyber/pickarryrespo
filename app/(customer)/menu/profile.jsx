@@ -4,8 +4,11 @@ import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } fr
 import { TextInput } from 'react-native-gesture-handler';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
+
 export default function Profile() {
   const router = useRouter();
+  const { colors, isDarkMode } = useTheme();
   const backimg = require("@/assets/images/back.png");
   const headerlogo = require("@/assets/images/headerlogo.png");
   const person = require("@/assets/images/person.png");
@@ -15,7 +18,7 @@ export default function Profile() {
   const gender = require("@/assets/images/gender.png");
   const home = require("@/assets/images/home.png");
 
-// --- State ---
+  // --- State ---
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState({
@@ -38,7 +41,7 @@ export default function Profile() {
 
         if (!session) {
           Alert.alert("Error", "No user session found.");
-          router.replace('/(auth)/login'); 
+          router.replace('/(auth)/login');
           return;
         }
 
@@ -57,7 +60,7 @@ export default function Profile() {
         if (data) {
           setProfile({
             full_name: data.full_name || 'Not Provided',
-            email: user.email || 'Not Provided', 
+            email: user.email || 'Not Provided',
             phone_number: data.phone_number || 'Not Provided',
             date_of_birth: data.birth_date || 'Not Provided',
             gender: data.gender || 'Not Provided',
@@ -102,10 +105,10 @@ export default function Profile() {
       if (error) {
         throw error;
       }
-      
+
       Alert.alert('Success', 'Profile updated!');
       setIsEditing(false); // Switch back to view mode
-      
+
     } catch (error) {
       console.error("Save Error:", error.message);
       Alert.alert('Error', 'Could not save profile.');
@@ -121,116 +124,117 @@ export default function Profile() {
       [field]: value
     }));
   };
-  
+
   // --- Loading Spinner ---
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#0AB3FF" />
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.tint} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(customer)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
+          <Image source={backimg} style={[styles.backicon, { tintColor: isDarkMode ? undefined : colors.text }]} />
         </Pressable>
-      
-        <Text style={styles.title}>Profile</Text>
-        <View style={styles.placeholder}/>
-            <Pressable onPress={isEditing ? handleSave : () => setIsEditing(true)}>
-                      <Text style={styles.editSaveButton}>{isEditing ? 'Save' : 'Edit'}</Text>
-                    </Pressable>
-        
+
+        <Text style={[styles.title, { color: colors.tint }]}>Profile</Text>
+        <View style={styles.placeholder} />
+        <Pressable onPress={isEditing ? handleSave : () => setIsEditing(true)}>
+          <Text style={[styles.editSaveButton, { color: colors.tint }]}>{isEditing ? 'Save' : 'Edit'}</Text>
+        </Pressable>
+
       </View>
-      <View style={styles.separator} />
-      
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
       <View style={styles.mainContent}>
         <View style={styles.settingcontent}>
           <View style={styles.settingsubcontent}>
-            <Image source={person} style={styles.ordericon}/>
+            <Image source={person} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Full Name</Text>
-                {isEditing ? (
-                  <TextInput
-                  style={styles.input}
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Full Name</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
                   value={profile.full_name}
-                  onChangeText={(text)=>handleInputChange('full_name', text)}
+                  onChangeText={(text) => handleInputChange('full_name', text)}
                   placeholder="Enter full name"
-                  placeholderTextColor="#9ca3af"
-                  />
+                  placeholderTextColor={colors.subText}
+                />
 
-                ):(
-                  <Text style={styles.settingsubinnertext}>{profile.full_name}</Text>
-                )}
+              ) : (
+                <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.full_name}</Text>
+              )}
             </View>
           </View>
-          
+
           <View style={styles.settingsubcontent}>
-            <Image source={email} style={styles.ordericon}/>
+            <Image source={email} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Email</Text>
-              <Text style={styles.settingsubinnertext}>{profile.email}</Text>
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Email</Text>
+              <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.email}</Text>
             </View>
           </View>
-          
+
           <View style={styles.settingsubcontent}>
-            <Image source={contact} style={styles.ordericon}/>
+            <Image source={contact} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Phone Number</Text>
-              <Text style={styles.settingsubinnertext}>{profile.phone_number}</Text>
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Phone Number</Text>
+              <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.phone_number}</Text>
             </View>
           </View>
-          
+
           <View style={styles.settingsubcontent}>
-            <Image source={birth} style={styles.ordericon}/>
+            <Image source={birth} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Date of Birth</Text>
-              <Text style={styles.settingsubinnertext}>{profile.date_of_birth}</Text>
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Date of Birth</Text>
+              <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.date_of_birth}</Text>
             </View>
           </View>
-          
+
           <View style={styles.settingsubcontent}>
-            <Image source={gender} style={styles.ordericon}/>
+            <Image source={gender} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Gender</Text>
-               {isEditing ? (
-                  <TextInput
-                  style={styles.input}
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Gender</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
                   value={profile.gender}
-                  onChangeText={(text)=>handleInputChange('gender', text)}
+                  onChangeText={(text) => handleInputChange('gender', text)}
                   placeholder="Enter Gender"
-                  placeholderTextColor="#9ca3af"
-                  />
+                  placeholderTextColor={colors.subText}
+                />
 
-                ):(
-                  <Text style={styles.settingsubinnertext}>{profile.gender}</Text>
-                )}
+              ) : (
+                <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.gender}</Text>
+              )}
             </View>
           </View>
-          
+
           <View style={styles.settingsubcontent}>
-            <Image source={home} style={styles.ordericon}/>
+            <Image source={home} style={styles.ordericon} />
             <View style={styles.textContainer}>
-              <Text style={styles.settingsubtext}>Address</Text>
-               {isEditing ? (
-                  <TextInput
-                  style={styles.input}
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Address</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
                   value={profile.address}
-                  onChangeText={(text)=>handleInputChange('address', text)}
-                  placeholder="Enter Gender"
-                  />
+                  onChangeText={(text) => handleInputChange('address', text)}
+                  placeholder="Enter Address"
+                  placeholderTextColor={colors.subText}
+                />
 
-                ):(
-                 <Text style={styles.settingsubinnertext}>{profile.address}</Text>
-                )}
-             
+              ) : (
+                <Text style={[styles.settingsubinnertext, { color: colors.subText }]}>{profile.address}</Text>
+              )}
+
             </View>
           </View>
-          
-        
+
+
         </View>
       </View>
     </View>
@@ -240,19 +244,17 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-   gap:20,
+    gap: 20,
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(30),
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 10,
   },
@@ -277,7 +279,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Roboto-Bold',
     fontSize: 24,
-    color: '#0AB3FF',
   },
   settingcontent: {
     flexDirection: 'column',
@@ -300,14 +301,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Medium',
     fontSize: 16,
     fontWeight: '500',
-    color: '#ffffff',
     marginBottom: 4,
   },
   settingsubinnertext: {
     fontFamily: 'Roboto-Light',
     fontSize: 14,
     fontWeight: '300',
-    color: '#9ca3af',
   },
   ordericon: {
     width: 24,
@@ -318,15 +317,12 @@ const styles = StyleSheet.create({
   editSaveButton: {
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
-    color: '#0AB3FF',
     marginLeft: 150,
   },
   input: {
     fontFamily: 'Roboto-Light',
     fontSize: 14,
-    color: '#FFFFFF', // Make text white so it's visible
     borderBottomWidth: 1,
-    borderBottomColor: '#363D47',
     paddingVertical: 4,
   },
   loadingContainer: {

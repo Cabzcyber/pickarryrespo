@@ -1,11 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, Alert, ActivityIndicator } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, Alert, ActivityIndicator, Switch } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function AdminMenu() {
   const router = useRouter();
+  const { theme, toggleTheme, colors } = useTheme();
 
   // Assets
   const setting = require("@/assets/images/setting.png");
@@ -14,6 +16,7 @@ export default function AdminMenu() {
   const report = require("@/assets/images/report.png");
   const general = require("@/assets/images/general.png");
   const logout = require("@/assets/images/logout.png");
+  const themeIcon = require("@/assets/images/theme.png"); // Assuming you have a theme icon, or reuse setting
 
   // State
   const [loading, setLoading] = useState(true);
@@ -84,51 +87,79 @@ export default function AdminMenu() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.mainContent}>
         <View style={styles.header}>
           <View style={styles.maintext}>
             {loading ? (
-               <ActivityIndicator size="small" color="#0AB3FF" style={{alignSelf:'flex-start'}} />
+              <ActivityIndicator size="small" color="#0AB3FF" style={{ alignSelf: 'flex-start' }} />
             ) : (
-               <>
-                 <Text style={styles.subtext}>{profile.fullName}</Text>
-                 <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
-               </>
+              <>
+                <Text style={styles.subtext}>{profile.fullName}</Text>
+                <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
+              </>
             )}
           </View>
         </View>
-        <View style={styles.separator} />
+        <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
         <View style={styles.settingcontent}>
+
+          {/* Dark Mode Toggle */}
+          <View style={styles.settingsubcontent}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={themeIcon} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Dark Mode</Text>
+            </View>
+            <Switch
+              trackColor={{ false: "#767577", true: "#0AB3FF" }}
+              thumbColor={theme === 'dark' ? "#f4f3f4" : "#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
+              onValueChange={toggleTheme}
+              value={theme === 'dark'}
+            />
+          </View>
+
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(admin)/menu/notification')}>
-            <Image source={notification} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Notification</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={notification} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Notification</Text>
+            </View>
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(admin)/menu/about')}>
-            <Image source={calculator} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Fare</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={calculator} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Fare</Text>
+            </View>
           </Pressable>
 
-          <Pressable style={styles.settingsubcontent}  onPress={() => router.push('/(admin)/menu/profile')}>
-            <Image source={report} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Complaint</Text>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(admin)/menu/profile')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={report} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Complaint</Text>
+            </View>
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(admin)/menu/term')}>
-            <Image source={general} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>General Terms & Conditions</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={general} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>General Terms & Conditions</Text>
+            </View>
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(admin)/menu/settings')}>
-            <Image source={setting} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Settings</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={setting} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Settings</Text>
+            </View>
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={handleLogout}>
-            <Image source={logout} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Log Out</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={logout} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+              <Text style={[styles.settingsubtext, { color: colors.text }]}>Log Out</Text>
+            </View>
           </Pressable>
         </View>
       </View>
@@ -139,7 +170,6 @@ export default function AdminMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   mainContent: {
     flex: 1,
@@ -154,16 +184,15 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 20,
   },
   maintext: {
     flexDirection: 'column',
-    marginTop:'5'
+    marginTop: '5'
   },
   subtext: {
-    fontFamily: 'Roboto-Bold', // Ensure this font is loaded, changed from 'Roboto Flex' for consistency
+    fontFamily: 'Roboto-Bold',
     fontSize: 20,
     color: '#0AB3FF',
     marginBottom: 5,
@@ -187,6 +216,7 @@ const styles = StyleSheet.create({
   settingsubcontent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between', // Changed to space-between for toggle
     width: '100%',
     paddingVertical: 15,
     paddingHorizontal: 10,
@@ -196,7 +226,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Light',
     fontSize: 17,
     fontWeight: '300',
-    color: '#ffffff',
   },
   ordericon: {
     width: 24,

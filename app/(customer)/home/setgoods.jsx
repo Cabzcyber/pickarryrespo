@@ -1,4 +1,4 @@
-import AntDesign from '@expo/vector-icons/AntDesign';
+
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from "react";
@@ -6,12 +6,14 @@ import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, 
 import { Dropdown } from 'react-native-element-dropdown';
 import { verticalScale } from 'react-native-size-matters';
 import { useOrder } from '../../../context/OrderContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const backimg = require("@/assets/images/back.png");
 
 export default function SetGoodsScreen() {
   const router = useRouter();
   const { setGoodsDetails, goodsDetails: existingDetails } = useOrder();
+  const { colors } = useTheme();
 
   // Initialize state
   const [assets, setAssets] = useState(existingDetails?.images || []);
@@ -36,9 +38,9 @@ export default function SetGoodsScreen() {
 
   const renderItem = item => (
     <View style={styles.item}>
-      <Text style={styles.textItem}>{item.label}</Text>
+      <Text style={[styles.textItem, { color: colors.subText }]}>{item.label}</Text>
       {item.value === value && (
-        <AntDesign style={styles.icon} color="black" name="check" size={20} />
+        <AntDesign style={styles.icon} color={colors.text} name="check" size={20} />
       )}
     </View>
   );
@@ -84,26 +86,26 @@ export default function SetGoodsScreen() {
 
     // 1. Validate
     if (!value) {
-        Alert.alert("Missing Info", "Please select a Goods Category.");
-        return;
+      Alert.alert("Missing Info", "Please select a Goods Category.");
+      return;
     }
     if (!description.trim()) {
-        Alert.alert("Missing Info", "Please enter a description.");
-        return;
+      Alert.alert("Missing Info", "Please enter a description.");
+      return;
     }
 
     // 2. Format Data (Force Category ID to be a valid Integer)
     const categoryIdInt = parseInt(value, 10);
     if (isNaN(categoryIdInt)) {
-        Alert.alert("Error", "Invalid Category ID");
-        return;
+      Alert.alert("Error", "Invalid Category ID");
+      return;
     }
 
     const detailsPayload = {
-        category_id: categoryIdInt, // Must be integer
-        other_details: description,
-        rush_fee: rushFee || "0",   // Default to "0" if empty
-        images: assets
+      category_id: categoryIdInt, // Must be integer
+      other_details: description,
+      rush_fee: rushFee || "0",   // Default to "0" if empty
+      images: assets
     };
 
     // 3. Save to Context
@@ -121,7 +123,7 @@ export default function SetGoodsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Goods Service', headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View>
           <Pressable onPress={() => router.back()}>
             <Image source={backimg} style={styles.backimg} />
@@ -132,11 +134,11 @@ export default function SetGoodsScreen() {
           {/* Description */}
           <View style={styles.maininputcontainer}>
             <View style={styles.inputcontainer}>
-              <Text style={styles.title}>Description To Deliver</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Description To Deliver</Text>
               <TextInput
-                style={styles.textinput}
+                style={[styles.textinput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
                 placeholder='Enter The Details To Deliver'
-                placeholderTextColor='#7398A9'
+                placeholderTextColor={colors.subText}
                 multiline={true}
                 numberOfLines={5}
                 value={description}
@@ -148,11 +150,11 @@ export default function SetGoodsScreen() {
           {/* Dropdown */}
           <View style={styles.dropdowncontent}>
             <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              inputSearchStyle={styles.inputSearchStyle}
-              iconStyle={styles.iconStyle}
+              style={[styles.dropdown, { backgroundColor: colors.card }]}
+              placeholderStyle={[styles.placeholderStyle, { color: colors.subText }]}
+              selectedTextStyle={[styles.selectedTextStyle, { color: colors.text }]}
+              inputSearchStyle={[styles.inputSearchStyle, { color: colors.text }]}
+              iconStyle={[styles.iconStyle, { color: colors.subText }]}
               data={data}
               search
               maxHeight={300}
@@ -170,9 +172,9 @@ export default function SetGoodsScreen() {
           </View>
 
           {/* Images */}
-          <View style={styles.imagePickerContainer}>
-            <Pressable onPress={pickImage} style={styles.imgbutton}>
-              <Text style={styles.uploadButtonText}>Upload Goods Images (Max 3)</Text>
+          <View style={[styles.imagePickerContainer, { backgroundColor: colors.card }]}>
+            <Pressable onPress={pickImage} style={[styles.imgbutton, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.uploadButtonText, { color: colors.subText }]}>Upload Goods Images (Max 3)</Text>
             </Pressable>
 
             <FlatList
@@ -191,11 +193,11 @@ export default function SetGoodsScreen() {
           {/* Rush Fee */}
           <View style={styles.maininputcontainer1}>
             <View style={styles.inputcontainer}>
-              <Text style={styles.title}>Ipa-Dali Bonus</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Ipa-Dali Bonus</Text>
               <TextInput
-                style={styles.textinput1}
+                style={[styles.textinput1, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
                 placeholder='Enter Minimum Amount ₱10'
-                placeholderTextColor='#7398A9'
+                placeholderTextColor={colors.subText}
                 keyboardType='numeric'
                 value={rushFee}
                 onChangeText={setRushFee}
@@ -203,8 +205,8 @@ export default function SetGoodsScreen() {
             </View>
           </View>
 
-          <Pressable style={styles.mainbutton} onPress={handleSubmit}>
-             <Text style={styles.maintextbutton}>Submit</Text>
+          <Pressable style={[styles.mainbutton, { backgroundColor: colors.success }]} onPress={handleSubmit}>
+            <Text style={[styles.maintextbutton, { color: colors.buttonText }]}>Submit</Text>
           </Pressable>
 
         </View>
@@ -218,24 +220,24 @@ export default function SetGoodsScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <Image
               source={{ uri: previewImage?.uri }}
               style={styles.previewImage}
               resizeMode="contain"
             />
             <View style={styles.modalButtons}>
-              <Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.buttonText}>Close</Text>
+              <Pressable style={[styles.closeButton, { backgroundColor: colors.subText }]} onPress={() => setModalVisible(false)}>
+                <Text style={[styles.buttonText, { color: colors.buttonText }]}>Close</Text>
               </Pressable>
               <Pressable
-                style={styles.deleteButton}
+                style={[styles.deleteButton, { backgroundColor: colors.error }]}
                 onPress={() => {
                   const index = assets.findIndex(asset => asset.uri === previewImage.uri);
                   deleteImage(index);
                 }}
               >
-                <Text style={styles.buttonText}>Delete</Text>
+                <Text style={[styles.buttonText, { color: colors.buttonText }]}>Delete</Text>
               </Pressable>
             </View>
           </View>
@@ -246,36 +248,36 @@ export default function SetGoodsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   mainContent: { flex: 1, padding: 24 },
-  backimg:{ padding:10, marginTop: verticalScale(40) },
-  imgbutton:{ width:'90%', height: 50, backgroundColor:'#192028', borderRadius: 11, padding: 12, marginBottom: 10 },
-  maininputcontainer:{ justifyContent:"center", alignItems:'center', marginTop: verticalScale(-30), rowGap:10, height: '28%' },
-  title:{ fontFamily: 'Roboto-Bold', color: '#FFFFFF', fontSize: 18, marginBottom:11 },
-  inputcontainer:{ flexDirection:'column', width:'105%', height:'80%', padding:10, marginHorizontal:'auto' },
-  textinput:{ flex:1, fontFamily: 'Roboto-regular', color: '#FFFFFF', fontSize: 15, backgroundColor:'#363D47', borderRadius: 11, padding:10, borderWidth:1, borderColor: '#363D47', textAlignVertical: "top" },
-  textinput1:{ flex:1, fontFamily: 'Roboto-regular', color: '#FFFFFF', fontSize: 15, backgroundColor:'#363D47', borderRadius: 11, padding:10, borderWidth:1, borderColor: '#363D47' },
-  maininputcontainer1:{ justifyContent:"center", alignItems:'center', marginTop: verticalScale(1), rowGap:10, height: '18%', padding:1 },
+  backimg: { padding: 10, marginTop: verticalScale(40) },
+  imgbutton: { width: '90%', height: 50, borderRadius: 11, padding: 12, marginBottom: 10 },
+  maininputcontainer: { justifyContent: "center", alignItems: 'center', marginTop: verticalScale(-30), rowGap: 10, height: '28%' },
+  title: { fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 11 },
+  inputcontainer: { flexDirection: 'column', width: '105%', height: '80%', padding: 10, marginHorizontal: 'auto' },
+  textinput: { flex: 1, fontFamily: 'Roboto-regular', fontSize: 15, borderRadius: 11, padding: 10, borderWidth: 1, textAlignVertical: "top" },
+  textinput1: { flex: 1, fontFamily: 'Roboto-regular', fontSize: 15, borderRadius: 11, padding: 10, borderWidth: 1 },
+  maininputcontainer1: { justifyContent: "center", alignItems: 'center', marginTop: verticalScale(1), rowGap: 10, height: '18%', padding: 1 },
   dropdowncontent: { width: '100%', marginBottom: 20 },
-  dropdown: { backgroundColor: '#192028', borderRadius: 12, padding: 12, height: 50, color: '#FFFFFF' },
-  icon: { marginRight: 5, color: '#7398A9' },
+  dropdown: { borderRadius: 12, padding: 12, height: 50 },
+  icon: { marginRight: 5 },
   item: { padding: 17, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  textItem: { flex: 1, fontSize: 16, color: '#7398A9' },
-  placeholderStyle: { fontSize: 16, color: '#7398A9', fontFamily: 'Roboto-regular', marginLeft:5 },
-  selectedTextStyle: { fontSize: 16, color: '#FFFFFF', fontFamily: 'Roboto-regular', marginLeft:5 },
-  iconStyle: { width: 20, height: 20, color: '#7398A9' },
-  inputSearchStyle: { height: 40, fontSize: 16, color: '#7398A9', marginLeft:5 },
-  imagePickerContainer: { justifyContent: "center", alignItems: 'center', marginTop: verticalScale(20), marginBottom: verticalScale(20), width: '100%', height: verticalScale(150), backgroundColor: '#363D47', borderRadius: 11, padding: 10 },
+  textItem: { flex: 1, fontSize: 16 },
+  placeholderStyle: { fontSize: 16, fontFamily: 'Roboto-regular', marginLeft: 5 },
+  selectedTextStyle: { fontSize: 16, fontFamily: 'Roboto-regular', marginLeft: 5 },
+  iconStyle: { width: 20, height: 20 },
+  inputSearchStyle: { height: 40, fontSize: 16, marginLeft: 5 },
+  imagePickerContainer: { justifyContent: "center", alignItems: 'center', marginTop: verticalScale(20), marginBottom: verticalScale(20), width: '100%', height: verticalScale(150), borderRadius: 11, padding: 10 },
   imageListContainer: { marginTop: 20 },
   selectedImage: { width: 100, height: 100, margin: 5, borderRadius: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#363D47', borderRadius: 12, padding: 20, alignItems: 'center', maxWidth: '90%', maxHeight: '80%' },
+  modalContent: { borderRadius: 12, padding: 20, alignItems: 'center', maxWidth: '90%', maxHeight: '80%' },
   previewImage: { width: 300, height: 300, borderRadius: 8 },
   modalButtons: { flexDirection: 'row', marginTop: 20, gap: 15 },
-  closeButton: { backgroundColor: '#7398A9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  deleteButton: { backgroundColor: '#FF4444', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  buttonText: { color: '#FFFFFF', fontFamily: 'Roboto-Bold', fontSize: 16 },
-  uploadButtonText: { color: '#7398A9', fontFamily: 'Roboto-Bold', fontSize: 16 },
-  mainbutton:{ flexDirection:'column', width:'98%', padding:10, justifyContent:"center", alignItems:'center', backgroundColor:'#3BF579', borderRadius: 10, marginTop: verticalScale(45), marginBottom: verticalScale(10) },
-  maintextbutton:{ fontSize:18, color:'black', fontFamily: 'Roboto-Bold' },
+  closeButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  deleteButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  buttonText: { fontFamily: 'Roboto-Bold', fontSize: 16 },
+  uploadButtonText: { fontFamily: 'Roboto-Bold', fontSize: 16 },
+  mainbutton: { flexDirection: 'column', width: '98%', padding: 10, justifyContent: "center", alignItems: 'center', borderRadius: 10, marginTop: verticalScale(45), marginBottom: verticalScale(10) },
+  maintextbutton: { fontSize: 18, fontFamily: 'Roboto-Bold' },
 });

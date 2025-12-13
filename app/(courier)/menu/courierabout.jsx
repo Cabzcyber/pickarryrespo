@@ -3,9 +3,11 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View, Alert, ActivityIn
 import { verticalScale } from 'react-native-size-matters';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function About() {
   const router = useRouter();
+  const { colors } = useTheme();
   const backimg = require("@/assets/images/back.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
 
@@ -80,21 +82,21 @@ export default function About() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#0AB3FF" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <Image source={backimg} style={styles.backicon}/>
+        <Pressable onPress={() => router.replace('/(courier)/menu')}>
+          <Image source={backimg} style={[styles.backicon, { tintColor: '#0AB3FF' }]} />
         </Pressable>
         <Text style={styles.title}>About</Text>
       </View>
-      <View style={styles.separator} />
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <ScrollView
         style={styles.mainContent}
@@ -102,46 +104,46 @@ export default function About() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.logoContainer}>
-          <Image source={aboutlogo} style={styles.aboutlogo}/>
+          <Image source={aboutlogo} style={styles.aboutlogo} />
         </View>
 
         {/* --- Section 1: About --- */}
-        <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+        <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['about']}</Text>
 
         {/* --- Section 2: General Terms --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
-          <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>General Terms & Conditions</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms']}</Text>
         </View>
 
         {/* --- Section 3: Contact --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['contact']}</Text>
         </View>
 
         {/* --- Section 4: Terms of Use --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Terms of Use</Text>
-          <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Terms of Use</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms-and-policies']}</Text>
         </View>
 
         {/* --- Section 5: Customer Policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Customer Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Customer Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['customer-policies']}</Text>
         </View>
 
         {/* --- Section 6: Courier Policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Courier Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Courier Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['courier-policies']}</Text>
         </View>
 
         {/* --- Section 7: Fare Policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Fare Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fare Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['fare-policies']}</Text>
         </View>
       </ScrollView>
     </View>
@@ -151,7 +153,7 @@ export default function About() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
+    // backgroundColor: '#141519', // Handled dynamically
   },
   loadingContainer: {
     flex: 1,
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
+    // backgroundColor: '#363D47', // Handled dynamically
     width: '100%',
     marginBottom: 1,
     marginTop: verticalScale(6),
@@ -203,13 +205,13 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontFamily: 'Roboto-Light',
     fontSize: 13,
-    color: '#d1d5db',
+    // color: '#d1d5db', // Handled dynamically
     lineHeight: 20,
     textAlign: 'justify',
     marginBottom: 20,
   },
   sectionCard: {
-    backgroundColor: '#1f2937',
+    // backgroundColor: '#1f2937', // Handled dynamically
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
@@ -217,8 +219,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
-    color: '#ffffff',
+    // color: '#ffffff', // Handled dynamically
     marginBottom: 10,
   },
-  // Input style removed as it is no longer used
 });

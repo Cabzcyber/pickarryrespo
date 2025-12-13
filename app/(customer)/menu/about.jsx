@@ -3,9 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View, Alert, ActivityIndicator
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
 import { useEffect, useState } from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function About() {
   const router = useRouter();
+  const { colors, isDarkMode } = useTheme();
   const backimg = require("@/assets/images/back.png");
   const aboutlogo = require("@/assets/images/aboutlogo.png");
 
@@ -82,21 +84,21 @@ export default function About() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#0AB3FF" />
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.tint} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(customer)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
+          <Image source={backimg} style={[styles.backicon, { tintColor: isDarkMode ? undefined : colors.text }]} />
         </Pressable>
-        <Text style={styles.title}>About</Text>
+        <Text style={[styles.title, { color: colors.tint }]}>About</Text>
       </View>
-      <View style={styles.separator} />
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <ScrollView
         style={styles.mainContent}
@@ -104,43 +106,43 @@ export default function About() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.logoContainer}>
-          <Image source={aboutlogo} style={styles.aboutlogo}/>
+          <Image source={aboutlogo} style={styles.aboutlogo} />
         </View>
 
         {/* Section 1: About */}
-        <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+        <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['about']}</Text>
 
         {/* Section 2: Terms */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
-          <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>General Terms & Conditions</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms']}</Text>
         </View>
 
         {/* Section 3: Contact */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['contact']}</Text>
         </View>
 
         {/* Additional Sections */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Terms of Use</Text>
-          <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Terms of Use</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms-and-policies']}</Text>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Customer Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Customer Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['customer-policies']}</Text>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Courier Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Courier Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['courier-policies']}</Text>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Fare Policies</Text>
-          <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fare Policies</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['fare-policies']}</Text>
         </View>
       </ScrollView>
     </View>
@@ -148,17 +150,17 @@ export default function About() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 20, paddingHorizontal: 12, paddingTop: 12, marginTop: verticalScale(31) },
   backicon: { width: 35, height: 35, resizeMode: 'contain' },
-  separator: { height: 1, backgroundColor: '#363D47', width: '100%', marginBottom: 1, marginTop: verticalScale(6) },
+  separator: { height: 1, width: '100%', marginBottom: 1, marginTop: verticalScale(6) },
   mainContent: { flex: 1, paddingHorizontal: 15, marginTop: verticalScale(8) },
   scrollContent: { paddingBottom: 30 },
-  title: { fontFamily: 'Roboto-Bold', fontSize: 24, color: '#0AB3FF' },
+  title: { fontFamily: 'Roboto-Bold', fontSize: 24 },
   logoContainer: { alignItems: 'center', marginVertical: 20 },
   aboutlogo: { width: 200, height: 60, resizeMode: 'contain' },
-  descriptionText: { fontFamily: 'Roboto-Light', fontSize: 13, color: '#d1d5db', lineHeight: 20, textAlign: 'justify', marginBottom: 20 },
-  sectionCard: { backgroundColor: '#1f2937', borderRadius: 20, padding: 15, marginBottom: 15 },
-  sectionTitle: { fontFamily: 'Roboto-Bold', fontSize: 18, color: '#ffffff', marginBottom: 10 },
+  descriptionText: { fontFamily: 'Roboto-Light', fontSize: 13, lineHeight: 20, textAlign: 'justify', marginBottom: 20 },
+  sectionCard: { borderRadius: 20, padding: 15, marginBottom: 15, elevation: 2 },
+  sectionTitle: { fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 10 },
 });

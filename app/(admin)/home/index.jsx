@@ -1,26 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Dimensions, Image, StyleSheet, Text, View, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
-import { PieChart } from "react-native-chart-kit";
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState, useEffect } from 'react';
+import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, View, Dimensions } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { PieChart } from 'react-native-chart-kit';
 import { verticalScale } from 'react-native-size-matters';
 import supabase from '../../../lib/supabase';
+import { Colors } from '@/constants/theme';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function AdminHome() {
-  const person = require("@/assets/images/person.png");
   const money = require("@/assets/images/money.png");
   const cart = require("@/assets/images/cart.png");
   const logo = require("@/assets/images/headerlogo.png");
+
+  // Theme Colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const subTextColor = useThemeColor({}, 'subText');
+  const borderColor = useThemeColor({}, 'border');
+  const tintColor = useThemeColor({}, 'tint');
 
   // Dropdown State
   const [open, setOpen] = useState(false);
   const [timeFilter, setTimeFilter] = useState('Month');
   const [items, setItems] = useState([
-    {label: 'Today', value: 'Current'},
-    {label: 'This Week', value: 'Week'},
-    {label: 'This Month', value: 'Month'},
-    {label: 'Last Month', value: 'LastMonth'},
+    { label: 'Today', value: 'Current' },
+    { label: 'This Week', value: 'Week' },
+    { label: 'This Month', value: 'Month' },
+    { label: 'Last Month', value: 'LastMonth' },
   ]);
 
   // Data State
@@ -83,7 +93,7 @@ export default function AdminHome() {
       name: item.status,
       population: Number(item.count),
       color: colorMap[item.status] || '#BDC3C7',
-      legendFontColor: "#FFFFFF",
+      legendFontColor: textColor,
       legendFontSize: 12
     }));
   };
@@ -94,20 +104,20 @@ export default function AdminHome() {
   };
 
   return (
-    <View style={styles.container}>
-       {/* Header */}
-       <View style={styles.header}>
-           <Image source={logo} style={styles.logo} />
-       </View>
+    <View style={[styles.container, { backgroundColor }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Image source={logo} style={styles.logo} />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0AB3FF"/>}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={tintColor} />}
         nestedScrollEnabled={true}
       >
         {/* Filter Dropdown */}
         <View style={styles.filterContainer}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>Overview</Text>
           <View style={styles.dropdownWrapper}>
             <DropDownPicker
               open={open}
@@ -116,52 +126,52 @@ export default function AdminHome() {
               setOpen={setOpen}
               setValue={setTimeFilter}
               setItems={setItems}
-              style={styles.dropdown}
-              textStyle={styles.dropdownText}
-              dropDownContainerStyle={styles.dropdownList}
+              style={[styles.dropdown, { backgroundColor: cardColor, borderColor: borderColor }]}
+              textStyle={[styles.dropdownText, { color: tintColor }]}
+              dropDownContainerStyle={[styles.dropdownList, { backgroundColor: cardColor, borderColor: borderColor }]}
               placeholder="Select Period"
               zIndex={3000}
               listMode="SCROLLVIEW"
               scrollViewProps={{
                 nestedScrollEnabled: true,
               }}
-
+              theme={backgroundColor === '#141519' ? 'DARK' : 'LIGHT'}
             />
           </View>
         </View>
 
         {/* --- SUMMARY CARDS --- */}
         <View style={styles.cardsContainer}>
-           {/* Revenue Card */}
-           <View style={styles.card}>
-             <View style={styles.cardIconBg}>
-                <Image source={money} style={styles.cardIcon} />
-             </View>
-             <View>
-               <Text style={styles.cardLabel}>Total Revenue</Text>
-               <Text style={styles.cardValue}>₱ {stats.total_revenue?.toFixed(2)}</Text>
-               <Text style={styles.cardSub}>Comm: ₱ {stats.total_commission?.toFixed(2)}</Text>
-             </View>
-           </View>
+          {/* Revenue Card */}
+          <View style={[styles.card, { backgroundColor: cardColor, borderColor: borderColor }]}>
+            <View style={styles.cardIconBg}>
+              <Image source={money} style={styles.cardIcon} />
+            </View>
+            <View>
+              <Text style={[styles.cardLabel, { color: subTextColor }]}>Total Revenue</Text>
+              <Text style={styles.cardValue}>₱ {stats.total_revenue?.toFixed(2)}</Text>
+              <Text style={[styles.cardSub, { color: subTextColor }]}>Comm: ₱ {stats.total_commission?.toFixed(2)}</Text>
+            </View>
+          </View>
 
-           {/* Orders Card */}
-           <View style={styles.card}>
-             <View style={[styles.cardIconBg, {backgroundColor: 'rgba(52, 152, 219, 0.2)'}]}>
-                <Image source={cart} style={[styles.cardIcon, {tintColor: '#3498DB'}]} />
-             </View>
-             <View>
-               <Text style={styles.cardLabel}>Total Orders</Text>
-               <Text style={[styles.cardValue, {color: '#3498DB'}]}>{stats.total_orders}</Text>
-               <Text style={styles.cardSub}>{timeFilter} Period</Text>
-             </View>
-           </View>
+          {/* Orders Card */}
+          <View style={[styles.card, { backgroundColor: cardColor, borderColor: borderColor }]}>
+            <View style={[styles.cardIconBg, { backgroundColor: 'rgba(52, 152, 219, 0.2)' }]}>
+              <Image source={cart} style={[styles.cardIcon, { tintColor: '#3498DB' }]} />
+            </View>
+            <View>
+              <Text style={[styles.cardLabel, { color: subTextColor }]}>Total Orders</Text>
+              <Text style={[styles.cardValue, { color: '#3498DB' }]}>{stats.total_orders}</Text>
+              <Text style={[styles.cardSub, { color: subTextColor }]}>{timeFilter} Period</Text>
+            </View>
+          </View>
         </View>
 
         {/* --- PIE CHART --- */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Order Status Distribution</Text>
+        <View style={[styles.chartContainer, { backgroundColor: cardColor, borderColor: borderColor }]}>
+          <Text style={[styles.chartTitle, { color: textColor }]}>Order Status Distribution</Text>
           {loading ? (
-            <ActivityIndicator size="large" color="#0AB3FF" style={{marginTop: 20}}/>
+            <ActivityIndicator size="large" color={tintColor} style={{ marginTop: 20 }} />
           ) : (
             <PieChart
               data={getChartData()}
@@ -183,7 +193,7 @@ export default function AdminHome() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   header: { alignItems: 'center', marginTop: verticalScale(40), marginBottom: 10 },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
   scrollContent: { padding: 20 },
@@ -195,20 +205,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     zIndex: 3000
   },
-  sectionTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
+  sectionTitle: { fontSize: 24, fontWeight: 'bold' },
   dropdownWrapper: { width: 140 },
-  dropdown: { backgroundColor: '#22262F', borderColor: '#363D47', minHeight: 40 },
-  dropdownText: { color: '#0AB3FF', fontSize: 12 },
-  dropdownList: { backgroundColor: '#22262F', borderColor: '#363D47' },
+  dropdown: { minHeight: 40 },
+  dropdownText: { fontSize: 12 },
+  dropdownList: {},
 
   cardsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, zIndex: 1000 },
   card: {
     width: '48%',
-    backgroundColor: '#22262F',
     borderRadius: 16,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#363D47',
     flexDirection: 'column',
     gap: 10
   },
@@ -219,18 +227,16 @@ const styles = StyleSheet.create({
     marginBottom: 5
   },
   cardIcon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#3BF579' },
-  cardLabel: { color: '#8796AA', fontSize: 12 },
+  cardLabel: { fontSize: 12 },
   cardValue: { color: '#3BF579', fontSize: 20, fontWeight: 'bold' },
-  cardSub: { color: '#555', fontSize: 10 },
+  cardSub: { fontSize: 10 },
 
   chartContainer: {
-    backgroundColor: '#22262F',
     borderRadius: 20,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#363D47',
     alignItems: 'center',
     marginBottom: 100
   },
-  chartTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', marginBottom: 10, alignSelf: 'flex-start' }
+  chartTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, alignSelf: 'flex-start' }
 });

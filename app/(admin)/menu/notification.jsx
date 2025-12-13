@@ -1,50 +1,53 @@
 import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function Notification() {
   const router = useRouter();
+  const { colors } = useTheme();
+
   const backimg = require("@/assets/images/back.png");
   const headerlogo = require("@/assets/images/headerlogo.png");
   const feature = require("@/assets/images/feature.png");
-  
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(admin)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
+          <Image source={backimg} style={styles.backicon} />
         </Pressable>
         <Text style={styles.title}>Notifications</Text>
-        <View style={styles.placeholder}/>
+        <View style={styles.placeholder} />
       </View>
-      <View style={styles.separator} />
-      
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
       <ScrollView style={styles.mainContent}>
-        <View style={styles.notifcontainer}>
+        <View style={[styles.notifcontainer, { backgroundColor: colors.card }]}>
           <View style={styles.notifheader}>
-            <Image source={feature} style={styles.notificon}/>
-            <Text style={styles.notifheaderText}>Feature Added!</Text>
+            <Image source={feature} style={styles.notificon} />
+            <Text style={[styles.notifheaderText, { color: colors.text }]}>Feature Added!</Text>
           </View>
           <View style={styles.notifdescription}>
-            <Text style={styles.notifdescriptiontext}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-              Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            <Text style={[styles.notifdescriptiontext, { color: colors.subText }]}>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl.
+              Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi,
               faucibus vel sollicitudin ut, malesuada et justo.
             </Text>
           </View>
         </View>
 
-        <View style={styles.notifcontainer}>
+        <View style={[styles.notifcontainer, { backgroundColor: colors.card }]}>
           <View style={styles.notifheader}>
-            <Image source={feature} style={styles.notificon}/>
-            <Text style={styles.notifheaderText}>Patches 1.2</Text>
+            <Image source={feature} style={styles.notificon} />
+            <Text style={[styles.notifheaderText, { color: colors.text }]}>Patches 1.2</Text>
           </View>
           <View style={styles.notifdescription}>
-            <Text style={styles.notifdescriptiontext}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl. 
-              Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi, 
+            <Text style={[styles.notifdescriptiontext, { color: colors.subText }]}>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              Nam sagittis sed elit sed ultrices. Proin sed eleifend nisl.
+              Phasellus eu laoreet nulla, quis volutpat lorem. Maecenas dui mi,
               faucibus vel sollicitudin ut, malesuada et justo.
             </Text>
           </View>
@@ -57,12 +60,11 @@ export default function Notification() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-   gap:20,
+    gap: 20,
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(30),
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 1,
   },
@@ -97,7 +98,6 @@ const styles = StyleSheet.create({
     color: '#0AB3FF',
   },
   notifcontainer: {
-    backgroundColor: '#1f2937',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
   notifheaderText: {
     fontFamily: 'Roboto-Bold',
     fontSize: 16,
-    color: '#ffffff',
   },
   notifdescription: {
     paddingLeft: 44,
@@ -124,7 +123,6 @@ const styles = StyleSheet.create({
   notifdescriptiontext: {
     fontFamily: 'Roboto-Light',
     fontSize: 13,
-    color: '#d1d5db',
     lineHeight: 20,
     textAlign: 'justify',
   },

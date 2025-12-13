@@ -1,202 +1,95 @@
-// app/(courier)/home/delivercomplete.jsx
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useCallback } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
-import { verticalScale } from 'react-native-size-matters';
-
-// Hooks
-import { useOrderDetails } from '../../../hooks/useOrderDetails';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, BackHandler } from 'react-native';
+import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
-const headerlogo = require("@/assets/images/headerlogo.png");
-const checkmark = require("@/assets/images/done2.png"); // Assuming you have a checkmark or similar
+// const success = require("@/assets/images/success.png");
 
 const DeliverComplete = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
-  const { order, loading, refetch } = useOrderDetails(orderId);
+  const { colors } = useTheme();
 
-  const [refreshing, setRefreshing] = useState(false);
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('order')
+          .select('*')
+          .eq('order_id', orderId)
+          .single();
 
-  if (loading || !order) {
+        if (error) throw error;
+        setOrder(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+
+    const backAction = () => {
+      router.replace('/(courier)/home');
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+
+  }, [orderId]);
+
+  const handleDone = () => {
+    router.replace('/(courier)/home');
+  };
+
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#3BF579" />
       </View>
     );
   }
 
-  // Calculate Net Earnings
-  // Formula: Total - Commission - Penalty + Bonus
-  const netEarnings = (
-    Number(order.total_fare) -
-    Number(order.commission_amount) -
-    Number(order.penalty_amount) +
-    Number(order.bonus_charge_component)
-  ).toFixed(2);
-
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.content}>
+          {/* <Image source={success} style={[styles.successIcon, { tintColor: colors.primary }]} /> */}
+          <Text style={[styles.title, { color: colors.text }]}>Delivery Complete!</Text>
+          <Text style={[styles.subtitle, { color: colors.subText }]}>Great job!</Text>
 
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3BF579" />
-        }
-      >
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Image source={headerlogo} style={styles.logo} />
+          <View style={[styles.earningsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.earningsTitle, { color: colors.subText }]}>TOTAL EARNINGS</Text>
+            <Text style={styles.earningsAmount}>₱ {order?.total_fare}</Text>
           </View>
 
-          <View style={styles.mainContent}>
-            <Image source={checkmark} style={styles.successIcon} />
-            <Text style={styles.title}>Delivery Success!</Text>
-            <Text style={styles.subtitle}>Job ID: {order.order_id}</Text>
-
-            {/* Earnings Card */}
-            <View style={styles.earningsCard}>
-              <Text style={styles.earningsTitle}>You Earned</Text>
-              <Text style={styles.earningsAmount}>₱ {netEarnings}</Text>
-
-              <View style={styles.divider} />
-
-              <View style={styles.breakdownRow}>
-                <Text style={styles.label}>Customer Paid</Text>
-                <Text style={styles.value}>₱ {order.total_fare}</Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.label}>Commission (Deducted)</Text>
-                <Text style={[styles.value, { color: '#FF4444' }]}>- ₱ {order.commission_amount}</Text>
-              </View>
-              {order.bonus_charge_component > 0 && (
-                <View style={styles.breakdownRow}>
-                  <Text style={styles.label}>Bonus</Text>
-                  <Text style={[styles.value, { color: '#3BF579' }]}>+ ₱ {order.bonus_charge_component}</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Next Action */}
-            <Pressable
-              style={styles.mainButton}
-              onPress={() => router.push('/(courier)/home')}
-            >
-              <Text style={styles.mainButtonText}>Find New Orders</Text>
-            </Pressable>
-
-          </View>
+          <Pressable style={styles.mainButton} onPress={handleDone}>
+            <Text style={styles.mainButtonText}>BACK TO DASHBOARD</Text>
+          </Pressable>
         </View>
-      </ScrollView>
+      </View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#141519',
-    padding: 24
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#141519',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: verticalScale(30),
-    marginBottom: 20
-  },
-  logo: {
-    width: 120,
-    height: 28,
-    resizeMode: 'contain'
-  },
-  mainContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  successIcon: {
-    width: 80,
-    height: 80,
-    marginBottom: 20,
-    tintColor: '#3BF579' // Optional: Tint it green
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8796AA',
-    marginBottom: 30
-  },
-  earningsCard: {
-    width: '100%',
-    backgroundColor: '#22262F',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    marginBottom: 40,
-    borderWidth: 1,
-    borderColor: '#3BF579'
-  },
-  earningsTitle: {
-    color: '#8796AA',
-    fontSize: 16,
-    textTransform: 'uppercase',
-    marginBottom: 5
-  },
-  earningsAmount: {
-    color: '#3BF579',
-    fontSize: 42,
-    fontWeight: 'bold'
-  },
-  divider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#4a5568',
-    marginVertical: 20
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 8
-  },
-  label: {
-    color: '#ccc',
-    fontSize: 16
-  },
-  value: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  mainButton: {
-    width: '100%',
-    backgroundColor: '#3BF579',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center'
-  },
-  mainButtonText: {
-    color: '#141519',
-    fontSize: 18,
-    fontWeight: 'bold'
-  }
+  container: { flex: 1, padding: 20 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: -50 },
+  successIcon: { width: 100, height: 100, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 40, paddingHorizontal: 20 },
+  earningsCard: { width: '100%', borderRadius: 16, padding: 30, alignItems: 'center', marginBottom: 40, borderWidth: 1 },
+  earningsTitle: { fontSize: 14, letterSpacing: 1, marginBottom: 10 },
+  earningsAmount: { color: '#3BF579', fontSize: 48, fontWeight: 'bold' },
+  mainButton: { backgroundColor: '#3BF579', padding: 18, borderRadius: 12, alignItems: 'center', width: '100%' },
+  mainButtonText: { color: '#141519', fontSize: 16, fontWeight: 'bold' }
 });
 
 export default DeliverComplete;

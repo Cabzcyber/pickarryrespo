@@ -1,11 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, Alert, Switch } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function CourierMenu() {
   const router = useRouter();
+  const { colors, toggleTheme, isDarkMode } = useTheme();
 
   // Assets
   const edit = require("@/assets/images/edit.png");
@@ -15,6 +17,7 @@ export default function CourierMenu() {
   const about = require("@/assets/images/about.png");
   const share = require("@/assets/images/share.png");
   const logout = require("@/assets/images/logout.png");
+  const themeIcon = require("@/assets/images/theme.png");
 
   // State
   const [loading, setLoading] = useState(true);
@@ -87,65 +90,78 @@ export default function CourierMenu() {
   };
 
   return (
-  <View style={styles.container}>
-       <View style={styles.mainContent}>
-         <View style={styles.header}>
-           <View style={styles.maintext}>
-             {loading ? (
-                <ActivityIndicator size="small" color="#0AB3FF" style={{alignSelf:'flex-start'}} />
-             ) : (
-                <>
-                  <Text style={styles.subtext}>{profile.fullName}</Text>
-                  <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
-                </>
-             )}
-           </View>
-           <Pressable onPress={() => router.push('/(courier)/menu/courierprofile')}>
-             <Image source={edit} style={styles.editicon}/>
-           </Pressable>
-         </View>
-         <View style={styles.separator} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.mainContent}>
+        <View style={styles.header}>
+          <View style={styles.maintext}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#0AB3FF" style={{ alignSelf: 'flex-start' }} />
+            ) : (
+              <>
+                {/* Profile Name and Phone Number - Fixed Blue Color */}
+                <Text style={styles.subtext}>{profile.fullName}</Text>
+                <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
+              </>
+            )}
+          </View>
+          <Pressable onPress={() => router.push('/(courier)/menu/courierprofile')}>
+            <Image source={edit} style={[styles.editicon, { tintColor: '#0AB3FF' }]} />
+          </Pressable>
+        </View>
+        <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
-         <View style={styles.settingcontent}>
-           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/couriersettings')}>
-             <Image source={setting} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>Settings</Text>
-           </Pressable>
+        <View style={styles.settingcontent}>
 
-           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/couriernotification')}>
-             <Image source={notification} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>Notification</Text>
-           </Pressable>
+          {/* Dark Mode Toggle */}
+          <View style={styles.settingsubcontent}>
+            <Image source={themeIcon} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text, flex: 1 }]}>Dark Mode</Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#767577', true: '#0AB3FF' }}
+              thumbColor={isDarkMode ? '#ffffff' : '#f4f3f4'}
+            />
+          </View>
 
-           <Pressable  style={styles.settingsubcontent} onPress={() => router.replace('/(customer)/home')}>
-             <Image source={switchcour} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>Switch To Customer</Text>
-           </Pressable>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/couriersettings')}>
+            <Image source={setting} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Settings</Text>
+          </Pressable>
 
-           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/courierabout')}>
-             <Image source={about} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>About</Text>
-           </Pressable>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/couriernotification')}>
+            <Image source={notification} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Notification</Text>
+          </Pressable>
 
-            <View style={styles.settingsubcontent}>
-             <Image source={share} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>Check Our Pickarry Website</Text>
-           </View>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.replace('/(customer)/home')}>
+            <Image source={switchcour} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Switch To Customer</Text>
+          </Pressable>
 
-           <Pressable style={styles.settingsubcontent} onPress={handleLogout}>
-             <Image source={logout} style={styles.ordericon}/>
-             <Text style={styles.settingsubtext}>Log Out</Text>
-           </Pressable>
-         </View>
-       </View>
-     </View>
+          <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(courier)/menu/courierabout')}>
+            <Image source={about} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>About</Text>
+          </Pressable>
+
+          <View style={styles.settingsubcontent}>
+            <Image source={share} style={[styles.ordericon, { tintColor: '#0AB3FF' }]} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Check Our Pickarry Website</Text>
+          </View>
+
+          <Pressable style={styles.settingsubcontent} onPress={handleLogout}>
+            <Image source={logout} style={[styles.ordericon, { tintColor: '#FF4444' }]} />
+            <Text style={[styles.settingsubtext, { color: '#FF4444' }]}>Log Out</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   mainContent: {
     flex: 1,
@@ -160,25 +176,24 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 20,
   },
   maintext: {
     flexDirection: 'column',
-    marginTop:'5'
+    marginTop: '5'
   },
   subtext: {
     fontFamily: 'Roboto-Bold',
     fontWeight: 'bold',
     fontSize: 20,
-    color: '#0AB3FF',
+    color: '#0AB3FF', // Fixed Blue Color
     marginBottom: 5,
   },
   subtext1: {
     fontFamily: 'Roboto-Light',
     fontSize: 16,
-    color: '#0AB3FF',
+    color: '#0AB3FF', // Fixed Blue Color
     marginBottom: 5,
   },
   editicon: {
@@ -203,7 +218,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Light',
     fontSize: 17,
     fontWeight: '300',
-    color: '#ffffff',
   },
   ordericon: {
     width: 24,

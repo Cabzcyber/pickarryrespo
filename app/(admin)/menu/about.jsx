@@ -1,9 +1,8 @@
-import { supabase } from '@/lib/supabase'; // Assuming your supabase client is here
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator
-  ,
+  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -14,9 +13,11 @@ import {
   View
 } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function About() {
   const router = useRouter();
+  const { colors } = useTheme();
   const backimg = require("@/assets/images/back.png");
 
   // --- STATE ---
@@ -58,8 +59,6 @@ export default function About() {
           supabase
             .from('type_vehicle')
             .select('slug,base_fare,distance_rate_per_km,vehicle_name')
-
-
         ]);
 
         // Check config fetch
@@ -88,9 +87,9 @@ export default function About() {
       }
     };
     fetchData();
-  }, []); // End of useEffect
+  }, []);
 
-  // --- CONFIG (Section 1) Handlers (Unchanged) ---
+  // --- CONFIG (Section 1) Handlers ---
   const handleConfigChange = (field, value) => {
     setGlobalConfig(prev => ({ ...prev, [field]: value }));
   };
@@ -131,7 +130,7 @@ export default function About() {
     setIsConfigEditing(false);
   };
 
-  // --- VEHICLES (Section 2) Handlers (Unchanged) ---
+  // --- VEHICLES (Section 2) Handlers ---
   const handleVehicleChange = (slug, field, value) => {
     setVehicleFares(prevFares => {
       return prevFares.map(v =>
@@ -186,319 +185,315 @@ export default function About() {
     return vehicle[field].toString();
   };
 
-  // --- LOADING (Unchanged) ---
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#0AB3FF" />
       </View>
     );
   }
 
-  // --- RENDER ---
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(admin)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
+          <Image source={backimg} style={styles.backicon} />
         </Pressable>
         <Text style={styles.title}>Fare</Text>
       </View>
-      <View style={styles.separator} />
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
       <ScrollView
         style={styles.mainContent}
         keyboardShouldPersistTaps="handled"
       >
 
         {/* --- SECTION 1: DELIVERY FARE MANAGEMENT --- */}
-         <Text style={styles.sectionTitle}>Delivery Fare Management</Text>
-      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Delivery Fare Management</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
 
-                  <View style={styles.inputcontainer}>
-                    <Text style={styles.title1}>Time Rate (₱ of Every Minute)</Text>
-                      {isConfigEditing ? (
-                      <TextInput style={styles.textinput}
-                        value={globalConfig?.time_rate_per_minute?.toString()}
-                        onChangeText={(text) => handleConfigChange('time_rate_per_minute', text)}
-                        placeholder='Enter Time Rate'
-                        placeholderTextColor='#87AFB9'
-                        keyboardType='numeric'
-                      />
-                      ) : (
-                        <Text style={styles.descriptionText}>{globalConfig?.time_rate_per_minute}</Text>
-                      )}
-                  </View>
-                  <View style={styles.inputcontainer}>
-                    <Text style={styles.title1}>Platform Commission (% Every Delivery)</Text>
-                      {isConfigEditing ? (
-                      <TextInput style={styles.textinput}
-                        value={globalConfig?.platform_commission_percentage?.toString()}
-                        onChangeText={(text) => handleConfigChange('platform_commission_percentage', text)}
-                        placeholder='Enter Platform Commission'
-                        placeholderTextColor='#87AFB9'
-                        keyboardType='numeric'
-                      />
-                      ) : (
-                        <Text style={styles.descriptionText}>{globalConfig?.platform_commission_percentage}</Text>
-                      )}
-                  </View>
-                  <View style={styles.inputcontainer}>
-                    <Text style={styles.title1}>Ipa-Dali Bonus (Minimum Set Price)</Text>
-                      {isConfigEditing ? (
-                      <TextInput style={styles.textinput}
-                        value={globalConfig?.bonus_rate?.toString()}
-                        onChangeText={(text) => handleConfigChange('bonus_rate', text)}
-                        placeholder='Enter Ipa-Dali Bonus'
-                        placeholderTextColor='#87AFB9'
-                        keyboardType='numeric'
-                      />
-                      ) : (
-                        <Text style={styles.descriptionText}>{globalConfig?.bonus_rate}</Text>
-                      )}
-                  </View>
-                  <View style={styles.inputcontainer}>
-                    <Text style={styles.title1}>Penalty Rate (₱ Per Minute)</Text>
-                      {isConfigEditing ? (
-                      <TextInput style={styles.textinput}
-                        value={globalConfig?.penalty_rate_per_minute?.toString()}
-                        onChangeText={(text) => handleConfigChange('penalty_rate_per_minute', text)}
-                        placeholder='Enter Penalty Rate'
-                        placeholderTextColor='#87AFB9'
-                        keyboardType='numeric'
-                      />
-                      ) : (
-                        <Text style={styles.descriptionText}>{globalConfig?.penalty_rate_per_minute}</Text>
-                      )}
-                  </View>
-                  <View style={styles.inputcontainer}>
-                    <Text style={styles.title1}>Grace Period Rate (Seconds)</Text>
-                      {isConfigEditing ? (
-                      <TextInput style={styles.textinput}
-                        value={globalConfig?.grace_period_minutes?.toString()}
-                        onChangeText={(text) => handleConfigChange('grace_period_minutes', text)}
-                        placeholder='Enter Grace Period Rate'
-                        placeholderTextColor='#87AFB9'
-                        keyboardType='numeric'
-                      />
-                      ) : (
-                        <Text style={styles.descriptionText}>{globalConfig?.grace_period_minutes}</Text>
-                      )}
-                  </View>
+          <View style={styles.inputcontainer}>
+            <Text style={styles.title1}>Time Rate (₱ of Every Minute)</Text>
+            {isConfigEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={globalConfig?.time_rate_per_minute?.toString()}
+                onChangeText={(text) => handleConfigChange('time_rate_per_minute', text)}
+                placeholder='Enter Time Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (
+              <Text style={[styles.descriptionText, { color: colors.text }]}>{globalConfig?.time_rate_per_minute}</Text>
+            )}
+          </View>
+          <View style={styles.inputcontainer}>
+            <Text style={styles.title1}>Platform Commission (% Every Delivery)</Text>
+            {isConfigEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={globalConfig?.platform_commission_percentage?.toString()}
+                onChangeText={(text) => handleConfigChange('platform_commission_percentage', text)}
+                placeholder='Enter Platform Commission'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (
+              <Text style={[styles.descriptionText, { color: colors.text }]}>{globalConfig?.platform_commission_percentage}</Text>
+            )}
+          </View>
+          <View style={styles.inputcontainer}>
+            <Text style={styles.title1}>Ipa-Dali Bonus (Minimum Set Price)</Text>
+            {isConfigEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={globalConfig?.bonus_rate?.toString()}
+                onChangeText={(text) => handleConfigChange('bonus_rate', text)}
+                placeholder='Enter Ipa-Dali Bonus'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (
+              <Text style={[styles.descriptionText, { color: colors.text }]}>{globalConfig?.bonus_rate}</Text>
+            )}
+          </View>
+          <View style={styles.inputcontainer}>
+            <Text style={styles.title1}>Penalty Rate (₱ Per Minute)</Text>
+            {isConfigEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={globalConfig?.penalty_rate_per_minute?.toString()}
+                onChangeText={(text) => handleConfigChange('penalty_rate_per_minute', text)}
+                placeholder='Enter Penalty Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (
+              <Text style={[styles.descriptionText, { color: colors.text }]}>{globalConfig?.penalty_rate_per_minute}</Text>
+            )}
+          </View>
+          <View style={styles.inputcontainer}>
+            <Text style={styles.title1}>Grace Period Rate (Seconds)</Text>
+            {isConfigEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={globalConfig?.grace_period_minutes?.toString()}
+                onChangeText={(text) => handleConfigChange('grace_period_minutes', text)}
+                placeholder='Enter Grace Period Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (
+              <Text style={[styles.descriptionText, { color: colors.text }]}>{globalConfig?.grace_period_minutes}</Text>
+            )}
+          </View>
 
 
-                  <Pressable style={styles.mainbutton} onPress={isConfigEditing ? handleSaveConfig : () => setIsConfigEditing(true)}>
-                    <Text style={styles.maintextbutton}>{isConfigEditing ? 'Save Fare' : 'Edit Fare'}</Text>
-                  </Pressable>
-                  {isConfigEditing && (
-                    <Pressable style={[styles.mainbutton, styles.cancelButton]} onPress={handleCancelConfig}>
-                      <Text style={styles.maintextbutton}>Cancel</Text>
-                    </Pressable>
-                  )}
-              </View>
+          <Pressable style={styles.mainbutton} onPress={isConfigEditing ? handleSaveConfig : () => setIsConfigEditing(true)}>
+            <Text style={styles.maintextbutton}>{isConfigEditing ? 'Save Fare' : 'Edit Fare'}</Text>
+          </Pressable>
+          {isConfigEditing && (
+            <Pressable style={[styles.mainbutton, styles.cancelButton]} onPress={handleCancelConfig}>
+              <Text style={styles.maintextbutton}>Cancel</Text>
+            </Pressable>
+          )}
+        </View>
 
         {/* --- SECTION 2: DELIVERY VEHICLE MANAGEMENT --- */}
         <Text style={styles.sectionTitle}>Delivery Vehicle Management</Text>
-        <View style={styles.sectionCard1}>
-                  {/* On-Foot */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>On-Foot Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('onfoot', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('onfoot', 'base_fare', text)}
-                      placeholder='Enter On-Foot Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('onfoot', 'base_fare')}</Text>
-                )}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>On-Foot Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('onfoot', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('onfoot', 'distance_rate_per_km', text)}
-                      placeholder='Enter On-Foot Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('onfoot', 'distance_rate_per_km')}</Text>
-                )}
-                  </View>
-                  {/* Motorcycle */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Motorcycle Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('motorcycle', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('motorcycle', 'base_fare', text)}
-                      placeholder='Enter Motorcycle Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('motorcycle', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Motorcycle Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('motorcycle', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('motorcycle', 'distance_rate_per_km', text)}
-                      placeholder='Enter Motorcycle Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('motorcycle', 'distance_rate_per_km')}</Text>)}
-                  </View>
-                  {/* Bicycle */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Bicycle Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('bicycle', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('bicycle', 'base_fare', text)}
-                      placeholder='Enter Bicycle Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('bicycle', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Bicycle Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('bicycle', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('bicycle', 'distance_rate_per_km', text)}
-                      placeholder='Enter Bicycle Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('bicycle', 'distance_rate_per_km')}</Text>)}
-                  </View>
-                  {/* Rela */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Rela Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('rela', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('rela', 'base_fare', text)}
-                      placeholder='Enter Rela Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('rela', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Rela Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('rela', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('rela', 'distance_rate_per_km', text)}
-                      placeholder='Enter Rela Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('rela', 'distance_rate_per_km')}</Text>
-                )}
-                  </View>
-                  {/* Dulog */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Dulog Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('dulog', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('dulog', 'base_fare', text)}
-                      placeholder='Enter Dulog Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('dulog', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Dulog Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('dulog', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('dulog', 'distance_rate_per_km', text)}
-                      placeholder='Enter Dulog Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('dulog', 'distance_rate_per_km')}</Text>)}
-                  </View>
-                  {/* Passenger Car */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Passenger Car Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('passenger-car', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('passenger-car', 'base_fare', text)}
-                      placeholder='Enter Passenger Car Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('passenger-car', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Passenger Car Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('passenger-car', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('passenger-car', 'distance_rate_per_km', text)}
-                      placeholder='Enter Passenger Car Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('passenger-car', 'distance_rate_per_km')}</Text>)}
-                  </View>
-                  {/* Truck */}
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Truck Fare</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('truck', 'base_fare')}
-                      onChangeText={(text) => handleVehicleChange('truck', 'base_fare', text)}
-                      placeholder='Enter Truck Fare'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('truck', 'base_fare')}</Text>)}
-                  </View>
-                  <View style={styles.inputcontainer1}>
-                    <Text style={styles.title1}>Truck Distance Rate per Km</Text>
-                    {isVehiclesEditing ? (
-                    <TextInput style={styles.textinput}
-                      value={getVehicleValue('truck', 'distance_rate_per_km')}
-                      onChangeText={(text) => handleVehicleChange('truck', 'distance_rate_per_km', text)}
-                      placeholder='Enter Truck Distance Rate'
-                      placeholderTextColor='#87AFB9'
-                      keyboardType='numeric'
-                    />
-                    ) : (<Text style={styles.descriptionText}>{getVehicleValue('truck', 'distance_rate_per_km')}</Text>
-                )}
-                  </View>
+        <View style={[styles.sectionCard1, { backgroundColor: colors.card }]}>
+          {/* On-Foot */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>On-Foot Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('onfoot', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('onfoot', 'base_fare', text)}
+                placeholder='Enter On-Foot Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('onfoot', 'base_fare')}</Text>
+            )}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>On-Foot Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('onfoot', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('onfoot', 'distance_rate_per_km', text)}
+                placeholder='Enter On-Foot Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('onfoot', 'distance_rate_per_km')}</Text>
+            )}
+          </View>
+          {/* Motorcycle */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Motorcycle Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('motorcycle', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('motorcycle', 'base_fare', text)}
+                placeholder='Enter Motorcycle Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('motorcycle', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Motorcycle Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('motorcycle', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('motorcycle', 'distance_rate_per_km', text)}
+                placeholder='Enter Motorcycle Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('motorcycle', 'distance_rate_per_km')}</Text>)}
+          </View>
+          {/* Bicycle */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Bicycle Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('bicycle', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('bicycle', 'base_fare', text)}
+                placeholder='Enter Bicycle Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('bicycle', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Bicycle Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('bicycle', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('bicycle', 'distance_rate_per_km', text)}
+                placeholder='Enter Bicycle Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('bicycle', 'distance_rate_per_km')}</Text>)}
+          </View>
+          {/* Rela */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Rela Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('rela', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('rela', 'base_fare', text)}
+                placeholder='Enter Rela Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('rela', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Rela Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('rela', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('rela', 'distance_rate_per_km', text)}
+                placeholder='Enter Rela Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('rela', 'distance_rate_per_km')}</Text>
+            )}
+          </View>
+          {/* Dulog */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Dulog Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('dulog', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('dulog', 'base_fare', text)}
+                placeholder='Enter Dulog Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('dulog', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Dulog Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('dulog', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('dulog', 'distance_rate_per_km', text)}
+                placeholder='Enter Dulog Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('dulog', 'distance_rate_per_km')}</Text>)}
+          </View>
+          {/* Passenger Car */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Passenger Car Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('passenger-car', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('passenger-car', 'base_fare', text)}
+                placeholder='Enter Passenger Car Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('passenger-car', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Passenger Car Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('passenger-car', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('passenger-car', 'distance_rate_per_km', text)}
+                placeholder='Enter Passenger Car Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('passenger-car', 'distance_rate_per_km')}</Text>)}
+          </View>
+          {/* Truck */}
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Truck Fare</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('truck', 'base_fare')}
+                onChangeText={(text) => handleVehicleChange('truck', 'base_fare', text)}
+                placeholder='Enter Truck Fare'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('truck', 'base_fare')}</Text>)}
+          </View>
+          <View style={styles.inputcontainer1}>
+            <Text style={styles.title1}>Truck Distance Rate per Km</Text>
+            {isVehiclesEditing ? (
+              <TextInput style={[styles.textinput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                value={getVehicleValue('truck', 'distance_rate_per_km')}
+                onChangeText={(text) => handleVehicleChange('truck', 'distance_rate_per_km', text)}
+                placeholder='Enter Truck Distance Rate'
+                placeholderTextColor={colors.subText}
+                keyboardType='numeric'
+              />
+            ) : (<Text style={[styles.descriptionText, { color: colors.text }]}>{getVehicleValue('truck', 'distance_rate_per_km')}</Text>
+            )}
+          </View>
 
-                  <Pressable style={styles.mainbutton1} onPress={isVehiclesEditing ? handleSaveVehicles : () => setIsVehiclesEditing(true)}>
-                    <Text style={styles.maintextbutton1}>{isVehiclesEditing ? 'Save Vehicles' : 'Edit Vehicles'}</Text>
-                  </Pressable>
-                  {isVehiclesEditing && (
-                    <Pressable style={[styles.mainbutton1, styles.cancelButton]} onPress={handleCancelVehicles}>
-                      <Text style={styles.maintextbutton1}>Cancel</Text>
-                    </Pressable>
-                  )}
-              </View>
+          <Pressable style={styles.mainbutton1} onPress={isVehiclesEditing ? handleSaveVehicles : () => setIsVehiclesEditing(true)}>
+            <Text style={styles.maintextbutton1}>{isVehiclesEditing ? 'Save Vehicles' : 'Edit Vehicles'}</Text>
+          </Pressable>
+          {isVehiclesEditing && (
+            <Pressable style={[styles.mainbutton1, styles.cancelButton]} onPress={handleCancelVehicles}>
+              <Text style={styles.maintextbutton1}>Cancel</Text>
+            </Pressable>
+          )}
+        </View>
 
       </ScrollView>
     </View>
   );
 }
 
-// --- STYLES (Corrected) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -507,7 +502,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-   gap:20,
+    gap: 20,
     paddingHorizontal: 12,
     paddingTop: 12,
     marginTop: verticalScale(31),
@@ -519,7 +514,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 1,
     marginTop: verticalScale(6),
@@ -537,14 +531,12 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontFamily: 'Roboto-Light',
     fontSize: 14,
-    color: '#d1d5db',
     lineHeight: 20,
     paddingVertical: 12,
     paddingHorizontal: 12,
     minHeight: 44,
   },
   sectionCard: {
-    backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
@@ -555,91 +547,87 @@ const styles = StyleSheet.create({
     color: '#0AB3FF',
     marginBottom: 15,
   },
- inputcontainer:{
-    flexDirection:'column',
-    width:'100%',
-    maxWidth:1024,
+  inputcontainer: {
+    flexDirection: 'column',
+    width: '100%',
+    maxWidth: 1024,
     padding: 10,
     marginHorizontal: 0,
-    pointerEvents:'auto',
+    pointerEvents: 'auto',
     marginBottom: 10,
   },
-  title1:{
-    flexDirection:'column',
-    justifyContent:'flex-start',
+  title1: {
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
     fontFamily: 'Roboto',
     color: '#0AB3FF',
     fontWeight: '700',
     fontSize: 15,
     lineHeight: 18,
     letterSpacing: 0.12,
-    marginBottom:11,
+    marginBottom: 11,
   },
-  textinput:{
+  textinput: {
     fontFamily: 'Roboto',
-    backgroundColor: '#22262F',
-    color:'#FFFFFF',
     fontWeight: 'bold',
     fontSize: 15,
     lineHeight: 18,
     letterSpacing: 0.12,
-    borderColor:'#22262F',
     borderRadius: 10,
-    padding:12,
-    borderWidth:1,
+    padding: 12,
+    borderWidth: 1,
     minHeight: 44,
   },
-  mainbutton:{
-    flexDirection:'column',
-    width:'92%',
-    maxWidth:1024,
-    padding:10,
-    marginHorizontal:'auto',
-    pointerEvents:'auto',
-    backgroundColor:'#3BF579',
+  mainbutton: {
+    flexDirection: 'column',
+    width: '92%',
+    maxWidth: 1024,
+    padding: 10,
+    marginHorizontal: 'auto',
+    pointerEvents: 'auto',
+    backgroundColor: '#3BF579',
     borderRadius: 10,
-    justifyContent:"center",
-    alignItems:'center',
-    marginTop:verticalScale(10),
+    justifyContent: "center",
+    alignItems: 'center',
+    marginTop: verticalScale(10),
   },
-  maintextbutton:{
-    fontSize:18,
-    color:'black',
+  maintextbutton: {
+    fontSize: 18,
+    color: 'black',
     fontFamily: 'Roboto',
     fontWeight: '700',
   },
   sectionCard1: {
-    backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
 
   },
-  inputcontainer1:{
-    flexDirection:'column',
-    width:'100%',
-    maxWidth:1024,
+  inputcontainer1: {
+    flexDirection: 'column',
+    width: '100%',
+    maxWidth: 1024,
     padding: 10,
     marginHorizontal: 0,
-    pointerEvents:'auto',
+    pointerEvents: 'auto',
     marginBottom: 10,
   },
-  mainbutton1:{
-    flexDirection:'column',
-    width:'92%',
-    maxWidth:1024,
-    padding:10,
-    marginHorizontal:'auto',
-    pointerEvents:'auto',
-    backgroundColor:'#3BF579',
+  mainbutton1: {
+    flexDirection: 'column',
+    width: '92%',
+    maxWidth: 1024,
+    padding: 10,
+    marginHorizontal: 'auto',
+    pointerEvents: 'auto',
+    backgroundColor: '#3BF579',
     borderRadius: 10,
-    justifyContent:"center",
-    alignItems:'center',
-    marginTop:verticalScale(15),
+    justifyContent: "center",
+    alignItems: 'center',
+    marginTop: verticalScale(15),
   },
-  maintextbutton1:{
-    fontSize:18,
-    color:'black',
+  maintextbutton1: {
+    fontSize: 18,
+    color: 'black',
     fontFamily: 'Roboto',
     fontWeight: '700',
   },

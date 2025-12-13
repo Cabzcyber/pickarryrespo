@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Alert, Image, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
 const backimg = require("@/assets/images/back.png");
@@ -16,6 +17,7 @@ const SEARCH_TIMEOUT_SECONDS = 300; // 5 Minutes
 const OrderSearch = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
+  const { colors } = useTheme();
 
   const [timeLeft, setTimeLeft] = useState(SEARCH_TIMEOUT_SECONDS);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -133,50 +135,50 @@ const OrderSearch = () => {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
-           <Image source={headerlogo} style={styles.logo} />
+          <Image source={headerlogo} style={styles.logo} />
         </View>
 
         <View style={styles.mainContent}>
-           <View style={styles.rippleContainer}>
-              <ActivityIndicator size="large" color="#3BF579" style={{ transform: [{ scale: 2 }] }} />
-           </View>
-           <Text style={styles.searchingText}>Connecting to Drivers...</Text>
-           <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-           {isRedirecting && <Text style={styles.redirectText}>Driver Found! Connecting...</Text>}
+          <View style={styles.rippleContainer}>
+            <ActivityIndicator size="large" color={colors.tint} style={{ transform: [{ scale: 2 }] }} />
+          </View>
+          <Text style={[styles.searchingText, { color: colors.text }]}>Connecting to Drivers...</Text>
+          <Text style={[styles.timerText, { color: colors.subText }]}>{formatTime(timeLeft)}</Text>
+          {isRedirecting && <Text style={styles.redirectText}>Driver Found! Connecting...</Text>}
         </View>
 
         <BottomSheet
           ref={bottomSheetRef}
           index={1}
           snapPoints={snapPoints}
-          backgroundStyle={styles.bottomSheetBackground}
+          backgroundStyle={{ backgroundColor: colors.surface }}
           handleIndicatorStyle={styles.handleIndicator}
         >
           <BottomSheetView style={styles.contentContainer}>
-             <Text style={styles.sheetTitle}>Finding you a courier</Text>
-             <Text style={styles.sheetSubtitle}>Please wait while we broadcast your request.</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Finding you a courier</Text>
+            <Text style={[styles.sheetSubtitle, { color: colors.subText }]}>Please wait while we broadcast your request.</Text>
 
-             <Pressable
-               style={styles.cancelButton}
-               onPress={() => {
-                  Alert.alert("Cancel Request", "Are you sure you want to cancel?", [
-                    { text: "No", style: "cancel" },
-                    { text: "Yes", onPress: handleCancelOrder }
-                  ]);
-               }}
-               disabled={isCancelling || isRedirecting}
-             >
-                {isCancelling ? (
-                   <ActivityIndicator color="white" />
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Image source={cancelIcon} style={styles.iconSmall} />
-                    <Text style={styles.cancelText}>Cancel Request</Text>
-                  </View>
-                )}
-             </Pressable>
+            <Pressable
+              style={[styles.cancelButton, { backgroundColor: colors.card }]}
+              onPress={() => {
+                Alert.alert("Cancel Request", "Are you sure you want to cancel?", [
+                  { text: "No", style: "cancel" },
+                  { text: "Yes", onPress: handleCancelOrder }
+                ]);
+              }}
+              disabled={isCancelling || isRedirecting}
+            >
+              {isCancelling ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Image source={cancelIcon} style={styles.iconSmall} />
+                  <Text style={styles.cancelText}>Cancel Request</Text>
+                </View>
+              )}
+            </Pressable>
           </BottomSheetView>
         </BottomSheet>
       </View>
@@ -185,21 +187,19 @@ const OrderSearch = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   header: { alignItems: 'center', marginTop: verticalScale(40) },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
   mainContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
   rippleContainer: { marginBottom: 30 },
-  searchingText: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  timerText: { color: '#8796AA', fontSize: 16 },
+  searchingText: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
+  timerText: { fontSize: 16 },
   redirectText: { color: '#3BF579', fontSize: 14, marginTop: 10, fontWeight: 'bold' },
-  bottomSheetBackground: { backgroundColor: '#363D47' },
   handleIndicator: { backgroundColor: '#0AB3FF' },
   contentContainer: { flex: 1, padding: 20, alignItems: 'center' },
-  sheetTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  sheetSubtitle: { color: '#8796AA', fontSize: 14, textAlign: 'center', marginBottom: 25 },
+  sheetTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  sheetSubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 25 },
   cancelButton: {
-    backgroundColor: '#22262F',
     paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30,
     flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#FF4444'
   },

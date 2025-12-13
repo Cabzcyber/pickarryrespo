@@ -3,9 +3,11 @@ import React, { useState, useCallback } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase'; // Verify your path to supabase
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function Notification() {
   const router = useRouter();
+  const { colors, isDarkMode } = useTheme();
 
   // Assets
   const backimg = require("@/assets/images/back.png");
@@ -72,57 +74,57 @@ export default function Notification() {
     if (status === 'resolved') return '#2ECC71'; // Green
     if (status === 'dismissed') return '#95A5A6'; // Grey
     if (status === 'pending review') return '#F1C40F'; // Yellow/Orange
-    return '#0AB3FF'; // Default Blue
+    return colors.tint; // Default Blue
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(customer)/menu')}>
-          <Image source={backimg} style={styles.backicon}/>
+          <Image source={backimg} style={[styles.backicon, { tintColor: isDarkMode ? undefined : colors.text }]} />
         </Pressable>
-        <Text style={styles.title}>Notifications</Text>
-        <View style={styles.placeholder}/>
+        <Text style={[styles.title, { color: colors.tint }]}>Notifications</Text>
+        <View style={styles.placeholder} />
       </View>
-      <View style={styles.separator} />
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <ScrollView
         style={styles.mainContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0AB3FF"/>
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
       >
         {loading ? (
-           <ActivityIndicator size="large" color="#0AB3FF" style={{marginTop: 50}} />
+          <ActivityIndicator size="large" color={colors.tint} style={{ marginTop: 50 }} />
         ) : notifications.length === 0 ? (
-           <Text style={styles.emptyText}>You have no notifications.</Text>
+          <Text style={[styles.emptyText, { color: colors.subText }]}>You have no notifications.</Text>
         ) : (
-           notifications.map((item) => (
-              <View key={item.userreporting_id} style={styles.notifcontainer}>
-                <View style={styles.notifheader}>
-                  <Image source={reportIcon} style={styles.notificon}/>
-                  <View style={{flex: 1}}>
-                    <Text style={styles.notifheaderText}>
-                      Report Update: {item.reason?.report_type || "Issue"}
-                    </Text>
-                    <Text style={styles.subHeaderText}>
-                      Against: {item.reported?.full_name || "Courier"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.notifdescription}>
-                  <Text style={styles.notifdescriptiontext}>
-                    Status: <Text style={{color: getStatusColor(item.status?.status_name), fontWeight: 'bold'}}>
-                      {item.status?.status_name || "Pending"}
-                    </Text>
+          notifications.map((item) => (
+            <View key={item.userreporting_id} style={[styles.notifcontainer, { backgroundColor: colors.card, borderLeftColor: colors.tint }]}>
+              <View style={styles.notifheader}>
+                <Image source={reportIcon} style={styles.notificon} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.notifheaderText, { color: colors.text }]}>
+                    Report Update: {item.reason?.report_type || "Issue"}
                   </Text>
-                  <Text style={styles.dateText}>
-                    {formatDate(item.report_date)}
+                  <Text style={[styles.subHeaderText, { color: colors.subText }]}>
+                    Against: {item.reported?.full_name || "Courier"}
                   </Text>
                 </View>
               </View>
-           ))
+
+              <View style={styles.notifdescription}>
+                <Text style={[styles.notifdescriptiontext, { color: colors.subText }]}>
+                  Status: <Text style={{ color: getStatusColor(item.status?.status_name), fontWeight: 'bold' }}>
+                    {item.status?.status_name || "Pending"}
+                  </Text>
+                </Text>
+                <Text style={[styles.dateText, { color: colors.subText }]}>
+                  {formatDate(item.report_date)}
+                </Text>
+              </View>
+            </View>
+          ))
         )}
       </ScrollView>
     </View>
@@ -132,7 +134,6 @@ export default function Notification() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   header: {
     flexDirection: 'row',
@@ -149,7 +150,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 1,
     marginTop: 10
@@ -164,21 +164,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Roboto-Bold',
     fontSize: 20,
-    color: '#0AB3FF',
   },
   emptyText: {
-    color: '#8796AA',
     textAlign: 'center',
     marginTop: 50,
     fontSize: 16
   },
   notifcontainer: {
-    backgroundColor: '#1f2937',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#0AB3FF' // Accent line for visual pop
+    elevation: 2
   },
   notifheader: {
     flexDirection: 'row',
@@ -195,12 +192,10 @@ const styles = StyleSheet.create({
   notifheaderText: {
     fontFamily: 'Roboto-Bold',
     fontSize: 16,
-    color: '#ffffff',
   },
   subHeaderText: {
     fontFamily: 'Roboto-Regular',
     fontSize: 12,
-    color: '#8796AA',
   },
   notifdescription: {
     paddingLeft: 44,
@@ -208,12 +203,10 @@ const styles = StyleSheet.create({
   notifdescriptiontext: {
     fontFamily: 'Roboto-Light',
     fontSize: 14,
-    color: '#d1d5db',
     marginBottom: 4
   },
   dateText: {
     fontFamily: 'Roboto-Light',
     fontSize: 11,
-    color: '#586e85',
   }
 });

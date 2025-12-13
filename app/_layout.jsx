@@ -5,11 +5,33 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar } from 'expo-status-bar';
 
 // IMPORT THE CONTEXT
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { OrderProvider } from '../context/OrderContext';
 
 SplashScreen.preventAutoHideAsync();
+
+// Create a wrapper component to use the hook
+function RootLayoutNav() {
+  const { theme } = useTheme();
+
+  return (
+    <>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        {/** Auth stack lives under app/auth */}
+        <Stack.Screen name="auth" />
+        {/** Role groups */}
+        <Stack.Screen name="(customer)" />
+        <Stack.Screen name="(courier)" />
+        <Stack.Screen name="(admin)" />
+      </Stack>
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -38,18 +60,12 @@ export default function RootLayout() {
     <PaperProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          {/* WRAP THE STACK WITH ORDER PROVIDER */}
-          <OrderProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              {/** Auth stack lives under app/auth */}
-              <Stack.Screen name="auth" />
-              {/** Role groups */}
-              <Stack.Screen name="(customer)" />
-              <Stack.Screen name="(courier)" />
-              <Stack.Screen name="(admin)" />
-            </Stack>
-          </OrderProvider>
+          {/* WRAP THE STACK WITH THEME AND ORDER PROVIDER */}
+          <ThemeProvider>
+            <OrderProvider>
+              <RootLayoutNav />
+            </OrderProvider>
+          </ThemeProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </PaperProvider>

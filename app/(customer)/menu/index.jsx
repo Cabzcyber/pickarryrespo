@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View, Switch } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function CustomerMenu() {
   const router = useRouter();
+  const { colors, isDarkMode, toggleTheme } = useTheme();
 
   // Assets
   const edit = require("@/assets/images/edit.png");
@@ -42,18 +44,18 @@ export default function CustomerMenu() {
           // 1. Initial Fetch
           // FIXED: Removed 'updated_at' to prevent crashing if the column doesn't exist.
           const [profileResult, courierResult] = await Promise.all([
-             supabase.from('service_user').select('full_name, phone_number').eq('user_id', user.id).single(),
-             supabase.from('courier')
-               .select('user_id, user_status, rejection_reason, suspension_reason')
-               .eq('user_id', user.id)
-               .maybeSingle()
+            supabase.from('service_user').select('full_name, phone_number').eq('user_id', user.id).single(),
+            supabase.from('courier')
+              .select('user_id, user_status, rejection_reason, suspension_reason')
+              .eq('user_id', user.id)
+              .maybeSingle()
           ]);
 
           if (profileResult.data) {
-             setProfile({
-               fullName: profileResult.data.full_name || 'No Name',
-               phoneNumber: profileResult.data.phone_number ? String(profileResult.data.phone_number) : ''
-             });
+            setProfile({
+              fullName: profileResult.data.full_name || 'No Name',
+              phoneNumber: profileResult.data.phone_number ? String(profileResult.data.phone_number) : ''
+            });
           }
 
           if (courierResult.data) {
@@ -84,7 +86,7 @@ export default function CustomerMenu() {
 
                 // If status becomes Active (1), reset the approved alert flag so they see it
                 if (payload.new.user_status === 1) {
-                   AsyncStorage.removeItem(`hasSeenApprovedAlert_${user.id}`);
+                  AsyncStorage.removeItem(`hasSeenApprovedAlert_${user.id}`);
                 }
               }
             )
@@ -140,23 +142,23 @@ export default function CustomerMenu() {
         // If they clear cache (npx expo start --clear), 'hasSeenApproved' becomes null.
         // We accept that it shows ONCE after a cache clear, then saves 'true' immediately.
         if (hasSeenApproved !== 'true') {
-            Alert.alert(
-                "Application Approved",
-                "Congratulations! Your courier application has been approved. You can now access the courier dashboard.",
-                [{
-                    text: "Go to Dashboard",
-                    onPress: async () => {
-                        // Mark as seen so it doesn't appear again in this session/install
-                        await AsyncStorage.setItem(approvedKey, 'true');
-                        // Also mark unsuspended as true to prevent double alerts
-                        await AsyncStorage.setItem(unsuspendedKey, 'true');
-                        router.push('/(courier)/home');
-                    }
-                }]
-            );
+          Alert.alert(
+            "Application Approved",
+            "Congratulations! Your courier application has been approved. You can now access the courier dashboard.",
+            [{
+              text: "Go to Dashboard",
+              onPress: async () => {
+                // Mark as seen so it doesn't appear again in this session/install
+                await AsyncStorage.setItem(approvedKey, 'true');
+                // Also mark unsuspended as true to prevent double alerts
+                await AsyncStorage.setItem(unsuspendedKey, 'true');
+                router.push('/(courier)/home');
+              }
+            }]
+          );
         } else {
-            // Already seen, go directly
-            router.push('/(courier)/home');
+          // Already seen, go directly
+          router.push('/(courier)/home');
         }
 
       } catch (error) {
@@ -165,17 +167,17 @@ export default function CustomerMenu() {
       }
 
     } else if (courierStatus === 4) { // Suspended
-       // Reset alerts so they see them again if they get unsuspended later
-       try {
-           await AsyncStorage.removeItem(`hasSeenUnsuspendedAlert_${userId}`);
-           await AsyncStorage.removeItem(`hasSeenApprovedAlert_${userId}`);
-       } catch(e) {}
+      // Reset alerts so they see them again if they get unsuspended later
+      try {
+        await AsyncStorage.removeItem(`hasSeenUnsuspendedAlert_${userId}`);
+        await AsyncStorage.removeItem(`hasSeenApprovedAlert_${userId}`);
+      } catch (e) { }
 
-       const reasonText = suspensionReason ? suspensionReason : "Violation of policies.";
-       Alert.alert(
-         "Account Suspended",
-         `Your courier account has been suspended.\n\nReason: ${reasonText}\n\nPlease contact support.`
-       );
+      const reasonText = suspensionReason ? suspensionReason : "Violation of policies.";
+      Alert.alert(
+        "Account Suspended",
+        `Your courier account has been suspended.\n\nReason: ${reasonText}\n\nPlease contact support.`
+      );
 
     } else {
       // Fallback for unknown status
@@ -206,59 +208,69 @@ export default function CustomerMenu() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.mainContent}>
         <View style={styles.header}>
           <View style={styles.maintext}>
-             {loading ? (
-                <ActivityIndicator size="small" color="#0AB3FF" style={{alignSelf:'flex-start'}} />
-             ) : (
-                <>
-                  <Text style={styles.subtext}>{profile.fullName}</Text>
-                  <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
-                </>
-             )}
+            {loading ? (
+              <ActivityIndicator size="small" color="#0AB3FF" style={{ alignSelf: 'flex-start' }} />
+            ) : (
+              <>
+                <Text style={styles.subtext}>{profile.fullName}</Text>
+                <Text style={styles.subtext1}>{profile.phoneNumber}</Text>
+              </>
+            )}
           </View>
           <Pressable onPress={() => router.push('/(customer)/menu/profile')}>
-            <Image source={edit} style={styles.editicon}/>
+            <Image source={edit} style={styles.editicon} />
           </Pressable>
         </View>
-        <View style={styles.separator} />
+        <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
         <View style={styles.settingcontent}>
+          <View style={styles.settingsubcontent}>
+            <Text style={[styles.settingsubtext, { color: colors.text, flex: 1 }]}>Dark Mode</Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#767577', true: colors.tint }}
+              thumbColor={'#f4f3f4'}
+            />
+          </View>
+
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/settings')}>
-            <Image source={setting} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Settings</Text>
+            <Image source={setting} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Settings</Text>
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/notification')}>
-            <Image source={notification} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Notification</Text>
+            <Image source={notification} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Notification</Text>
           </Pressable>
 
-           <Pressable
+          <Pressable
             style={styles.settingsubcontent}
             onPress={handleSwitchToCourier}
           >
-            <Image source={switchcour} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Switch To Courier</Text>
+            <Image source={switchcour} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Switch To Courier</Text>
             {/* Show loading indicator if logic is processing */}
-            {loading && <ActivityIndicator size="small" color="#ffffff" style={{marginLeft: 10}} />}
+            {loading && <ActivityIndicator size="small" color="#ffffff" style={{ marginLeft: 10 }} />}
           </Pressable>
 
           <Pressable style={styles.settingsubcontent} onPress={() => router.push('/(customer)/menu/about')}>
-            <Image source={about} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>About</Text>
+            <Image source={about} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>About</Text>
           </Pressable>
 
           <View style={styles.settingsubcontent}>
-            <Image source={share} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Check Our Pickarry Website</Text>
+            <Image source={share} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Check Our Pickarry Website</Text>
           </View>
 
           <Pressable style={styles.settingsubcontent} onPress={handleLogout}>
-            <Image source={logout} style={styles.ordericon}/>
-            <Text style={styles.settingsubtext}>Log Out</Text>
+            <Image source={logout} style={styles.ordericon} />
+            <Text style={[styles.settingsubtext, { color: colors.text }]}>Log Out</Text>
           </Pressable>
         </View>
       </View>
@@ -269,7 +281,6 @@ export default function CustomerMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   mainContent: {
     flex: 1,
@@ -284,13 +295,12 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 20,
   },
   maintext: {
     flexDirection: 'column',
-    marginTop:'5'
+    marginTop: '5'
   },
   subtext: {
     fontFamily: 'Roboto-Bold',
@@ -327,7 +337,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Light',
     fontSize: 17,
     fontWeight: '300',
-    color: '#ffffff',
+    fontWeight: '300',
   },
   ordericon: {
     width: 24,

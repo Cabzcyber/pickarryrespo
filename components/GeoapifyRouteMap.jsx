@@ -12,7 +12,7 @@ export default function GeoapifyRouteMap({ pickup, dropoff, interactive = false 
   if (!API_KEY) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={{color: 'red'}}>Error: EXPO_PUBLIC_GEOAPIFY_API_KEY is missing.</Text>
+        <Text style={{ color: 'red' }}>Error: EXPO_PUBLIC_GEOAPIFY_API_KEY is missing.</Text>
       </View>
     );
   }
@@ -21,6 +21,7 @@ export default function GeoapifyRouteMap({ pickup, dropoff, interactive = false 
   const defaultLat = 8.6533;
   const defaultLon = 124.7533;
 
+  // Key depends on coordinates and interaction mode to force re-render
   const mapKey = `${pickup?.latitude}-${pickup?.longitude}-${dropoff?.latitude}-${dropoff?.longitude}-${interactive}`;
 
   const getRouteHtml = () => {

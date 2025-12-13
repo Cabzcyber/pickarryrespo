@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Image } from "react-native";
+import { useTheme } from '../../context/ThemeContext';
 
 // Import your icon assets here. Make sure these files exist in your assets folder.
 const homeIcon = require("../../assets/images/house.png");
@@ -9,13 +10,15 @@ const cartIconActive = require("../../assets/images/cart1.png");
 const menuIcon = require("../../assets/images/menus.png");
 
 export default function CustomerTabs() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#1f2937', // Dark background
-          borderTopColor: '#374151',
+          backgroundColor: colors.tabBar, // Dynamic background
+          borderTopColor: colors.border,
           height: 60, // Adjust height to fit icons comfortably
           paddingBottom: 8,
           paddingTop: 8,

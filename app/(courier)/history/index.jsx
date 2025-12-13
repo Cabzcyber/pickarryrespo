@@ -5,6 +5,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Searchbar } from 'react-native-paper';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
 const headerlogo = require("@/assets/images/headerlogo.png");
@@ -26,6 +27,7 @@ const STATUS_MAP = {
 
 export default function CourierHistory() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   // State
   const [orders, setOrders] = useState([]);
@@ -39,7 +41,7 @@ export default function CourierHistory() {
 
   // 1. UPDATED FILTER ITEMS
   const [items, setItems] = useState([
-    { label: 'All Orders', value: 'All' },
+    { label: 'All', value: 'All' },
     { label: 'Scheduled', value: 'Scheduled' }, // New Filter
     { label: 'Accepted', value: 'Accepted' },
     { label: 'Ongoing', value: 'Ongoing' },
@@ -63,8 +65,8 @@ export default function CourierHistory() {
       // Apply Status/Type Filter
       if (statusFilter !== 'All') {
         if (statusFilter === 'Scheduled') {
-            // New Logic: Filter by boolean flag
-            query = query.eq('is_scheduled', true);
+          // New Logic: Filter by boolean flag
+          query = query.eq('is_scheduled', true);
         }
         else if (statusFilter === 'Accepted') query = query.eq('deliverystatus_id', 2);
         else if (statusFilter === 'Ongoing') query = query.eq('deliverystatus_id', 3);
@@ -143,8 +145,8 @@ export default function CourierHistory() {
 
     // Prioritize Scheduled Time over Created Time
     const rawDate = isScheduled
-        ? (item.scheduled_pickup_time || item.created_at)
-        : item.created_at;
+      ? (item.scheduled_pickup_time || item.created_at)
+      : item.created_at;
 
     const dateObj = new Date(rawDate);
     const dateStr = !isNaN(dateObj.getTime())
@@ -153,67 +155,69 @@ export default function CourierHistory() {
 
     return (
       <View style={[
-          styles.ordercard,
-          // Optional: Blue border for scheduled items to make them pop
-          isScheduled && { borderColor: '#0AB3FF' }
+        styles.ordercard,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        // Optional: Blue border for scheduled items to make them pop
+        isScheduled && { borderColor: '#0AB3FF' }
       ]}>
 
         {/* 3. SCHEDULED BADGE */}
         {isScheduled && (
-            <View style={styles.scheduledBadge}>
-                <Image source={clockIcon} style={styles.badgeIcon} />
-                <Text style={styles.badgeText}>RESERVED</Text>
-            </View>
+          <View style={styles.scheduledBadge}>
+            <Image source={clockIcon} style={styles.badgeIcon} />
+            <Text style={styles.badgeText}>RESERVED</Text>
+          </View>
         )}
 
         <View style={styles.orderinfo}>
 
           {/* Header */}
-          <View style={styles.productRow}>
+          <View style={[styles.productRow, isScheduled && { paddingRight: 60 }]}>
             <View style={styles.productInfo}>
-              <Image source={goods} style={styles.ordericon} />
-              <Text style={styles.productText} numberOfLines={1}>
+              <Image source={goods} style={[styles.ordericon, { tintColor: colors.text }]} />
+              <Text style={[styles.productText, { color: colors.text }]} numberOfLines={1}>
                 {item.goods_details || item.other_details || "Delivery"}
               </Text>
             </View>
 
             <View style={[styles.statusBadge, { borderColor: statusColor }]}>
               <Text style={[styles.statusText, { color: statusColor }]}>
-                  {/* If scheduled but still status 2, you might prefer seeing 'RESERVED' or 'ACCEPTED' */}
-                  {statusName}
+                {/* If scheduled but still status 2, you might prefer seeing 'RESERVED' or 'ACCEPTED' */}
+                {statusName}
               </Text>
             </View>
           </View>
 
           {/* Locations */}
           <View style={styles.locationRow}>
-            <Image source={geopick} style={styles.locationIcon} />
-            <Text style={styles.locationText} numberOfLines={1}>{item.pickup_address}</Text>
+            <Image source={geopick} style={[styles.locationIcon, { tintColor: colors.text }]} />
+            <Text style={[styles.locationText, { color: colors.subText }]} numberOfLines={1}>{item.pickup_address}</Text>
           </View>
           <View style={styles.locationRow}>
-            <Image source={geodrop} style={styles.locationIcon} />
-            <Text style={styles.locationText} numberOfLines={1}>{item.dropoff_address}</Text>
+            <Image source={geodrop} style={[styles.locationIcon, { tintColor: colors.text }]} />
+            <Text style={[styles.locationText, { color: colors.subText }]} numberOfLines={1}>{item.dropoff_address}</Text>
           </View>
 
-          <View style={styles.separator} />
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
           {/* Footer */}
           <View style={styles.footerRow}>
             <View style={styles.metaContainer}>
               <View style={styles.metaRow}>
-                <Image source={money} style={styles.metaIcon} />
-                <Text style={styles.metaText}>₱ {item.total_fare}</Text>
+                <Image source={money} style={[styles.metaIcon, { tintColor: colors.text }]} />
+                <Text style={[styles.metaText, { color: colors.subText }]}>₱ {item.total_fare}</Text>
               </View>
               <View style={styles.metaRow}>
                 <Image
-                    source={time}
-                    style={[styles.metaIcon, isScheduled && { tintColor: '#0AB3FF' }]}
+                  source={time}
+                  style={[styles.metaIcon, { tintColor: isScheduled ? '#0AB3FF' : colors.text }]}
                 />
                 <Text style={[
-                    styles.metaText,
-                    isScheduled && { color: '#0AB3FF', fontWeight: 'bold' }
+                  styles.metaText,
+                  { color: colors.subText },
+                  isScheduled && { color: '#0AB3FF', fontWeight: 'bold' }
                 ]}>
-                    {dateStr}
+                  {dateStr}
                 </Text>
               </View>
             </View>
@@ -232,23 +236,23 @@ export default function CourierHistory() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Image source={headerlogo} style={styles.logo} />
       </View>
 
       <View style={styles.mainContent}>
         {/* Filter Section */}
-        <View style={styles.filtercontainer}>
+        <View style={[styles.filtercontainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.searchcontainer}>
             <Searchbar
               placeholder="Search orders..."
               onChangeText={setSearchQuery}
               value={searchQuery}
-              style={styles.searchbar}
-              iconColor="#0AB3FF"
-              inputStyle={styles.searchInput}
-              placeholderTextColor="#0AB3FF"
+              style={[styles.searchbar, { backgroundColor: colors.inputBackground || colors.card }]}
+              iconColor={colors.tint}
+              inputStyle={[styles.searchInput, { color: colors.text }]}
+              placeholderTextColor={colors.subText}
               onSubmitEditing={fetchOrders}
             />
           </View>
@@ -262,12 +266,14 @@ export default function CourierHistory() {
               setValue={setStatusFilter}
               setItems={setItems}
               placeholder="Status"
-              style={styles.dropdown}
-              textStyle={styles.dropdownText}
-              placeholderStyle={styles.placeholderText}
-              dropDownContainerStyle={styles.dropdownContainer}
+              style={[styles.dropdown, { backgroundColor: colors.inputBackground || colors.card, borderColor: colors.border }]}
+              textStyle={[styles.dropdownText, { color: colors.text }]}
+              placeholderStyle={[styles.placeholderText, { color: colors.subText }]}
+              dropDownContainerStyle={[styles.dropdownContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
               selectedItemContainerStyle={styles.selectedItemContainer}
-              selectedItemLabelStyle={styles.selectedItemLabel}
+              selectedItemLabelStyle={[styles.selectedItemLabel, { color: colors.tint }]}
+              arrowIconStyle={{ tintColor: colors.text }}
+              tickIconStyle={{ tintColor: colors.text }}
               listMode="SCROLLVIEW"
               scrollViewProps={{ nestedScrollEnabled: true }}
             />
@@ -284,7 +290,7 @@ export default function CourierHistory() {
               keyExtractor={(item) => item.order_id.toString()}
               renderItem={renderItem}
               contentContainerStyle={{ paddingBottom: 100 }}
-              ListEmptyComponent={<Text style={styles.emptyText}>No orders found.</Text>}
+              ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.subText }]}>No orders found.</Text>}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3BF579" />
               }
@@ -297,14 +303,12 @@ export default function CourierHistory() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 12, marginTop: verticalScale(30) },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
   mainContent: { flex: 1, padding: 15 },
 
   filtercontainer: {
-    backgroundColor: '#363D47',
-    borderColor: '#363D47',
     borderWidth: 1,
     borderRadius: 11,
     width: '100%',
@@ -317,28 +321,26 @@ const styles = StyleSheet.create({
     zIndex: 2000,
   },
   searchcontainer: { flex: 2, paddingHorizontal: 5 },
-  searchbar: { backgroundColor: '#22262F', borderRadius: 8, height: 40 },
-  searchInput: { color: '#0AB3FF', fontSize: 14, fontFamily: 'Roboto-Regular', minHeight: 0 },
+  searchbar: { borderRadius: 8, height: 40 },
+  searchInput: { fontSize: 14, fontFamily: 'Roboto-Regular', minHeight: 0 },
   filterbtn: { flex: 1, paddingHorizontal: 5, paddingVertical: 5 },
 
-  dropdown: { backgroundColor: '#22262F', borderColor: '#22262F', borderWidth: 0, borderRadius: 8, minHeight: 40 },
-  dropdownText: { color: '#0AB3FF', fontSize: 14, fontFamily: 'Roboto-Regular' },
-  placeholderText: { color: '#0AB3FF', fontSize: 14, fontFamily: 'Roboto-Regular' },
-  dropdownContainer: { backgroundColor: '#22262F', borderColor: '#4B5563', borderWidth: 1, borderRadius: 8, marginTop: 5 },
+  dropdown: { borderWidth: 1, borderRadius: 8, minHeight: 40 },
+  dropdownText: { fontSize: 14, fontFamily: 'Roboto-Regular' },
+  placeholderText: { fontSize: 14, fontFamily: 'Roboto-Regular' },
+  dropdownContainer: { borderWidth: 1, borderRadius: 8, marginTop: 5 },
   selectedItemContainer: { backgroundColor: '#4B5563' },
-  selectedItemLabel: { color: '#0AB3FF', fontSize: 14, fontFamily: 'Roboto-Medium' },
+  selectedItemLabel: { fontSize: 14, fontFamily: 'Roboto-Medium' },
 
   ordercontent: { flex: 1, marginTop: verticalScale(10), zIndex: 1000 },
-  emptyText: { color: '#87AFB9', textAlign: 'center', marginTop: 50, fontSize: 16 },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16 },
 
   ordercard: {
     width: '100%',
-    backgroundColor: '#363D47',
     borderRadius: 14,
     marginBottom: 15,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#4B5563',
     position: 'relative' // Needed for Badge
   },
 
@@ -360,25 +362,25 @@ const styles = StyleSheet.create({
 
   orderinfo: { flexDirection: 'column' },
 
-  productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingRight: 60 }, // Padding for badge
+  productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   productInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },
   ordericon: { width: 20, height: 20, resizeMode: 'contain', marginRight: 8 },
-  productText: { fontFamily: 'Roboto-Bold', fontSize: 16, color: '#FFFFFF', flexShrink: 1 },
+  productText: { fontFamily: 'Roboto-Bold', fontSize: 16, flexShrink: 1 },
 
   statusBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   statusText: { fontSize: 11, fontFamily: 'Roboto-Bold', textTransform: 'uppercase' },
 
   locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   locationIcon: { width: 18, height: 18, resizeMode: 'contain', marginRight: 10, opacity: 0.8 },
-  locationText: { fontFamily: 'Roboto-Regular', fontSize: 14, color: '#B0C4D4', flexShrink: 1 },
+  locationText: { fontFamily: 'Roboto-Regular', fontSize: 14, flexShrink: 1 },
 
-  separator: { height: 1, backgroundColor: '#4B5563', marginVertical: 12 },
+  separator: { height: 1, marginVertical: 12 },
 
   footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   metaContainer: { flex: 1, marginRight: 10 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  metaIcon: { width: 16, height: 16, resizeMode: 'contain', marginRight: 8, tintColor: '#87AFB9' },
-  metaText: { fontFamily: 'Roboto-Medium', fontSize: 13, color: '#87AFB9' },
+  metaIcon: { width: 16, height: 16, resizeMode: 'contain', marginRight: 8 },
+  metaText: { fontFamily: 'Roboto-Medium', fontSize: 13 },
 
   viewButton: {
     backgroundColor: '#3BF579',

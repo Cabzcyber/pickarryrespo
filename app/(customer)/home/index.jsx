@@ -28,6 +28,7 @@ import supabase from '../../../lib/supabase';
 import { calculateAndPrepareOrder } from '../../../services/FareCalculator';
 import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
 import { sanitizeGoodsDetails } from '../../../utils/InputSanitizer';
+import { useTheme } from '../../../context/ThemeContext';
 
 const onfoot = require("../../../assets/images/onfoot.png");
 const dulog = require("../../../assets/images/dulog.png");
@@ -49,6 +50,7 @@ export default function index() {
   const router = useRouter();
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ['15%', '40%', '85%'], []);
+  const { colors } = useTheme();
 
   const {
     pickupLocation,
@@ -174,9 +176,9 @@ export default function index() {
     if (!userId) return;
 
     if (userStatusId === 4) {
-        await AsyncStorage.setItem(`wasSuspended_${userId}`, 'true');
-        Alert.alert("Account Suspended", `Reason: ${suspensionReason}`);
-        return;
+      await AsyncStorage.setItem(`wasSuspended_${userId}`, 'true');
+      Alert.alert("Account Suspended", `Reason: ${suspensionReason}`);
+      return;
     }
     if (!pickupLocation || !dropoffLocation) {
       Alert.alert("Missing Location", "Please select locations.");
@@ -258,13 +260,13 @@ export default function index() {
       setPaymentMethod(null);
 
       Alert.alert("Order Submitted!", `Total: ₱${payload.total_fare}`, [
-          {
-            text: "OK",
-            onPress: () => router.push({
-              pathname: '/(customer)/home/ordersearch',
-              params: { orderId: data.order_id }
-            })
-          }
+        {
+          text: "OK",
+          onPress: () => router.push({
+            pathname: '/(customer)/home/ordersearch',
+            params: { orderId: data.order_id }
+          })
+        }
       ]);
 
     } catch (error) {
@@ -297,7 +299,7 @@ export default function index() {
   const fareEst = getFareEstimate();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.mainContent}>
         <View style={styles.mapWrapper}>
           <GeoapifyRouteMap
@@ -305,23 +307,23 @@ export default function index() {
             dropoff={dropoffLocation}
           />
 
-          <Pressable style={styles.viewModeButton} onPress={toggleUiVisibility}>
-             <AntDesign name={uiVisible ? "eye" : "eye-invisible"} size={24} color="#0AB3FF" />
+          <Pressable style={[styles.viewModeButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={toggleUiVisibility}>
+            <AntDesign name={uiVisible ? "eye" : "eye-invisible"} size={24} color={colors.tint} />
           </Pressable>
 
           {orderMetrics.distanceKm > 0 && uiVisible && (
-            <View style={styles.statsOverlay}>
-              <Text style={styles.statsText}>
+            <View style={[styles.statsOverlay, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.statsText, { color: colors.text }]}>
                 {orderMetrics.distanceKm} km • {orderMetrics.durationMin} min
               </Text>
 
               {fareEst && (
                 <View style={styles.fareBreakdown}>
-                   <View style={styles.divider} />
-                   <Text style={styles.fareTitle}>Est. Total: ₱ {fareEst.total}</Text>
-                   <Text style={styles.fareSub}>
-                     Base: ₱{fareEst.base} + Dist: ₱{fareEst.distCost}
-                   </Text>
+                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                  <Text style={[styles.fareTitle, { color: colors.tint }]}>Est. Total: ₱ {fareEst.total}</Text>
+                  <Text style={[styles.fareSub, { color: colors.subText }]}>
+                    Base: ₱{fareEst.base} + Dist: ₱{fareEst.distCost}
+                  </Text>
                 </View>
               )}
             </View>
@@ -330,26 +332,26 @@ export default function index() {
       </View>
 
       {uiVisible && (
-        <View style={styles.inputlocationcontainer} pointerEvents="box-none">
+        <View style={[styles.inputlocationcontainer, { backgroundColor: colors.surface }]} pointerEvents="box-none">
           <View style={styles.inputcontainer}>
-            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/pickup')}>
-              <Text style={[styles.textloc, pickupLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
+            <Pressable style={[styles.textinputloc, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(customer)/home/pickup')}>
+              <Text style={[styles.textloc, { color: pickupLocation ? colors.text : colors.subText }, pickupLocation && { fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
                 {pickupLocation ? pickupLocation.address : "Where To Pickup?"}
               </Text>
               <Image source={next} style={styles.nexticon} />
             </Pressable>
           </View>
           <View style={styles.inputcontainer}>
-            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/dropoff')}>
-              <Text style={[styles.textloc, dropoffLocation && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
+            <Pressable style={[styles.textinputloc, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(customer)/home/dropoff')}>
+              <Text style={[styles.textloc, { color: dropoffLocation ? colors.text : colors.subText }, dropoffLocation && { fontFamily: 'Roboto-Regular' }]} numberOfLines={1}>
                 {dropoffLocation ? dropoffLocation.address : "Where To Drop-off?"}
               </Text>
               <Image source={next} style={styles.nexticon} />
             </Pressable>
           </View>
           <View style={styles.inputcontainer}>
-            <Pressable style={styles.textinputloc} onPress={() => router.push('/(customer)/home/setgoods')}>
-              <Text style={[styles.textloc, goodsDetails && { color: '#FFFFFF', fontFamily: 'Roboto-Regular' }]}>
+            <Pressable style={[styles.textinputloc, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(customer)/home/setgoods')}>
+              <Text style={[styles.textloc, { color: goodsDetails ? colors.text : colors.subText }, goodsDetails && { fontFamily: 'Roboto-Regular' }]}>
                 {goodsDetails ? `${goodsDetails.other_details.substring(0, 20)}...` : "What To Deliver?"}
               </Text>
               <Image source={next} style={styles.nexticon} />
@@ -363,7 +365,7 @@ export default function index() {
         index={1}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
-        backgroundStyle={styles.bottomSheetBackground}
+        backgroundStyle={{ backgroundColor: colors.surface }}
         handleIndicatorStyle={styles.handleIndicator}
         style={{ zIndex: 50 }}
       >
@@ -372,11 +374,11 @@ export default function index() {
             <View style={styles.gridRow}>
               <View style={styles.gridItem}>
                 <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.card }]}
+                  placeholderStyle={[styles.placeholderStyle, { color: colors.subText }]}
+                  selectedTextStyle={[styles.selectedTextStyle, { color: colors.text }]}
+                  inputSearchStyle={[styles.inputSearchStyle, { color: colors.text }]}
+                  iconStyle={[styles.iconStyle, { color: colors.subText }]}
                   data={deliveryOptions}
                   maxHeight={300}
                   labelField="label"
@@ -387,17 +389,17 @@ export default function index() {
                 />
               </View>
               <View style={styles.gridItem}>
-                <View style={styles.remembercontainer}>
+                <View style={[styles.remembercontainer, { backgroundColor: colors.card }]}>
                   <View style={styles.recover}>
                     <CheckBox
                       checked={isSelected}
                       onPress={() => setSelected(!isSelected)}
-                      checkedColor='#1976d2'
-                      uncheckedColor='#aaa'
+                      checkedColor={colors.tint}
+                      uncheckedColor={colors.subText}
                       size={20}
                       containerStyle={{ padding: 0, margin: 0, marginLeft: 10, backgroundColor: 'transparent', borderWidth: 0 }}
                     />
-                    <Text style={{ color: '#7398A9', marginLeft: 5, flex: 1, fontSize: 11 }} numberOfLines={1}>Book For Delivery</Text>
+                    <Text style={{ color: colors.subText, marginLeft: 5, flex: 1, fontSize: 11 }} numberOfLines={1}>Book For Delivery</Text>
                   </View>
                 </View>
               </View>
@@ -406,11 +408,11 @@ export default function index() {
             <View style={styles.gridRow}>
               <View style={styles.gridItem}>
                 <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.card }]}
+                  placeholderStyle={[styles.placeholderStyle, { color: colors.subText }]}
+                  selectedTextStyle={[styles.selectedTextStyle, { color: colors.text }]}
+                  inputSearchStyle={[styles.inputSearchStyle, { color: colors.text }]}
+                  iconStyle={[styles.iconStyle, { color: colors.subText }]}
                   data={paymentOptions}
                   maxHeight={300}
                   labelField="label"
@@ -422,10 +424,10 @@ export default function index() {
               </View>
               <View style={styles.gridItem}>
                 <Pressable
-                  style={[styles.button, styles.buttonOpen, !isSelected && styles.buttonDisabled]}
+                  style={[styles.button, styles.buttonOpen, !isSelected && styles.buttonDisabled, { backgroundColor: colors.card }]}
                   onPress={showPicker}
                   disabled={!isSelected}>
-                  <Text style={[styles.textStyle, !isSelected && styles.textDisabled]}>
+                  <Text style={[styles.textStyle, !isSelected && styles.textDisabled, { color: colors.subText }]}>
                     {scheduledDate ? scheduledDate.toLocaleDateString() : "Set Schedule"}
                   </Text>
                   <Image source={time} style={styles.ordericon} />
@@ -436,7 +438,7 @@ export default function index() {
 
           <View style={styles.swiperContainer}>
             {loadingVehicles ? (
-              <ActivityIndicator size="large" color="#0AB3FF" style={{ marginTop: 50 }} />
+              <ActivityIndicator size="large" color={colors.tint} style={{ marginTop: 50 }} />
             ) : (
               <Swiper
                 style={styles.swiperWrapper}
@@ -448,8 +450,8 @@ export default function index() {
                 containerStyle={{ overflow: 'visible' }}
                 // --- FIX: Add padding to button wrapper to bring arrows inside screen ---
                 buttonWrapperStyle={{ paddingHorizontal: 20 }}
-                nextButton={<Text style={{ fontSize: 50, color: '#0AB3FF', fontWeight: 'bold' }}>›</Text>}
-                prevButton={<Text style={{ fontSize: 50, color: '#0AB3FF', fontWeight: 'bold' }}>‹</Text>}
+                nextButton={<Text style={{ fontSize: 50, color: colors.tint, fontWeight: 'bold' }}>›</Text>}
+                prevButton={<Text style={{ fontSize: 50, color: colors.tint, fontWeight: 'bold' }}>‹</Text>}
               >
                 {vehicleList.map((item) => {
                   const isSelected = selectedVehicle?.vehicle_id === item.vehicle_id;
@@ -458,9 +460,9 @@ export default function index() {
                     <View key={item.vehicle_id} style={styles.slideOuter}>
                       <Pressable
                         onPress={() => setSelectedVehicle(isSelected ? null : item)}
-                        style={[styles.slide, isSelected && styles.selectedSlide]}
+                        style={[styles.slide, isSelected && styles.selectedSlide, { backgroundColor: colors.card, borderColor: isSelected ? colors.tint : 'transparent', shadowColor: isSelected ? colors.tint : '#000' }]}
                       >
-                        <Text style={styles.swiperText}>{item.vehicle_name} - ₱ {item.base_fare}</Text>
+                        <Text style={[styles.swiperText, { color: colors.text }]}>{item.vehicle_name} - ₱ {item.base_fare}</Text>
                         <Image source={imageSource} style={styles.slideimg} />
                       </Pressable>
                     </View>
@@ -478,8 +480,8 @@ export default function index() {
             date={scheduledDate || new Date()}
           />
 
-          <Pressable style={styles.mainbutton} onPress={handleOrderPress} disabled={isSubmitting}>
-            {isSubmitting ? <ActivityIndicator color="black" /> : <Text style={styles.maintextbutton}>Order</Text>}
+          <Pressable style={[styles.mainbutton, { backgroundColor: colors.success }]} onPress={handleOrderPress} disabled={isSubmitting}>
+            {isSubmitting ? <ActivityIndicator color={colors.buttonText} /> : <Text style={[styles.maintextbutton, { color: colors.buttonText }]}>Order</Text>}
           </Pressable>
 
         </BottomSheetView>
@@ -489,7 +491,7 @@ export default function index() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   mainContent: { flex: 1, padding: 0, alignItems: 'center', justifyContent: 'flex-start' },
   mapWrapper: { flex: 1, width: '100%', marginBottom: 0 },
   viewModeButton: { position: 'absolute', top: 340, right: 20, backgroundColor: 'rgba(30, 30, 30, 0.9)', padding: 12, borderRadius: 30, zIndex: 100, borderWidth: 1, borderColor: '#363D47' },
@@ -498,13 +500,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 330,
     alignSelf: 'center',
-    backgroundColor: 'rgba(20, 21, 25, 0.95)',
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 16,
     zIndex: 10,
     borderWidth: 1,
-    borderColor: '#363D47',
     alignItems: 'center',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -512,50 +512,50 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8
   },
-  statsText: { color: '#FFFFFF', fontFamily: 'Roboto-Bold', fontSize: 16, marginBottom: 2 },
+  statsText: { fontFamily: 'Roboto-Bold', fontSize: 16, marginBottom: 2 },
 
   fareBreakdown: { alignItems: 'center', width: '100%' },
-  divider: { height: 1, width: '80%', backgroundColor: '#444', marginVertical: 8 },
-  fareTitle: { color: '#0AB3FF', fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 2 },
-  fareSub: { color: '#8796AA', fontFamily: 'Roboto-Regular', fontSize: 12 },
+  divider: { height: 1, width: '80%', marginVertical: 8 },
+  fareTitle: { fontFamily: 'Roboto-Bold', fontSize: 18, marginBottom: 2 },
+  fareSub: { fontFamily: 'Roboto-Regular', fontSize: 12 },
 
-  inputlocationcontainer: { position: 'absolute', width: '90%', maxWidth: 381, alignSelf: 'center', top: 70, backgroundColor: '#363D47', borderRadius: 28, paddingVertical: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8 },
+  inputlocationcontainer: { position: 'absolute', width: '90%', maxWidth: 381, alignSelf: 'center', top: 70, borderRadius: 28, paddingVertical: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8 },
   inputcontainer: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 9, marginHorizontal: 'auto', pointerEvents: 'auto' },
-  textinputloc: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#192028', borderColor: '#192028', borderWidth: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 8 },
-  textloc: { flexShrink: 1, color: '#7398A9', fontFamily: 'Roboto-Light', fontSize: 16, lineHeight: 23 },
+  textinputloc: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 8 },
+  textloc: { flexShrink: 1, fontFamily: 'Roboto-Light', fontSize: 16, lineHeight: 23 },
   nexticon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#00bfff' },
-  bottomSheetBackground: { backgroundColor: '#363D47' },
+  bottomSheetBackground: {},
   handleIndicator: { backgroundColor: '#0AB3FF' },
   contentContainer: { flex: 1, padding: 16 },
 
   bottomsheetcontainer: { flex: 1, marginBottom: 10, paddingHorizontal: 8, paddingVertical: 8 },
   gridRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'stretch', width: '100%' },
   gridItem: { flex: 1, marginHorizontal: 2, justifyContent: 'center', minWidth: 0 },
-  dropdown: { backgroundColor: '#192028', borderColor: '#192028', color: '#7398A9', height: 50, borderRadius: 12, padding: 12, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0.1 },
+  dropdown: { height: 50, borderRadius: 12, padding: 12, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0.1 },
   icon: { marginRight: 5, color: '#3BF579' },
-  item: { color: '#7398A9', padding: 17, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  textItem: { flex: 1, fontSize: 16, color: '#7398A9' },
-  placeholderStyle: { fontSize: 14, color: '#7398A9', fontFamily: 'Roboto-Regular', marginLeft: 5 },
-  selectedTextStyle: { fontSize: 14, color: '#FFFFFF', fontFamily: 'Roboto-Regular', marginLeft: 5 },
-  iconStyle: { width: 20, height: 20, color: '#7398A9' },
-  inputSearchStyle: { height: 40, fontSize: 16, color: '#7398A9', marginLeft: 5 },
-  remembercontainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#192028', borderRadius: 12, height: 50, justifyContent: 'flex-start', flex: 1 },
+  item: { padding: 17, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  textItem: { flex: 1, fontSize: 16 },
+  placeholderStyle: { fontSize: 14, fontFamily: 'Roboto-Regular', marginLeft: 5 },
+  selectedTextStyle: { fontSize: 14, fontFamily: 'Roboto-Regular', marginLeft: 5 },
+  iconStyle: { width: 20, height: 20 },
+  inputSearchStyle: { height: 40, fontSize: 16, marginLeft: 5 },
+  remembercontainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, height: 50, justifyContent: 'flex-start', flex: 1 },
   recover: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   button: { borderRadius: 12, padding: 10, elevation: 2 },
-  buttonOpen: { backgroundColor: '#192028', height: 50, padding: 14, pointerEvents: 'auto', borderRadius: 10, justifyContent: "center", alignItems: 'center', fontFamily: 'Roboto-Regular', flexDirection: 'row' },
-  buttonDisabled: { opacity: 0.5, backgroundColor: '#0f151c' },
-  textStyle: { color: '#7398A9', fontFamily: 'Roboto-Regular', textAlign: 'center', fontSize: 14, flex: 1 },
-  textDisabled: { color: '#4a5a68' },
+  buttonOpen: { height: 50, padding: 14, pointerEvents: 'auto', borderRadius: 10, justifyContent: "center", alignItems: 'center', fontFamily: 'Roboto-Regular', flexDirection: 'row' },
+  buttonDisabled: { opacity: 0.5 },
+  textStyle: { fontFamily: 'Roboto-Regular', textAlign: 'center', fontSize: 14, flex: 1 },
+  textDisabled: {},
   ordericon: { width: 20, height: 20, resizeMode: 'contain', marginRight: 10 },
 
   swiperContainer: { height: 220, marginVertical: 20, width: width },
   swiperWrapper: { height: 240 },
   slideOuter: { width: width, flex: 1, alignItems: 'center', justifyContent: 'center' },
-  slide: { width: width * 0.75, height: 180, backgroundColor: '#465569', borderRadius: 17, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent', marginVertical: 10 },
-  selectedSlide: { borderColor: '#0AB3FF', backgroundColor: '#2A3B4D', shadowColor: '#0AB3FF', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.8, shadowRadius: 8, elevation: 10 },
-  swiperText: { fontWeight: 'bold', fontFamily: 'Roboto-Regular', fontSize: 18, color: '#FFFFFF', marginBottom: 10, textAlign: 'center' },
+  slide: { width: width * 0.75, height: 180, borderRadius: 17, justifyContent: 'center', alignItems: 'center', borderWidth: 2, marginVertical: 10 },
+  selectedSlide: { shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.8, shadowRadius: 8, elevation: 10 },
+  swiperText: { fontWeight: 'bold', fontFamily: 'Roboto-Regular', fontSize: 18, marginBottom: 10, textAlign: 'center' },
   slideimg: { width: 100, height: 100, alignSelf: 'center', resizeMode: 'contain' },
 
-  mainbutton: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 15, justifyContent: "center", alignItems: 'center', marginHorizontal: 'auto', pointerEvents: 'auto', backgroundColor: '#3BF579', borderRadius: 10, marginTop: verticalScale(20) },
-  maintextbutton: { fontSize: 18, color: 'black', fontFamily: 'Roboto-Bold' },
+  mainbutton: { flexDirection: 'column', width: '100%', maxWidth: 1024, padding: 15, justifyContent: "center", alignItems: 'center', marginHorizontal: 'auto', pointerEvents: 'auto', borderRadius: 10, marginTop: verticalScale(20) },
+  maintextbutton: { fontSize: 18, fontFamily: 'Roboto-Bold' },
 });

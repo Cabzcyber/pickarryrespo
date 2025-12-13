@@ -1,15 +1,15 @@
-// app/(customer)/home/ordercomplete.jsx
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View, ActivityIndicator, ScrollView, RefreshControl, Modal } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import ImageViewing from 'react-native-image-viewing';
-import DropDownPicker from 'react-native-dropdown-picker'; // Ensure this is installed
+import DropDownPicker from 'react-native-dropdown-picker';
 
 // Hooks & Libs
 import { useOrderDetails } from '../../../hooks/useOrderDetails';
 import { supabase } from '../../../lib/supabase'; // Import Supabase client
 import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
 const headerlogo = require("@/assets/images/headerlogo.png");
@@ -20,6 +20,7 @@ const OrderComplete = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
   const { order, courier, loading, refetch } = useOrderDetails(orderId);
+  const { colors } = useTheme();
 
   // --- EXISTING STATE ---
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -108,9 +109,9 @@ const OrderComplete = () => {
 
   if (loading || !order) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0AB3FF" />
-        <Text style={styles.loadingText}>Generating Receipt...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.tint} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Generating Receipt...</Text>
       </View>
     );
   }
@@ -131,9 +132,9 @@ const OrderComplete = () => {
         onRequestClose={() => setReportModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Report Courier</Text>
-            <Text style={styles.modalSubtitle}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Report Courier</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.subText }]}>
               Please select the issue you encountered with {courier?.name || 'the driver'}.
             </Text>
 
@@ -147,19 +148,19 @@ const OrderComplete = () => {
                 setValue={setReportValue}
                 setItems={setReportItems}
                 placeholder="Select a reason..."
-                style={styles.dropdown}
-                textStyle={styles.dropdownText}
-                dropDownContainerStyle={styles.dropdownContainer}
+                style={[styles.dropdown, { backgroundColor: colors.background, borderColor: colors.border }]}
+                textStyle={[styles.dropdownText, { color: colors.text }]}
+                dropDownContainerStyle={[styles.dropdownContainer, { backgroundColor: colors.background, borderColor: colors.border }]}
                 listMode="SCROLLVIEW"
               />
             </View>
 
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalBtn, styles.cancelBtn]}
+                style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.surface }]}
                 onPress={() => setReportModalVisible(false)}
               >
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={[styles.cancelText, { color: colors.text }]}>Cancel</Text>
               </Pressable>
 
               <Pressable
@@ -168,9 +169,9 @@ const OrderComplete = () => {
                 disabled={isSubmittingReport}
               >
                 {isSubmittingReport ? (
-                   <ActivityIndicator color="white" />
+                  <ActivityIndicator color="white" />
                 ) : (
-                   <Text style={styles.submitText}>Submit Report</Text>
+                  <Text style={styles.submitText}>Submit Report</Text>
                 )}
               </Pressable>
             </View>
@@ -178,70 +179,70 @@ const OrderComplete = () => {
         </View>
       </Modal>
 
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.mapContainer}>
-           <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} />
-           <View style={styles.darkOverlay} />
+          <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} />
+          <View style={styles.darkOverlay} />
         </View>
 
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0AB3FF" />}
+          contentContainerStyle={{ flexGrow: 1 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />}
         >
           <View style={styles.contentWrapper}>
             <View style={styles.header}>
-              <Image source={headerlogo} style={styles.logo}/>
+              <Image source={headerlogo} style={styles.logo} />
             </View>
 
             <View style={styles.mainContent}>
               <View style={styles.statusPill}>
-                <Text style={styles.title}>Order Completed!</Text>
-                <Text style={styles.subtitle}>Thank you for using Pickarry</Text>
+                <Text style={[styles.title, { color: colors.tint }]}>Order Completed!</Text>
+                <Text style={[styles.subtitle, { color: colors.subText }]}>Thank you for using Pickarry</Text>
               </View>
 
-              <View style={styles.receiptCard}>
+              <View style={[styles.receiptCard, { backgroundColor: colors.card }]}>
                 <View style={styles.courierSection}>
-                  <Text style={styles.sectionTitle}>Delivered By</Text>
-                  <Text style={styles.courierName}>{courier?.name || 'Unknown Driver'}</Text>
-                  <Text style={styles.courierVehicle}>
-                     {courier ? `${courier.vehicle_color} ${courier.vehicle_brand} • ${courier.plate_number}` : ''}
+                  <Text style={[styles.sectionTitle, { color: colors.subText }]}>Delivered By</Text>
+                  <Text style={[styles.courierName, { color: colors.text }]}>{courier?.name || 'Unknown Driver'}</Text>
+                  <Text style={[styles.courierVehicle, { color: colors.subText }]}>
+                    {courier ? `${courier.vehicle_color} ${courier.vehicle_brand} • ${courier.plate_number}` : ''}
                   </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
                 {order.goods_receivedimg && (
                   <>
-                    <Pressable style={styles.proofButton} onPress={() => setViewerVisible(true)}>
-                       <Image source={cameraIcon} style={{width: 20, height: 20, tintColor: '#0AB3FF', marginRight: 10}} />
-                       <Text style={styles.proofButtonText}>View Proof of Delivery</Text>
+                    <Pressable style={[styles.proofButton, { backgroundColor: colors.surface, borderColor: colors.tint }]} onPress={() => setViewerVisible(true)}>
+                      <Image source={cameraIcon} style={{ width: 20, height: 20, tintColor: colors.tint, marginRight: 10 }} />
+                      <Text style={[styles.proofButtonText, { color: colors.tint }]}>View Proof of Delivery</Text>
                     </Pressable>
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
                   </>
                 )}
 
                 <View style={styles.paymentSection}>
-                  <Text style={styles.sectionTitle}>Payment Summary</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.subText }]}>Payment Summary</Text>
                   <View style={styles.row}>
-                    <Text style={styles.label}>Total Paid</Text>
-                    <Text style={styles.totalValue}>₱ {order.total_fare}</Text>
+                    <Text style={[styles.label, { color: colors.subText }]}>Total Paid</Text>
+                    <Text style={[styles.totalValue, { color: colors.tint }]}>₱ {order.total_fare}</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.buttonContainer}>
-                 {/* MAIN ACTION: BACK TO HOME */}
-                 <Pressable style={styles.homeButton} onPress={() => router.push('/(customer)/home')}>
-                    <Text style={styles.homeButtonText}>Back to Home</Text>
-                 </Pressable>
+                {/* MAIN ACTION: BACK TO HOME */}
+                <Pressable style={[styles.homeButton, { backgroundColor: colors.tint }]} onPress={() => router.push('/(customer)/home')}>
+                  <Text style={[styles.homeButtonText, { color: colors.buttonText }]}>Back to Home</Text>
+                </Pressable>
 
-                 {/* SECONDARY ACTION: REPORT */}
-                 <Pressable
-                    style={styles.reportButton}
-                    onPress={() => setReportModalVisible(true)}
-                 >
-                    <Text style={styles.reportButtonText}>Report Courier</Text>
-                 </Pressable>
+                {/* SECONDARY ACTION: REPORT */}
+                <Pressable
+                  style={styles.reportButton}
+                  onPress={() => setReportModalVisible(true)}
+                >
+                  <Text style={styles.reportButtonText}>Report Courier</Text>
+                </Pressable>
               </View>
             </View>
           </View>
@@ -259,36 +260,36 @@ const OrderComplete = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
+  container: { flex: 1 },
   mapContainer: { ...StyleSheet.absoluteFillObject },
   darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
 
   contentWrapper: { padding: 20, paddingBottom: 50 },
-  loadingContainer: { flex: 1, backgroundColor: '#141519', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: 'white', marginTop: 10 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10 },
 
   header: { alignItems: 'center', marginTop: verticalScale(30), marginBottom: 20 },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
   mainContent: { flex: 1, alignItems: 'center' },
 
   statusPill: { marginBottom: 20, alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#3BF579', marginBottom: 5, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 5 },
-  subtitle: { fontSize: 16, color: '#EEE', marginBottom: 10, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 5 },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 5, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 5 },
+  subtitle: { fontSize: 16, marginBottom: 10, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 5 },
 
-  receiptCard: { width: '100%', backgroundColor: '#363D47', borderRadius: 16, padding: 20, marginBottom: 20, elevation: 5 },
-  sectionTitle: { color: '#87AFB9', fontSize: 14, marginBottom: 10, textTransform: 'uppercase', fontWeight: 'bold' },
-  courierName: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-  courierVehicle: { color: '#ccc', fontSize: 14, marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#4a5568', marginVertical: 15 },
+  receiptCard: { width: '100%', borderRadius: 16, padding: 20, marginBottom: 20, elevation: 5 },
+  sectionTitle: { fontSize: 14, marginBottom: 10, textTransform: 'uppercase', fontWeight: 'bold' },
+  courierName: { fontSize: 20, fontWeight: 'bold' },
+  courierVehicle: { fontSize: 14, marginTop: 2 },
+  divider: { height: 1, marginVertical: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  label: { color: '#ccc', fontSize: 16 },
-  totalValue: { color: '#0AB3FF', fontSize: 22, fontWeight: 'bold' },
+  label: { fontSize: 16 },
+  totalValue: { fontSize: 22, fontWeight: 'bold' },
 
   buttonContainer: { width: '100%', gap: 15 },
-  homeButton: { backgroundColor: '#0AB3FF', padding: 15, borderRadius: 12, alignItems: 'center' },
-  homeButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  proofButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#22262F', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#0AB3FF' },
-  proofButtonText: { color: '#0AB3FF', fontWeight: 'bold', fontSize: 16 },
+  homeButton: { padding: 15, borderRadius: 12, alignItems: 'center' },
+  homeButtonText: { fontWeight: 'bold', fontSize: 16 },
+  proofButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, borderWidth: 1 },
+  proofButtonText: { fontWeight: 'bold', fontSize: 16 },
 
   // --- NEW STYLES FOR REPORTING ---
   reportButton: {
@@ -310,26 +311,24 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '85%',
-    backgroundColor: '#22262F',
     borderRadius: 20,
     padding: 20,
     paddingTop: 30,
     borderWidth: 1,
-    borderColor: '#4B5563'
   },
-  modalTitle: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
-  modalSubtitle: { color: '#8796AA', fontSize: 14, marginBottom: 20, textAlign: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+  modalSubtitle: { fontSize: 14, marginBottom: 20, textAlign: 'center' },
 
   // Dropdown Styles inside Modal
-  dropdown: { backgroundColor: '#141519', borderColor: '#4B5563' },
-  dropdownText: { color: 'white' },
-  dropdownContainer: { backgroundColor: '#141519', borderColor: '#4B5563' },
+  dropdown: {},
+  dropdownText: {},
+  dropdownContainer: {},
 
   modalButtons: { flexDirection: 'row', gap: 15, justifyContent: 'space-between' },
   modalBtn: { flex: 1, padding: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  cancelBtn: { backgroundColor: '#363D47' },
+  cancelBtn: {},
   submitBtn: { backgroundColor: '#FF4444' },
-  cancelText: { color: 'white', fontWeight: 'bold' },
+  cancelText: { fontWeight: 'bold' },
   submitText: { color: 'white', fontWeight: 'bold' }
 });
 

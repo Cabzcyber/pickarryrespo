@@ -1,12 +1,10 @@
-// app/(customer)/home/ordercancel.jsx
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
-
-// Hooks
 import { useOrderDetails } from '../../../hooks/useOrderDetails';
 import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Assets
 const headerlogo = require("@/assets/images/headerlogo.png");
@@ -16,12 +14,13 @@ const OrderCancel = () => {
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
   const { order } = useOrderDetails(orderId);
+  const { colors } = useTheme();
 
   const pickupCoords = order ? { latitude: order.pickup_latitude, longitude: order.pickup_longitude } : null;
   const dropoffCoords = order ? { latitude: order.dropoff_latitude, longitude: order.dropoff_longitude } : null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 1. Map Background */}
       <View style={styles.mapContainer}>
         {order && <GeoapifyRouteMap pickup={pickupCoords} dropoff={dropoffCoords} />}
@@ -34,18 +33,18 @@ const OrderCancel = () => {
         </View>
 
         <View style={styles.mainContent}>
-          <View style={styles.card}>
-            <Image source={cancelIcon} style={styles.icon} />
-            <Text style={styles.title}>Order Cancelled</Text>
-            <Text style={styles.subtitle}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.error }]}>
+            <Image source={cancelIcon} style={[styles.icon, { tintColor: colors.error }]} />
+            <Text style={[styles.title, { color: colors.error }]}>Order Cancelled</Text>
+            <Text style={[styles.subtitle, { color: colors.subText }]}>
               This order has been cancelled.
             </Text>
 
             <Pressable
-              style={styles.homeButton}
+              style={[styles.homeButton, { backgroundColor: colors.error }]}
               onPress={() => router.push('/(customer)/home')}
             >
-              <Text style={styles.buttonText}>Find New Courier</Text>
+              <Text style={[styles.buttonText, { color: colors.buttonText }]}>Find New Courier</Text>
             </Pressable>
           </View>
         </View>
@@ -55,8 +54,8 @@ const OrderCancel = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#141519' },
-  mapContainer: { ...StyleSheet.absoluteFillObject},
+  container: { flex: 1 },
+  mapContainer: { ...StyleSheet.absoluteFillObject },
   darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)' },
 
   contentWrapper: { flex: 1, padding: 20 },
@@ -66,25 +65,22 @@ const styles = StyleSheet.create({
 
   card: {
     width: '100%',
-    backgroundColor: '#363D47',
     borderRadius: 20,
     padding: 30,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FF4444'
   },
-  icon: { width: 60, height: 60, marginBottom: 20, tintColor: '#FF4444' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#FF4444', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#CCCCCC', textAlign: 'center', marginBottom: 30 },
+  icon: { width: 60, height: 60, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 30 },
 
   homeButton: {
     width: '100%',
-    backgroundColor: '#FF4444',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center'
   },
-  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
+  buttonText: { fontWeight: 'bold', fontSize: 16 }
 });
 
 export default OrderCancel;

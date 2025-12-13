@@ -1,5 +1,7 @@
 import { Tabs } from "expo-router";
 import { Image } from "react-native";
+import { Colors } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 // Import your icon assets
 // Ensure these files exist in your assets/images folder
@@ -16,19 +18,24 @@ const cartIconActive = require("../../assets/images/cart1.png");
 const menuIcon = require("../../assets/images/menus.png");
 
 export default function AdminTabs() {
+  const backgroundColor = useThemeColor({}, 'tabBar');
+  const borderTopColor = useThemeColor({}, 'border');
+  const activeTintColor = useThemeColor({}, 'tint');
+  const inactiveTintColor = useThemeColor({}, 'tabIconDefault');
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#1f2937', // Dark background
-          borderTopColor: '#374151',
+          backgroundColor: backgroundColor,
+          borderTopColor: borderTopColor,
           height: 60, // Adjust height for icons
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: '#3b82f6', // Blue for active tab
-        tabBarInactiveTintColor: '#9ca3af', // Gray for inactive tabs (Text labels)
+        tabBarActiveTintColor: activeTintColor, // Brand Color
+        tabBarInactiveTintColor: inactiveTintColor, // Dynamic Gray
       }}
     >
       {/* 1. Home Tab */}
@@ -58,7 +65,7 @@ export default function AdminTabs() {
                 height: 24,
                 resizeMode: 'contain',
                 // Only apply Blue tint when focused. When undefined, it shows original image color (White)
-                tintColor: focused ? '#3b82f6' : undefined
+                tintColor: focused ? activeTintColor : undefined
               }}
             />
           )
@@ -78,7 +85,7 @@ export default function AdminTabs() {
                 height: 24,
                 resizeMode: 'contain',
                 // Only apply Blue tint when focused. When undefined, it shows original image color (White)
-                tintColor: focused ? '#3b82f6' : undefined
+                tintColor: focused ? activeTintColor : undefined
               }}
             />
           )
@@ -115,7 +122,7 @@ export default function AdminTabs() {
                 height: 24,
                 resizeMode: 'contain',
                 // Only apply Blue tint when focused. When undefined, it shows original image color (White)
-                tintColor: focused ? '#3b82f6' : undefined
+                tintColor: focused ? activeTintColor : undefined
               }}
             />
           )

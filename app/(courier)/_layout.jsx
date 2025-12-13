@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Image } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 // Import your icon assets
 const homeIcon = require("../../assets/images/house.png");
@@ -9,19 +10,21 @@ const cartIconActive = require("../../assets/images/cart1.png");
 const menuIcon = require("../../assets/images/menus.png");
 
 export default function CourierTabs() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#1f2937', // Dark background
-          borderTopColor: '#374151',
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
       }}
     >
       {/* 1. Home Tab */}
@@ -67,7 +70,7 @@ export default function CourierTabs() {
                 width: 24,
                 height: 24,
                 resizeMode: 'contain',
-                tintColor: focused ? '#3b82f6' : '#9ca3af'
+                tintColor: focused ? colors.tint : colors.tabIconDefault
               }}
             />
           )

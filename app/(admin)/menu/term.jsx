@@ -5,9 +5,11 @@ import { verticalScale } from 'react-native-size-matters';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Image } from 'react-native'; // --- Re-added Image for the logo ---
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function term() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   // --- ASSETS (REDUCED) ---
   const backimg = require("@/assets/images/back.png");
@@ -19,99 +21,99 @@ export default function term() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
 
- // --- AFTER (Safer) ---
- const [contentMap, setContentMap] = useState({
-   'about': '',
-   'terms': '',
-   'contact': '',
-   'terms-and-policies': '',
-   'courier-policies': '',
-   'customer-policies': '',
-   'fare-policies': ''
- });
- const [originalContentMap, setOriginalContentMap] = useState({
-   'about': '',
-   'terms': '',
-   'contact': '',
-   'terms-and-policies': '',
-   'customer-policies': '',
-   'customer-policies': '',
-   'fare-policies':''
-});
+  // --- AFTER (Safer) ---
+  const [contentMap, setContentMap] = useState({
+    'about': '',
+    'terms': '',
+    'contact': '',
+    'terms-and-policies': '',
+    'courier-policies': '',
+    'customer-policies': '',
+    'fare-policies': ''
+  });
+  const [originalContentMap, setOriginalContentMap] = useState({
+    'about': '',
+    'terms': '',
+    'contact': '',
+    'terms-and-policies': '',
+    'customer-policies': '',
+    'customer-policies': '',
+    'fare-policies': ''
+  });
 
 
- // --- FETCH ---
-   useEffect(() => {
-     const fetchOverviewContent = async () => {
-       try {
-         setIsLoading(true);
+  // --- FETCH ---
+  useEffect(() => {
+    const fetchOverviewContent = async () => {
+      try {
+        setIsLoading(true);
 
-         // --- NEW: Get the current user's ID ---
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) {
-           throw new Error("User not authenticated.");
-         }
-         setCurrentUserId(user.id);
-         // --- End of new code ---
+        // --- NEW: Get the current user's ID ---
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User not authenticated.");
+        }
+        setCurrentUserId(user.id);
+        // --- End of new code ---
 
-         const { data, error } = await supabase
-           .from('overview')
-           .select('slug, content');
+        const { data, error } = await supabase
+          .from('overview')
+          .select('slug, content');
 
-         if (error) throw error;
+        if (error) throw error;
 
-         if (data) {
-           const map = data.reduce((acc, row) => {
-             acc[row.slug] = row.content || '';
-             return acc;
-           }, {});
-           setContentMap(map);
-           setOriginalContentMap(map);
-         }
-       } catch (error) {
-         console.error("Fetch Overview Error:", error.message);
-         Alert.alert('Error', 'Could not load page content.');
-       } finally {
-         setIsLoading(false);
-       }
-     };
+        if (data) {
+          const map = data.reduce((acc, row) => {
+            acc[row.slug] = row.content || '';
+            return acc;
+          }, {});
+          setContentMap(map);
+          setOriginalContentMap(map);
+        }
+      } catch (error) {
+        console.error("Fetch Overview Error:", error.message);
+        Alert.alert('Error', 'Could not load page content.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-     fetchOverviewContent();
-   }, []);
+    fetchOverviewContent();
+  }, []);
 
-   // --- SAVE ---
-   const handleSave = async () => {
-     // --- NEW: Check if we have the user ID ---
-     if (!currentUserId) {
-       Alert.alert("Error", "User ID not found. Cannot save.");
-       return;
-     }
+  // --- SAVE ---
+  const handleSave = async () => {
+    // --- NEW: Check if we have the user ID ---
+    if (!currentUserId) {
+      Alert.alert("Error", "User ID not found. Cannot save.");
+      return;
+    }
 
-     setIsLoading(true);
-     try {
-       // --- CHANGED: Add the user_id to every object ---
-       const updates = Object.keys(contentMap).map(slug => ({
-         slug: slug,
-         content: contentMap[slug],
-         user_id: currentUserId // <-- ADDED THIS LINE
-       }));
+    setIsLoading(true);
+    try {
+      // --- CHANGED: Add the user_id to every object ---
+      const updates = Object.keys(contentMap).map(slug => ({
+        slug: slug,
+        content: contentMap[slug],
+        user_id: currentUserId // <-- ADDED THIS LINE
+      }));
 
-       const { error } = await supabase
-         .from('overview')
-         .upsert(updates, { onConflict: 'slug' });
+      const { error } = await supabase
+        .from('overview')
+        .upsert(updates, { onConflict: 'slug' });
 
-       if (error) throw error;
+      if (error) throw error;
 
-       setOriginalContentMap(contentMap);
-       Alert.alert('Success', 'Content updated!');
-       setIsEditing(false);
-     } catch (error) {
-       console.error("Save Error:", error.message);
-       Alert.alert('Error', 'Could not save content.');
-     } finally {
-       setIsLoading(false);
-     }
-   };
+      setOriginalContentMap(contentMap);
+      Alert.alert('Success', 'Content updated!');
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Save Error:", error.message);
+      Alert.alert('Error', 'Could not save content.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // --- CANCEL (Unchanged) ---
   const handleCancel = () => {
@@ -130,7 +132,7 @@ export default function term() {
   // --- LOADING (Unchanged) ---
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#0AB3FF" />
       </View>
     );
@@ -138,7 +140,7 @@ export default function term() {
 
   // --- RENDER (JSX) ---
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.replace('/(admin)/menu')}>
           {/* Back icon is still an image */}
@@ -169,7 +171,7 @@ export default function term() {
           )}
         </View>
       </View>
-      <View style={styles.separator} />
+      <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <ScrollView
         style={styles.mainContent}
@@ -184,116 +186,116 @@ export default function term() {
         {/* --- Section 1: about --- */}
         {isEditing ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
             value={contentMap['about']}
             onChangeText={(text) => handleInputChange('about', text)}
             placeholder="Enter about"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.subText}
             multiline
           />
         ) : (
-          <Text style={styles.descriptionText}>{contentMap['about']}</Text>
+          <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['about']}</Text>
         )}
 
         {/* --- Section 2: terms --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>General Terms & Conditions</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>General Terms & Conditions</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['terms']}
               onChangeText={(text) => handleInputChange('terms', text)}
               placeholder="Enter general terms"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['terms']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms']}</Text>
           )}
         </View>
 
         {/* --- Section 3: contact --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['contact']}
               onChangeText={(text) => handleInputChange('contact', text)}
               placeholder="Enter Contact"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['contact']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['contact']}</Text>
           )}
         </View>
 
         {/* --- Section 4: terms and policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Terms of Use</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Terms of Use</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['terms-and-policies']}
               onChangeText={(text) => handleInputChange('terms-and-policies', text)}
               placeholder="Enter Terms of Use"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['terms-and-policies']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['terms-and-policies']}</Text>
           )}
         </View>
 
         {/* --- Section 5: customer policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Customer Policies</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Customer Policies</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['customer-policies']}
               onChangeText={(text) => handleInputChange('customer-policies', text)}
               placeholder="Enter Customer Policies"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['customer-policies']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['customer-policies']}</Text>
           )}
         </View>
 
         {/* --- Section 6: courier policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Courier Policies</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Courier Policies</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['courier-policies']}
               onChangeText={(text) => handleInputChange('courier-policies', text)}
               placeholder="Enter Courier Policies"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['courier-policies']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['courier-policies']}</Text>
           )}
         </View>
 
         {/* --- Section 7: fare policies --- */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Fare Policies</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fare Policies</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               value={contentMap['fare-policies']}
               onChangeText={(text) => handleInputChange('fare-policies', text)}
               placeholder="Enter Fare Policies"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.subText}
               multiline
             />
           ) : (
-            <Text style={styles.descriptionText}>{contentMap['fare-policies']}</Text>
+            <Text style={[styles.descriptionText, { color: colors.subText }]}>{contentMap['fare-policies']}</Text>
           )}
         </View>
 
@@ -306,7 +308,6 @@ export default function term() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141519',
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -354,7 +355,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#363D47',
     width: '100%',
     marginBottom: 1,
     marginTop: verticalScale(6),
@@ -379,14 +379,12 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontFamily: 'Roboto-Light',
     fontSize: 13,
-    color: '#d1d5db',
     lineHeight: 20,
     textAlign: 'justify',
     marginBottom: 20,
     minHeight: 50,
   },
   sectionCard: {
-    backgroundColor: '#1f2937',
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
@@ -394,17 +392,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Roboto-Bold',
     fontSize: 18,
-    color: '#ffffff',
     marginBottom: 10,
   },
   input: {
     fontFamily: 'Roboto-Light',
     fontSize: 13,
-    color: '#d1d5db',
     lineHeight: 20,
     textAlign: 'justify',
     marginBottom: 20,
-    backgroundColor: '#374151',
     borderRadius: 10,
     padding: 10,
     minHeight: 100,
