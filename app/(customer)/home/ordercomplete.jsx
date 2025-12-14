@@ -223,9 +223,49 @@ const OrderComplete = () => {
 
                 <View style={styles.paymentSection}>
                   <Text style={[styles.sectionTitle, { color: colors.subText }]}>Payment Summary</Text>
+
+                  {/* Breakdown */}
+                  <View style={{ marginBottom: 10 }}>
+                    <View style={styles.row}>
+                      <Text style={[styles.label, { color: colors.subText, fontSize: 14 }]}>Base Fare</Text>
+                      <Text style={[styles.value, { color: colors.text, fontSize: 14 }]}>₱ {order.base_fare_component}</Text>
+                    </View>
+                    <View style={styles.row}>
+                      <Text style={[styles.label, { color: colors.subText, fontSize: 14 }]}>Distance Charge</Text>
+                      <Text style={[styles.value, { color: colors.text, fontSize: 14 }]}>₱ {order.distance_charge_component}</Text>
+                    </View>
+                    <View style={styles.row}>
+                      <Text style={[styles.label, { color: colors.subText, fontSize: 14 }]}>Time Charge</Text>
+                      <Text style={[styles.value, { color: colors.text, fontSize: 14 }]}>₱ {order.time_charge_component}</Text>
+                    </View>
+                    {Number(order.bonus_charge_component) > 0 && (
+                      <View style={styles.row}>
+                        <Text style={[styles.label, { color: colors.subText, fontSize: 14 }]}>Rush Fee</Text>
+                        <Text style={[styles.value, { color: colors.text, fontSize: 14 }]}>₱ {order.bonus_charge_component}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={[styles.divider, { backgroundColor: colors.border, marginVertical: 10 }]} />
+
+                  {/* Totals */}
                   <View style={styles.row}>
-                    <Text style={[styles.label, { color: colors.subText }]}>Total Paid</Text>
-                    <Text style={[styles.totalValue, { color: colors.tint }]}>₱ {order.total_fare}</Text>
+                    <Text style={[styles.label, { color: colors.text, fontWeight: 'bold' }]}>Total Order Amount</Text>
+                    <Text style={[styles.value, { color: colors.text, fontWeight: 'bold' }]}>₱ {order.total_fare}</Text>
+                  </View>
+
+                  {Number(order.penalty_amount) > 0 && (
+                    <View style={styles.row}>
+                      <Text style={[styles.label, { color: '#FF4444' }]}>Less: Late Penalty Discount</Text>
+                      <Text style={[styles.value, { color: '#FF4444' }]}>- ₱ {order.penalty_amount}</Text>
+                    </View>
+                  )}
+
+                  <View style={[styles.row, { marginTop: 10, padding: 10, backgroundColor: 'rgba(59, 245, 121, 0.1)', borderRadius: 8 }]}>
+                    <Text style={[styles.label, { color: colors.tint, fontWeight: 'bold', fontSize: 18 }]}>AMOUNT TO PAY</Text>
+                    <Text style={[styles.totalValue, { color: colors.tint }]}>
+                      ₱ {(Number(order.total_fare) - Number(order.penalty_amount || 0)).toFixed(2)}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -283,6 +323,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginVertical: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   label: { fontSize: 16 },
+  value: { fontSize: 16, fontWeight: 'bold' },
   totalValue: { fontSize: 22, fontWeight: 'bold' },
 
   buttonContainer: { width: '100%', gap: 15 },

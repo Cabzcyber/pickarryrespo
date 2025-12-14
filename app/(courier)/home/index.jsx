@@ -24,9 +24,10 @@ export default function CourierHome() {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(null);
   const [items, setItems] = useState([
-    { label: 'All Categories', value: null },
+    { label: 'All', value: null },
     { label: 'Pasundo', value: 'Pasundo' },
     { label: 'Pasugo', value: 'Pasugo' },
+    { label: 'Scheduled', value: 'Scheduled' },
   ]);
 
   // Assets
@@ -258,7 +259,7 @@ export default function CourierHome() {
               setOpen={setOpen}
               setValue={setValue}
               setItems={setItems}
-              placeholder="Category"
+              placeholder="All"
               style={[styles.dropdown, { backgroundColor: colors.inputBackground, borderColor: colors.inputBackground }]}
               textStyle={[styles.dropdownText, { color: colors.text }]}
               placeholderStyle={[styles.placeholderText, { color: colors.subText }]}

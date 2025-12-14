@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import { verticalScale } from 'react-native-size-matters';
 import { decode } from 'base64-arraybuffer';
@@ -12,6 +12,7 @@ import { useOrderDetails } from '../../../hooks/useOrderDetails';
 import { broadcastLocation } from '../../../services/LocationService';
 import { supabase } from '../../../lib/supabase';
 import { useTheme } from '../../../context/ThemeContext';
+import { useDeliveryTimer } from '../../../hooks/useDeliveryTimer';
 
 // Components
 import GeoapifyRouteMap from '../../../components/GeoapifyRouteMap';
@@ -36,6 +37,46 @@ const DeliverOngoing = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(true);
+  const [graceModalVisible, setGraceModalVisible] = useState(false);
+  const [fareConfig, setFareConfig] = useState(null);
+
+  // 0. FETCH FARE CONFIG
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const { data, error } = await supabase
+        .from('fare_configuration')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+      if (!error && data) {
+        setFareConfig(data);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  // --- TIMER LOGIC ---
+  const { timeLeft, status, isPenaltyActive, graceTimeLeft } = useDeliveryTimer(
+    order?.accepted_at,
+    order?.estimated_duration,
+    fareConfig?.grace_period_minutes || 10
+  );
+
+  // Grace Period Modal Trigger
+  useEffect(() => {
+    if (status === 'grace' && !graceModalVisible) {
+      setGraceModalVisible(true);
+    }
+  }, [status]);
+
+  // Format Time Helper
+  const formatTime = (ms) => {
+    if (ms <= 0) return "00:00";
+    const totalSeconds = Math.floor(ms / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   // 1. LOCATION TRACKING
   useEffect(() => {
@@ -69,7 +110,7 @@ const DeliverOngoing = () => {
     if (!order) return;
 
     // CASE A: Pickup -> Ongoing
-    if (order.deliverystatus_id === 2) {
+    if (Number(order.deliverystatus_id) === 2) {
       try {
         setIsSubmitting(true);
         const { error } = await supabase
@@ -91,7 +132,7 @@ const DeliverOngoing = () => {
       }
     }
     // CASE B: Dropoff -> Complete
-    else if (order.deliverystatus_id === 3) {
+    else if (Number(order.deliverystatus_id) === 3) {
       if (assets.length === 0) {
         Alert.alert("Proof Required", "Please upload a photo.");
         return;
@@ -110,11 +151,30 @@ const DeliverOngoing = () => {
 
         const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(fileName);
 
+        // --- PENALTY CALCULATION ---
+        let penalty = 0;
+        if (isPenaltyActive && fareConfig) {
+          // Calculate overdue minutes
+          const acceptedTime = new Date(order.accepted_at).getTime();
+          const durationMs = order.estimated_duration * 60 * 1000;
+          const gracePeriodMs = (fareConfig.grace_period_minutes || 2) * 60 * 1000;
+          const deadline = acceptedTime + durationMs + gracePeriodMs;
+          const now = Date.now();
+
+          if (now > deadline) {
+            const overdueMs = now - deadline;
+            const overdueMinutes = Math.ceil(overdueMs / 60000);
+            const rate = parseFloat(fareConfig.penalty_rate_per_minute) || 0;
+            penalty = (overdueMinutes * rate).toFixed(2);
+          }
+        }
+
         const { error: updateError } = await supabase
           .from('order')
           .update({
             deliverystatus_id: 4,
-            goods_receivedimg: publicUrl
+            goods_receivedimg: publicUrl,
+            penalty_amount: penalty
           })
           .eq('order_id', orderId);
 
@@ -135,12 +195,27 @@ const DeliverOngoing = () => {
   const goodsImages = order.goods_image1 ? [{ uri: order.goods_image1 }] : [];
 
   // Status Logic
-  const isPickupPhase = order.deliverystatus_id === 2;
-  const isDropoffPhase = order.deliverystatus_id === 3;
+  const isPickupPhase = Number(order.deliverystatus_id) === 2;
+  const isDropoffPhase = Number(order.deliverystatus_id) === 3;
 
   // Map Coords
   const pickupCoords = { latitude: order.pickup_latitude, longitude: order.pickup_longitude };
   const dropoffCoords = { latitude: order.dropoff_latitude, longitude: order.dropoff_longitude };
+
+  // Timer UI Colors
+  let timerColor = '#3BF579'; // Green
+  let timerText = formatTime(timeLeft);
+  let statusText = "ON TIME";
+
+  if (status === 'grace') {
+    timerColor = '#FFA500'; // Orange
+    timerText = formatTime(graceTimeLeft);
+    statusText = "GRACE PERIOD";
+  } else if (status === 'penalty') {
+    timerColor = '#FF4444'; // Red
+    timerText = "00:00";
+    statusText = "PENALTY APPLIED";
+  }
 
   return (
     <>
@@ -165,12 +240,20 @@ const DeliverOngoing = () => {
         {showDetails && (
           <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.scrollView}>
             <View style={styles.mainContent}>
+
               <View style={[styles.cardContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+
+                {/* TIMER CARD (Moved Inside) */}
+                <View style={[styles.timerCard, { backgroundColor: colors.inputBackground, borderColor: timerColor, borderWidth: 1, marginBottom: 20 }]}>
+                  <Text style={[styles.timerLabel, { color: timerColor }]}>{statusText}</Text>
+                  <Text style={[styles.timerValue, { color: timerColor }]}>{timerText}</Text>
+                </View>
+
                 <View style={styles.orderinfo}>
                   <View style={styles.info}>
                     <Text style={[styles.infotext, { color: colors.text }]}>Delivery #{order.order_id}</Text>
                     <Text style={[styles.infosubtext, { color: colors.subText }]}>
-                      {isPickupPhase ? 'Heading to Pickup' : 'Heading to Dropoff'}
+                      {isPickupPhase ? 'Heading to Pickup' : 'Heading to Dropoff'} (Status: {order.deliverystatus_id})
                     </Text>
                   </View>
                   <View style={[styles.farecontainer, { backgroundColor: colors.inputBackground }]}>
@@ -221,17 +304,40 @@ const DeliverOngoing = () => {
             </View>
           </ScrollView>
         )}
+
+        {/* GRACE PERIOD MODAL */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={graceModalVisible}
+          onRequestClose={() => setGraceModalVisible(false)}
+        >
+          <View style={styles.centeredView}>
+            <View style={[styles.modalView, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.modalTitle, { color: '#FFA500' }]}>Grace Period Active!</Text>
+              <Text style={[styles.modalText, { color: colors.text }]}>
+                You have exceeded the estimated time. Please complete the delivery within {fareConfig?.grace_period_minutes || 10} minutes to avoid a penalty.
+              </Text>
+              <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => setGraceModalVisible(false)}
+              >
+                <Text style={styles.textStyle}>Understood</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </>
   );
 };
 
-// Use your existing Styles object here (omitted for brevity)
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  mapContainer: { ...StyleSheet.absoluteFillObject },
-  dimOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  mapContainer: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+  dimOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: verticalScale(30), zIndex: 100 },
   logo: { width: 120, height: 28, resizeMode: 'contain' },
   headerbutton: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10, gap: 6 },
@@ -257,7 +363,17 @@ const styles = StyleSheet.create({
   imageListContainer: { flexDirection: 'row', marginTop: 10 },
   selectedImage: { width: 60, height: 60, borderRadius: 5, margin: 5 },
   mainbutton: { backgroundColor: '#3BF579', padding: 15, borderRadius: 10, alignItems: 'center' },
-  maintextbutton: { color: 'black', fontWeight: 'bold', fontSize: 16 }
+  maintextbutton: { color: 'black', fontWeight: 'bold', fontSize: 16 },
+  timerCard: { padding: 15, borderRadius: 12, borderWidth: 2, alignItems: 'center', marginBottom: 15 },
+  timerLabel: { fontSize: 14, fontWeight: 'bold', letterSpacing: 1 },
+  timerValue: { fontSize: 32, fontWeight: 'bold' },
+  centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalView: { margin: 20, borderRadius: 20, padding: 35, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
+  modalText: { marginBottom: 15, textAlign: 'center' },
+  button: { borderRadius: 20, padding: 10, elevation: 2 },
+  buttonClose: { backgroundColor: '#2196F3' },
+  textStyle: { color: 'white', fontWeight: 'bold', textAlign: 'center' }
 });
 
 export default DeliverOngoing;

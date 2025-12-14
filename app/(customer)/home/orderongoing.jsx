@@ -2,7 +2,7 @@
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, Modal, Alert } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, ActivityIndicator, Modal, Alert, Linking } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
 import { supabase } from '../../../lib/supabase';
 
@@ -38,7 +38,15 @@ const OrderOngoing = () => {
   const snapPoints = useMemo(() => ['15%', '40%', '80%'], []);
   const bottomSheetRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [reportVisible, setReportVisible] = useState(false);
+
+  // Call Handler
+  const handleCall = () => {
+    if (courier?.phone) {
+      Linking.openURL(`tel:${courier.phone}`);
+    } else {
+      Alert.alert("Error", "Courier phone number not available.");
+    }
+  };
 
   // 1. NAVIGATION HANDLER
   const handleRedirect = (targetPath) => {
@@ -145,30 +153,19 @@ const OrderOngoing = () => {
             </View>
 
             <View style={styles.optionbtn}>
-              <Pressable style={styles.optionItem} onPress={() => Alert.alert("Call", "Calling driver...")}>
+              <Pressable style={styles.optionItem} onPress={handleCall}>
                 <View style={[styles.optionCircle, { backgroundColor: colors.card }]}>
                   <Image source={call} style={styles.cancelicon} />
                 </View>
                 <Text style={[styles.optionLabel, { color: colors.subText }]}>Call</Text>
               </Pressable>
 
-              <View style={styles.optionItem}>
+              <Pressable style={styles.optionItem} onPress={() => setModalVisible(true)}>
                 <View style={[styles.optionCircle, { backgroundColor: colors.card }]}>
-                  <Pressable onPress={() => setReportVisible(true)}>
-                    <Image source={report} style={styles.reporticon} />
-                  </Pressable>
-                </View>
-                <Text style={[styles.optionLabel, { color: colors.subText }]}>Report</Text>
-              </View>
-
-              <View style={styles.optionItem}>
-                <View style={[styles.optionCircle, { backgroundColor: colors.card }]}>
-                  <Pressable onPress={() => setModalVisible(true)}>
-                    <Image source={calculator} style={styles.calculatoricon} />
-                  </Pressable>
+                  <Image source={calculator} style={styles.calculatoricon} />
                 </View>
                 <Text style={[styles.optionLabel, { color: colors.subText }]}>Details</Text>
-              </View>
+              </Pressable>
             </View>
 
             <View style={styles.locationcontainer}>
@@ -236,7 +233,7 @@ const styles = StyleSheet.create({
   infosubtext: { fontFamily: 'Roboto-Regular', fontSize: 16 },
   farecontainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   totalfare: { fontFamily: 'Roboto-Regular', fontSize: 20, marginRight: 8 },
-  optionbtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 48, marginTop: 16 },
+  optionbtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', marginTop: 16 },
   optionItem: { alignItems: 'center', justifyContent: 'center' },
   optionCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   cancelicon: { width: 34, height: 34, resizeMode: 'contain' },

@@ -41,7 +41,7 @@ export default function AdminOrder() {
   const [openCategory, setOpenCategory] = useState(false);
   const [categoryValue, setCategoryValue] = useState('All');
   const [categoryItems, setCategoryItems] = useState([
-    { label: 'All Categories', value: 'All' }
+    { label: 'All', value: 'All' }
   ]);
 
   const [searchQuery, setSearchQuery] = useState('');

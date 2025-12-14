@@ -25,106 +25,81 @@ const OrderView = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  // 1. Fetch Order & Fare Configuration
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch Order Details
-        const { data: orderData, error: orderError } = await supabase
-          .from('order')
-          .select(`
-            *,
-            type_vehicle ( vehicle_name )
-          `)
-          .eq('order_id', orderId)
-          .single();
-
-        if (orderError) throw orderError;
-
-        // Fetch Fare Config
-        const { data: configData, error: configError } = await supabase
-          .from('fare_configuration')
-          .select('*')
-          .eq('is_active', true)
-          .single();
-
-        if (configError) console.warn("Could not fetch fare config:", configError.message);
-
-        setOrder(orderData);
-        setFareConfig(configData);
-
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        Alert.alert("Error", "Order no longer available.");
-        router.back();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (orderId) fetchData();
+    fetchOrderDetails();
   }, [orderId]);
 
-  // --- 2. UPDATED HANDLER (CONDITIONAL ROUTING) ---
-  const handleAccept = async () => {
-    if (!order) return;
-    setProcessing(true);
-
+  const fetchOrderDetails = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      setLoading(true);
 
-      // Attempt to accept via Backend Service
-      const result = await OrderDispatch.attemptAcceptOrder(order.order_id, user.id);
+      // Fetch Fare Config
+      const { data: configData, error: configError } = await supabase
+        .from('fare_configuration')
+        .select('*')
+        .eq('is_active', true)
+        .single();
 
-      if (result.success) {
-
-        // --- LOGIC SPLIT START ---
-        if (order.is_scheduled) {
-          // CASE A: Scheduled Order -> Go to Dashboard (Wait List)
-          Alert.alert(
-            "Job Reserved",
-            "This order has been added to your schedule. Please wait for the pickup time."
-          );
-          router.replace('/(courier)/home/index');
-        } else {
-          // CASE B: Immediate Order -> Go to Active Delivery (Start Now)
-          Alert.alert("Success", "You have accepted the order!");
-          router.replace({
-            pathname: '/(courier)/home/deliverongoing',
-            params: { orderId: order.order_id }
-          });
-        }
-        // --- LOGIC SPLIT END ---
-
+      if (configError) {
+        console.warn("Could not fetch fare config:", configError.message);
       } else {
-        Alert.alert("Too Late", result.message || "Order was taken by another driver.");
-        router.replace('/(courier)/home/index');
+        setFareConfig(configData);
       }
 
+      // Fetch Order
+      if (!orderId) return;
+
+      const { data: orderData, error: orderError } = await supabase
+        .from('order')
+        .select('*, type_vehicle(*)')
+        .eq('order_id', orderId)
+        .single();
+
+      if (orderError) throw orderError;
+      setOrder(orderData);
+
     } catch (error) {
-      Alert.alert("Error", error.message);
+      console.error("Error fetching order:", error);
+      Alert.alert("Error", "Could not load order details.");
+      router.back();
     } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color="#3BF579" />
-      </View>
-    );
-  }
-
-  // Helper to safely get vehicle name
   const getVehicleDisplay = () => {
+    if (!order) return '';
     if (order.type_vehicle && order.type_vehicle.vehicle_name) {
       return order.type_vehicle.vehicle_name;
     }
     return order.vehicle_id ? `Vehicle #${order.vehicle_id}` : 'Any Vehicle';
+  };
+
+  const handleAccept = async () => {
+    if (processing) return;
+    setProcessing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert("Error", "You must be logged in to accept orders.");
+        return;
+      }
+
+      const result = await OrderDispatch.attemptAcceptOrder(orderId, user.id);
+
+      if (result.success) {
+        Alert.alert("Success", "Order accepted!");
+        router.replace('/(courier)/home/deliverongoing');
+      } else {
+        Alert.alert("Missed", "This order has already been taken.");
+        router.back();
+      }
+    } catch (error) {
+      console.error("Accept error:", error);
+      Alert.alert("Error", "Failed to accept order.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const renderGoodsImage = (uri, index) => {
@@ -138,6 +113,16 @@ const OrderView = () => {
       />
     );
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.text} />
+      </View>
+    );
+  }
+
+  if (!order) return null;
 
   return (
     <>

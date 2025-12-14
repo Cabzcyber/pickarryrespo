@@ -279,7 +279,24 @@ export default function index() {
 
   const showPicker = () => { if (isSelected) setPickerVisible(true); };
   const hidePicker = () => setPickerVisible(false);
-  const handleConfirm = (date) => { setScheduledDate(date); hidePicker(); };
+  const handleConfirm = (date) => {
+    const now = new Date();
+    const diffInMs = date.getTime() - now.getTime();
+    const diffInMinutes = diffInMs / (1000 * 60);
+
+    if (diffInMinutes < 120) {
+      Alert.alert(
+        "Invalid Schedule Time",
+        "Scheduled orders require at least 2 hours notice. Please choose a later time or uncheck 'Book For Delivery' for immediate service."
+      );
+      setSelected(false);
+      hidePicker();
+      return;
+    }
+
+    setScheduledDate(date);
+    hidePicker();
+  };
 
   const getFareEstimate = () => {
     if (!selectedVehicle || !orderMetrics.distanceKm) return null;

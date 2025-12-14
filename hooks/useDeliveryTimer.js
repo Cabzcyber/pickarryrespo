@@ -1,37 +1,57 @@
 import { useState, useEffect } from 'react';
 
-export const useDeliveryTimer = (acceptedAt, durationMinutes) => {
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [status, setStatus] = useState('waiting'); // 'waiting', 'active', 'late'
+export const useDeliveryTimer = (acceptedAt, durationMinutes, gracePeriodMinutes = 10) => {
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [graceTimeLeft, setGraceTimeLeft] = useState(0);
+  const [status, setStatus] = useState('normal'); // 'normal', 'grace', 'penalty'
+  const [isPenaltyActive, setIsPenaltyActive] = useState(false);
 
   useEffect(() => {
     if (!acceptedAt || !durationMinutes) return;
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      const start = new Date(acceptedAt);
-      // Calculate Target Time: Start Time + Duration
-      const target = new Date(start.getTime() + durationMinutes * 60000);
+    const acceptedTime = new Date(acceptedAt).getTime();
+    const durationMs = durationMinutes * 60 * 1000;
+    const gracePeriodMs = gracePeriodMinutes * 60 * 1000;
+    const targetTime = acceptedTime + durationMs;
+    const penaltyTime = targetTime + gracePeriodMs;
 
-      // Difference in seconds
-      const diffInSeconds = Math.floor((target - now) / 1000);
+    const updateTimer = () => {
+      const now = Date.now();
+      const timeRemaining = targetTime - now;
 
-      if (diffInSeconds > 0) {
-        // Formatting MM:SS
-        const m = Math.floor(diffInSeconds / 60);
-        const s = diffInSeconds % 60;
-        setTimeLeft(`${m}:${s < 10 ? '0' : ''}${s}`);
-        setStatus('active');
+      if (timeRemaining > 0) {
+        // NORMAL PHASE
+        setTimeLeft(timeRemaining);
+        setStatus('normal');
+        setIsPenaltyActive(false);
       } else {
-        // Timer finished (Driver is late)
-        setTimeLeft("00:00");
-        setStatus('late');
-        clearInterval(interval);
+        // GRACE OR PENALTY PHASE
+        const graceRemaining = penaltyTime - now;
+
+        if (graceRemaining > 0) {
+          // GRACE PERIOD
+          setTimeLeft(0);
+          setGraceTimeLeft(graceRemaining);
+          setStatus('grace');
+          setIsPenaltyActive(false);
+        } else {
+          // PENALTY ACTIVE
+          setTimeLeft(0);
+          setGraceTimeLeft(0);
+          setStatus('penalty');
+          setIsPenaltyActive(true);
+        }
       }
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
-  }, [acceptedAt, durationMinutes]);
+    // Run immediately
+    updateTimer();
 
-  return { timeLeft, status };
+    // Interval
+    const intervalId = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [acceptedAt, durationMinutes, gracePeriodMinutes]);
+
+  return { timeLeft, status, isPenaltyActive, graceTimeLeft };
 };

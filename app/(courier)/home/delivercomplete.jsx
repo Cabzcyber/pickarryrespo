@@ -55,6 +55,13 @@ const DeliverComplete = () => {
     );
   }
 
+  // --- FINANCIAL CALCULATIONS ---
+  const originalTotal = Number(order?.total_fare || 0);
+  const penaltyDiscount = Number(order?.penalty_amount || 0);
+  const cashToCollect = originalTotal - penaltyDiscount;
+  const commission = Number(order?.commission_amount || 0);
+  const netEarnings = cashToCollect - commission;
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
@@ -65,8 +72,71 @@ const DeliverComplete = () => {
           <Text style={[styles.subtitle, { color: colors.subText }]}>Great job!</Text>
 
           <View style={[styles.earningsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.earningsTitle, { color: colors.subText }]}>TOTAL EARNINGS</Text>
-            <Text style={styles.earningsAmount}>₱ {order?.total_fare}</Text>
+
+            {/* Breakdown Rows */}
+            <View style={styles.breakdownContainer}>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.subText }]}>Base Fare</Text>
+                <Text style={[styles.value, { color: colors.text }]}>₱ {order?.base_fare_component}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.subText }]}>Distance Charge</Text>
+                <Text style={[styles.value, { color: colors.text }]}>₱ {order?.distance_charge_component}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.subText }]}>Time Charge</Text>
+                <Text style={[styles.value, { color: colors.text }]}>₱ {order?.time_charge_component}</Text>
+              </View>
+              {Number(order?.bonus_charge_component) > 0 && (
+                <View style={styles.row}>
+                  <Text style={[styles.label, { color: colors.subText }]}>Rush Fee</Text>
+                  <Text style={[styles.value, { color: colors.text }]}>₱ {order?.bonus_charge_component}</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            {/* Financial Summary */}
+            <View style={styles.summaryContainer}>
+              <View style={styles.row}>
+                <Text style={[styles.summaryLabel, { color: colors.text }]}>Total Order Amount</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>₱ {originalTotal.toFixed(2)}</Text>
+              </View>
+
+              {penaltyDiscount > 0 && (
+                <View style={styles.row}>
+                  <Text style={[styles.deductionLabel, { color: '#FF4444' }]}>Less: Late Penalty</Text>
+                  <Text style={[styles.deductionValue, { color: '#FF4444' }]}>- ₱ {penaltyDiscount.toFixed(2)}</Text>
+                </View>
+              )}
+
+              <View style={[styles.row, styles.highlightRow]}>
+                <Text style={[styles.highlightLabel, { color: colors.tint }]}>CASH TO COLLECT</Text>
+                <Text style={[styles.highlightValue, { color: colors.tint }]}>
+                  ₱ {cashToCollect.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            {/* Net Earnings Calculation */}
+            <View style={styles.netEarningsContainer}>
+              {commission > 0 && (
+                <View style={styles.row}>
+                  <Text style={[styles.label, { color: colors.subText }]}>Less: Platform Commission</Text>
+                  <Text style={[styles.value, { color: colors.text }]}>- ₱ {commission.toFixed(2)}</Text>
+                </View>
+              )}
+
+              <View style={{ marginTop: 10, alignItems: 'center' }}>
+                <Text style={[styles.earningsTitle, { color: colors.subText }]}>NET EARNINGS</Text>
+                <Text style={styles.earningsAmount}>
+                  ₱ {netEarnings.toFixed(2)}
+                </Text>
+              </View>
+            </View>
           </View>
 
           <Pressable style={styles.mainButton} onPress={handleDone}>
@@ -89,7 +159,21 @@ const styles = StyleSheet.create({
   earningsTitle: { fontSize: 14, letterSpacing: 1, marginBottom: 10 },
   earningsAmount: { color: '#3BF579', fontSize: 48, fontWeight: 'bold' },
   mainButton: { backgroundColor: '#3BF579', padding: 18, borderRadius: 12, alignItems: 'center', width: '100%' },
-  mainButtonText: { color: '#141519', fontSize: 16, fontWeight: 'bold' }
+  mainButtonText: { color: '#141519', fontSize: 16, fontWeight: 'bold' },
+  deductionLabel: { fontSize: 14 },
+  deductionValue: { fontSize: 14, fontWeight: 'bold' },
+  breakdownContainer: { width: '100%', marginBottom: 15 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  label: { fontSize: 14 },
+  value: { fontSize: 14, fontWeight: 'bold' },
+  divider: { height: 1, width: '100%', marginBottom: 15 },
+  summaryContainer: { width: '100%', marginBottom: 15 },
+  summaryLabel: { fontSize: 14, fontWeight: 'bold' },
+  summaryValue: { fontSize: 14, fontWeight: 'bold' },
+  highlightRow: { marginTop: 10, padding: 10, backgroundColor: 'rgba(59, 245, 121, 0.1)', borderRadius: 8 },
+  highlightLabel: { fontSize: 16, fontWeight: 'bold' },
+  highlightValue: { fontSize: 18, fontWeight: 'bold' },
+  netEarningsContainer: { width: '100%' }
 });
 
 export default DeliverComplete;

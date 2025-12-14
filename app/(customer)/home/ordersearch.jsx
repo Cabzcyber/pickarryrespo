@@ -119,7 +119,7 @@ const OrderSearch = () => {
     setIsCancelling(true);
     try {
       await supabase.from('order').update({ deliverystatus_id: 5 }).eq('order_id', orderId);
-      router.replace('/(customer)/home/index');
+      router.replace('/(customer)/home');
     } catch (err) {
       Alert.alert("Error", "Could not cancel: " + err.message);
       setIsCancelling(false);
